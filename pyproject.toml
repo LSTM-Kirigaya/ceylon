@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "feedback-collector"
+version = "0.1.0"
+description = "智能软件用户群反馈收集和自动化需求分析工具"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Feedback Collector Team"}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "click>=8.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "pyyaml>=6.0",
+    "openai>=1.0.0",
+    "httpx>=0.25.0",
+    "rich>=13.0.0",
+    "python-dateutil>=2.8.0",
+    "schedule>=1.2.0",
+    "sqlite3-utils>=3.30.0",
+    "jinja2>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+feishu = [
+    "requests>=2.31.0",
+    "lark-oapi>=1.0.0",
+]
+notion = [
+    "notion-client>=2.0.0",
+]
+all = [
+    "feedback-collector[dev,feishu,notion]",
+]
+
+[project.scripts]
+feedback-collector = "feedback_collector.cli:main"
+fc = "feedback_collector.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+feedback_collector = ["py.typed"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

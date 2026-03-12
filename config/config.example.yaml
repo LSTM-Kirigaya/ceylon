@@ -1,0 +1,122 @@
+# Feedback Collector 配置示例
+# 复制此文件为 config.yaml 并填写实际配置
+
+# 群聊平台配置
+platforms:
+  wechat:
+    enabled: true
+    # 微信ID（wxid_xxx 格式）
+    wxid: "your_wxid_here"
+    # 解密后的微信数据库路径
+    # Windows: C:\Users\<用户名>\Documents\CipherTalkData\<wxid>
+    # macOS: ~/Documents/CipherTalkData/<wxid>
+    db_path: "/path/to/decrypted/wechat/db"
+  
+  qq:
+    enabled: false
+    # QQ号
+    uin: "your_qq_number"
+    # QQ数据库路径
+    db_path: "/path/to/qq/db"
+
+# AI 服务配置
+ai:
+  # 服务提供商: openai, deepseek, zhipu, qwen, moonshot, azure, ollama
+  provider: "deepseek"
+  
+  # API 配置
+  api_key: "your_api_key_here"
+  model: "deepseek-chat"
+  base_url: "https://api.deepseek.com/v1"
+  
+  # 高级配置
+  temperature: 0.7
+  max_tokens: 4000
+  timeout: 60
+  
+  # 代理配置（如需）
+  # proxy:
+  #   http: "http://127.0.0.1:7890"
+  #   https: "http://127.0.0.1:7890"
+
+# 分析配置
+analysis:
+  # 软件名称（用于筛选相关反馈）
+  software_name: "YourApp"
+  
+  # 软件描述（帮助AI理解软件功能）
+  software_description: "这是一个什么样的软件"
+  
+  # 分类标签（GitHub 风格）
+  categories:
+    - name: "bug"
+      color: "#d73a4a"
+      description: "Something isn't working"
+    - name: "feature"
+      color: "#a2eeef"
+      description: "New feature or request"
+    - name: "enhancement"
+      color: "#84b6eb"
+      description: "Improve existing feature"
+    - name: "documentation"
+      color: "#0075ca"
+      description: "Documentation related"
+    - name: "performance"
+      color: "#ffb3c0"
+      description: "Performance issues"
+    - name: "ui"
+      color: "#ff9e42"
+      description: "UI/UX related"
+  
+  # 去重配置
+  deduplication:
+    # 相似度阈值（0-1）
+    similarity_threshold: 0.85
+    # 使用向量相似度
+    use_vector: true
+
+# 导出配置
+export:
+  # 导出目标: feishu, notion, local
+  default_target: "local"
+  
+  # 本地导出配置
+  local:
+    # 输出目录
+    output_dir: "./output"
+    # 格式: markdown, json, csv
+    format: "markdown"
+    # 按日期分文件夹
+    group_by_date: true
+  
+  # 飞书多维表格配置
+  feishu:
+    enabled: false
+    app_id: "your_app_id"
+    app_secret: "your_app_secret"
+    # 多维表格 ID
+    table_id: "your_table_id"
+    # 视图 ID（可选）
+    view_id: null
+  
+  # Notion 配置
+  notion:
+    enabled: false
+    token: "your_notion_integration_token"
+    # 数据库 ID
+    database_id: "your_database_id"
+
+# 定时任务配置（可选）
+schedule:
+  enabled: false
+  # 每天运行时间
+  run_time: "09:00"
+  # 收集前一天的反馈
+  collect_previous_day: true
+
+# 日志配置
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  file: "logs/feedback-collector.log"
+  max_size: "10MB"
+  backup_count: 7

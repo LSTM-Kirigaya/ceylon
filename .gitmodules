@@ -1,0 +1,4 @@
+[submodule "third_party/CipherTalk"]
+	path = third_party/CipherTalk
+	url = https://github.com/ILoveBingLu/CipherTalk.git
+	branch = main
