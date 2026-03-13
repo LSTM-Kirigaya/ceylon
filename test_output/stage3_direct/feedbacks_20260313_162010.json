@@ -1,0 +1,188 @@
+[
+  {
+    "id": "d8c94010-ad33-4d43-bfb8-70baf3fcfbc4",
+    "title": "保存按钮导致程序崩溃",
+    "description": "多个用户反馈点击保存按钮后程序崩溃，报错信息显示空指针异常。重现步骤：1.打开文件 2.编辑 3.点击保存",
+    "feedback_type": "bug",
+    "category": "",
+    "status": "new",
+    "priority": "critical",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户B",
+      "用户F",
+      "用户I"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800147",
+    "confidence": 0.95,
+    "keywords": [
+      "崩溃",
+      "保存",
+      "空指针"
+    ],
+    "suggested_labels": [
+      "bug",
+      "critical"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800109"
+  },
+  {
+    "id": "a53b5805-1a88-4228-afb8-05046912fb43",
+    "title": "添加导出功能",
+    "description": "用户希望能导出数据为Excel格式，目前数据只能查看不能导出，使用不方便",
+    "feedback_type": "feature",
+    "category": "",
+    "status": "new",
+    "priority": "high",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户C"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800160",
+    "confidence": 0.9,
+    "keywords": [
+      "导出",
+      "Excel"
+    ],
+    "suggested_labels": [
+      "feature",
+      "export"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800161"
+  },
+  {
+    "id": "1655e998-d882-43ac-a468-4d9614d9c0d6",
+    "title": "程序启动速度慢",
+    "description": "用户反馈程序启动需要30秒以上，希望能优化启动速度",
+    "feedback_type": "performance",
+    "category": "",
+    "status": "new",
+    "priority": "high",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户D"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800167",
+    "confidence": 0.88,
+    "keywords": [
+      "启动",
+      "速度",
+      "性能"
+    ],
+    "suggested_labels": [
+      "performance",
+      "optimization"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800168"
+  },
+  {
+    "id": "68f63af7-9d7f-4d9e-b9a2-3146bac7249c",
+    "title": "增加深色模式",
+    "description": "建议增加深色模式，方便夜间使用",
+    "feedback_type": "feature",
+    "category": "",
+    "status": "new",
+    "priority": "medium",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户G"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800173",
+    "confidence": 0.85,
+    "keywords": [
+      "深色模式",
+      "夜间"
+    ],
+    "suggested_labels": [
+      "feature",
+      "ui",
+      "theme"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800173"
+  },
+  {
+    "id": "c249173f-fd7e-4c7e-9471-2a57e7fde511",
+    "title": "界面操作复杂",
+    "description": "界面设计好看，但操作流程较为复杂，新手上手困难",
+    "feedback_type": "ui",
+    "category": "",
+    "status": "new",
+    "priority": "medium",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户E"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800178",
+    "confidence": 0.82,
+    "keywords": [
+      "界面",
+      "操作",
+      "新手"
+    ],
+    "suggested_labels": [
+      "ui",
+      "ux",
+      "usability"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800178"
+  },
+  {
+    "id": "cc7a6521-58a3-4e47-9de3-3c62452ee0d8",
+    "title": "文档不够详细",
+    "description": "用户反映文档说明不够详细，部分功能使用方法不清晰",
+    "feedback_type": "documentation",
+    "category": "",
+    "status": "new",
+    "priority": "low",
+    "source_messages": [],
+    "source_platform": "wechat",
+    "source_group": "产品反馈群",
+    "reported_by": [
+      "用户H"
+    ],
+    "reported_at": "2026-03-13 16:20:10.800183",
+    "confidence": 0.8,
+    "keywords": [
+      "文档",
+      "说明"
+    ],
+    "suggested_labels": [
+      "documentation"
+    ],
+    "is_merged": false,
+    "merged_from": [],
+    "merge_count": 1,
+    "created_at": "2026-03-13 16:20:10.800109",
+    "updated_at": "2026-03-13 16:20:10.800184"
+  }
+]

@@ -24,7 +24,7 @@ class LLMClient:
         """初始化 OpenAI 客户端"""
         try:
             client_kwargs: Dict[str, Any] = {
-                "api_key": self.config.api_key,
+                "api_key": self.config.get_api_key(),
                 "base_url": self.config.base_url,
                 "timeout": self.config.timeout,
             }

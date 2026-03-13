@@ -30,7 +30,13 @@ class PlatformConfig(BaseModel):
 
 
 class AIConfig(BaseModel):
-    """AI 服务配置"""
+    """AI 服务配置
+    
+    API Key 优先级:
+    1. 环境变量: AI_API_KEY 或 OPENAI_API_KEY
+    2. 环境变量: FC_AI_API_KEY (带前缀)
+    3. 配置文件: config.yaml 中的 api_key
+    """
     provider: str = "deepseek"
     api_key: str = ""
     model: str = "deepseek-chat"
@@ -39,6 +45,28 @@ class AIConfig(BaseModel):
     max_tokens: int = 4000
     timeout: int = 60
     proxy: Optional[Dict[str, str]] = None
+    
+    def get_api_key(self) -> str:
+        """获取 API Key，优先从环境变量读取"""
+        # 优先级1: 通用环境变量
+        env_key = os.environ.get("AI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+        if env_key:
+            return env_key
+        
+        # 优先级2: 带前缀的环境变量
+        provider_env_map = {
+            "deepseek": "DEEPSEEK_API_KEY",
+            "openai": "OPENAI_API_KEY",
+            "zhipu": "ZHIPU_API_KEY",
+            "moonshot": "MOONSHOT_API_KEY",
+        }
+        provider_key = provider_env_map.get(self.provider, f"{self.provider.upper()}_API_KEY")
+        env_key = os.environ.get(provider_key)
+        if env_key:
+            return env_key
+        
+        # 优先级3: 配置文件
+        return self.api_key
 
 
 class CategoryConfig(BaseModel):
