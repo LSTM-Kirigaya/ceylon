@@ -1,0 +1,46 @@
+{
+  "summary": {
+    "total_checked": 5,
+    "duplicates": 0,
+    "similar": 0,
+    "new": 5,
+    "processing_time_ms": 0
+  },
+  "results": [
+    {
+      "requirement_id": "REQ-0001",
+      "is_duplicate": false,
+      "confidence": 0.0,
+      "recommendation": "create_new",
+      "matched_issues": []
+    },
+    {
+      "requirement_id": "REQ-0002",
+      "is_duplicate": false,
+      "confidence": 0.0,
+      "recommendation": "create_new",
+      "matched_issues": []
+    },
+    {
+      "requirement_id": "REQ-0003",
+      "is_duplicate": false,
+      "confidence": 0.0,
+      "recommendation": "create_new",
+      "matched_issues": []
+    },
+    {
+      "requirement_id": "REQ-0004",
+      "is_duplicate": false,
+      "confidence": 0.0,
+      "recommendation": "create_new",
+      "matched_issues": []
+    },
+    {
+      "requirement_id": "REQ-0005",
+      "is_duplicate": false,
+      "confidence": 0.0,
+      "recommendation": "create_new",
+      "matched_issues": []
+    }
+  ]
+}

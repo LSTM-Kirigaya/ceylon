@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "total_input": 28,
+    "extracted": 21,
+    "filtered_low_confidence": 7,
+    "processing_time_ms": 0,
+    "ai_used": false,
+    "min_confidence": 0.6
+  },
+  "requirements": [
+    {
+      "id": "REQ-0004",
+      "title": "食物库推荐系统-  ",
+      "description": "食物库推荐系统-  ",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "食物库推荐系统"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0006",
+      "title": "首页餐食优化为卡片形式（详细展示三大营养素比例）",
+      "description": "首页餐食优化为卡片形式（详细展示三大营养素比例）",
+      "type": "improvement",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "详细展示三大营养素比例",
+        "首页餐食优化为卡片形式"
+      ],
+      "confidence": 0.8,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0007",
+      "title": "数据统计页面：它这个算法应该是你哪天记录了然后只算记录的天数...",
+      "description": "数据统计页面：它这个算法应该是你哪天记录了然后只算记录的天数去出除",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "它这个算法应该是你哪天记录了然后只算记录的天数去出除",
+        "数据统计页面"
+      ],
+      "confidence": 0.7,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0008",
+      "title": "用户昵称和电话号码搜索不到",
+      "description": "用户昵称和电话号码搜索不到",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "用户昵称和电话号码搜索不到"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0009",
+      "title": "地图搜索应该优先搜索最近的",
+      "description": "地图搜索应该优先搜索最近的",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "地图搜索应该优先搜索最近的"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0010",
+      "title": "记录了但是日期不对：我记录了两次，但是历史记录里面都没有显示...",
+      "description": "记录了但是日期不对：我记录了两次，但是历史记录里面都没有显示 ，而且历史记录它这个时间不对，今天已经3月13号了，它默认显示3月12号",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "号了",
+        "而且历史记录它这个时间不对",
+        "我记录了两次",
+        "但是历史记录里面都没有显示",
+        "记录了但是日期不对",
+        "它默认显示",
+        "今天已经"
+      ],
+      "confidence": 0.8,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0011",
+      "title": "现在这个很容易拍两遍",
+      "description": "现在这个很容易拍两遍",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "现在这个很容易拍两遍"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0012",
+      "title": "分析历史的按钮弄的显眼一些",
+      "description": "分析历史的按钮弄的显眼一些",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "分析历史的按钮弄的显眼一些"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0014",
+      "title": "调整食物重量这里有个小bug，调整食物重量但是热量没有变化，...",
+      "description": "调整食物重量这里有个小bug，调整食物重量但是热量没有变化，只有调整了实际摄入比例，热量才有变化",
+      "type": "bug",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "热量才有变化",
+        "调整食物重量但是热量没有变化",
+        "只有调整了实际摄入比例",
+        "bug",
+        "调整食物重量这里有个小"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0015",
+      "title": "左下角那个修改识别，最好弄个颜色",
+      "description": "左下角那个修改识别，最好弄个颜色",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "最好弄个颜色",
+        "左下角那个修改识别"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0016",
+      "title": "这个地理位置好像还是有点问题，很多地方还是搜不到",
+      "description": "这个地理位置好像还是有点问题，很多地方还是搜不到",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "这个地理位置好像还是有点问题",
+        "很多地方还是搜不到"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0017",
+      "title": "食物库食物识别功能还需要再优化一下，而且还需要增加编辑功能",
+      "description": "食物库食物识别功能还需要再优化一下，而且还需要增加编辑功能",
+      "type": "feature",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "而且还需要增加编辑功能",
+        "食物库食物识别功能还需要再优化一下"
+      ],
+      "confidence": 0.8,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0018",
+      "title": "分析食物之后，就可以直接点击上产食物库",
+      "description": "分析食物之后，就可以直接点击上产食物库",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "就可以直接点击上产食物库",
+        "分析食物之后"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0020",
+      "title": "接入服务公众号（食探和coachlink一起做了）",
+      "description": "接入服务公众号（食探和coachlink一起做了）",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "一起做了",
+        "coachlink",
+        "接入服务公众号",
+        "食探和"
+      ],
+      "confidence": 0.7,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0021",
+      "title": "历史记录页面增加接口，标记对应存在记录日期的摄入总热量。",
+      "description": "历史记录页面增加接口，标记对应存在记录日期的摄入总热量。",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "历史记录页面增加接口",
+        "标记对应存在记录日期的摄入总热量"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0023",
+      "title": "精度提升（估算出来的热量和碳单脂是要满足公式的  热量=碳水...",
+      "description": "精度提升（估算出来的热量和碳单脂是要满足公式的  热量=碳水*4+脂肪*9+蛋白质*4 ）",
+      "type": "improvement",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "蛋白质",
+        "碳水",
+        "估算出来的热量和碳单脂是要满足公式的",
+        "脂肪",
+        "精度提升",
+        "热量"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0024",
+      "title": "会员功能  标准模式下每天3次拍照机会  如果超过3次 就开...",
+      "description": "会员功能  标准模式下每天3次拍照机会  如果超过3次 就开9.9元的会员（每天20次上限） 会员的分享图更好看  然后精准模式需要开会员（更准的模式+计划指导+更强的监督）  ",
+      "type": "feature",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "每天",
+        "次拍照机会",
+        "标准模式下每天",
+        "更准的模式",
+        "就开",
+        "次上限",
+        "然后精准模式需要开会员",
+        "如果超过",
+        "会员的分享图更好看",
+        "更强的监督"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0025",
+      "title": "我觉得现在首页跟记录是重叠的 布局可能要优化",
+      "description": "我觉得现在首页跟记录是重叠的 布局可能要优化",
+      "type": "improvement",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "我觉得现在首页跟记录是重叠的",
+        "布局可能要优化"
+      ],
+      "confidence": 0.8,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0026",
+      "title": "食物学习知识库-有趣的方式学习知识",
+      "description": "食物学习知识库-有趣的方式学习知识",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "有趣的方式学习知识",
+        "食物学习知识库"
+      ],
+      "confidence": 0.6,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0027",
+      "title": "体重记录功能",
+      "description": "体重记录功能",
+      "type": "feature",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "体重记录功能"
+      ],
+      "confidence": 0.7,
+      "created_at": "2026-03-23T00:00:00"
+    },
+    {
+      "id": "REQ-0028",
+      "title": "这个是因为时区的问题，还是说我选加餐，它就默认是午后加餐了呀...",
+      "description": "这个是因为时区的问题，还是说我选加餐，它就默认是午后加餐了呀（见附件的图）",
+      "type": "other",
+      "priority": "low",
+      "source": "feishu",
+      "keywords": [
+        "它就默认是午后加餐了呀",
+        "见附件的图",
+        "这个是因为时区的问题",
+        "还是说我选加餐"
+      ],
+      "confidence": 0.8,
+      "created_at": "2026-03-23T00:00:00"
+    }
+  ]
+}

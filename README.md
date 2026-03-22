@@ -1,177 +1,224 @@
-# Feedback Collector
+# 锡兰 CEYLON - 智能化需求管理平台
 
-一个智能的软件用户群反馈收集和自动化需求分析工具。
+锡兰是一个现代化的需求管理平台，帮助团队更好地组织、跟踪和协作处理需求。
+
+## 技术栈
+
+- **前端**: Next.js 14 + TypeScript + Tailwind CSS + Material UI
+- **后端**: Supabase (PostgreSQL + Auth + Storage)
+- **CLI**: Node.js + TypeScript + Commander.js
+
+## 项目结构
+
+```
+ceylon/
+├── app/                    # Next.js 应用路由
+│   ├── page.tsx           # 首页
+│   ├── layout.tsx         # 根布局
+│   ├── login/             # 登录页
+│   ├── register/          # 注册页
+│   ├── dashboard/         # 控制台
+│   ├── projects/          # 项目相关页面
+│   └── api/               # API 路由
+├── components/            # React 组件
+│   ├── ThemeProvider.tsx
+│   ├── AuthProvider.tsx
+│   ├── MainLayout.tsx
+│   └── requirements/
+├── lib/                   # 工具库
+│   └── supabase.ts
+├── stores/                # Zustand 状态管理
+│   ├── themeStore.ts
+│   └── authStore.ts
+├── types/                 # TypeScript 类型
+│   └── index.ts
+├── sql/                   # 数据库 SQL 文件
+│   └── setup.sql
+├── cli/                   # CLI 命令行工具
+│   ├── src/
+│   └── dist/
+├── 参考图/                 # UI 设计参考图
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+├── .env.example
+├── .env.development
+├── .env.production
+└── README.md
+```
 
 ## 功能特性
 
-- 📱 **多平台支持**: 支持微信、QQ等群聊平台
-- 🤖 **AI 智能分析**: 使用大模型自动提取需求、Bug，并进行分类
-- 🔄 **智能去重**: 自动合并相似的反馈，避免重复记录
-- 📊 **多维导出**: 支持导出到多维表格或本地文件
-- ⚙️ **灵活配置**: 命令行参数支持，易于集成到 CI/CD
+### 核心功能
 
-## 快速开始
+1. **用户认证**
+   - 邮箱注册/登录
+   - 密码强度验证（至少8位，包含数字和字母）
+   - 头像上传（Supabase Storage）
 
-### 安装
+2. **项目管理**
+   - 创建/编辑/删除项目
+   - 项目列表展示
+   - 项目设置管理
 
-```bash
-pip install -e .
-```
+3. **团队协作**
+   - 邀请成员加入项目
+   - 三级权限控制：只读、可写、管理
+   - 创建者默认为项目所有者
 
-### 配置
+4. **版本视图管理**
+   - 为每个项目创建多个版本视图
+   - 切换不同版本视图查看需求
 
-复制 `config/config.example.yaml` 到 `config/config.yaml` 并填写相关配置：
+5. **需求管理**
+   - 需求表格展示
+   - 需求字段：
+     - 需求编号（每个版本从0开始）
+     - 需求名称
+     - 负责人
+     - 优先级（P0-P10）
+     - 类型（Bug、Feature、Improvement、Documentation、Security、Discussion）
+     - 状态（待启动、开发中、已完成、已拒绝）
+   - 创建/编辑/删除需求
 
-```bash
-cp config/config.example.yaml config/config.yaml
-```
+6. **主题系统**
+   - 支持浅色、深色、跟随系统三种模式
+   - 锡兰橙主题色 (#C85C1B)
 
-### 使用
-
-```bash
-# 收集并分析今天的群聊反馈
-feedback-collector --platform wechat --group "产品反馈群" --output markdown
-
-# 收集指定日期的反馈
-feedback-collector --platform wechat --group "产品反馈群" --date 2026-03-12 --output feishu
-
-# 仅输出到本地文件
-feedback-collector --platform wechat --group "产品反馈群" --output json
-```
-
-## 项目架构
-
-```
-feedback-collector/
-├── src/
-│   ├── collectors/          # 群聊信息收集模块
-│   │   ├── base.py          # 收集器基类
-│   │   ├── wechat.py        # 微信收集器
-│   │   └── qq.py            # QQ收集器
-│   ├── analyzer/            # AI 分析模块
-│   │   ├── llm.py           # 大模型接口
-│   │   ├── extractor.py     # 需求/Bug 提取器
-│   │   ├── classifier.py    # 分类器
-│   │   └── deduplicator.py  # 去重器
-│   ├── exporters/           # 数据导出模块
-│   │   ├── base.py          # 导出器基类
-│   │   ├── feishu.py        # 飞书多维表格导出
-│   │   ├── notion.py        # Notion 导出
-│   │   └── local.py         # 本地文件导出
-│   └── utils/               # 工具函数
-├── config/                  # 配置文件
-├── tests/                   # 测试用例
-├── docs/                    # 文档
-└── third_party/             # 第三方依赖（CipherTalk 等）
-```
-
-## 模块说明
-
-### 1. 收集器模块 (collectors)
-
-负责从指定的群聊中收集当天的消息记录。
-
-- **微信收集器**: 基于 CipherTalk 项目，读取微信本地数据库
-- **QQ收集器**: 支持 QQ 群聊消息收集
-
-### 2. 分析器模块 (analyzer)
-
-使用大模型对收集到的消息进行分析：
-
-- **提取器**: 从群聊消息中提取软件相关的需求和 Bug
-- **分类器**: 根据 GitHub 标签体系对需求和 Bug 进行分类
-- **去重器**: 合并相似的反馈，确保不重复记录
-
-### 3. 导出器模块 (exporters)
-
-将分析结果导出到目标位置：
-
-- **飞书导出器**: 上传到飞书多维表格
-- **Notion 导出器**: 上传到 Notion 数据库
-- **本地导出器**: 保存为 Markdown、JSON、CSV 等格式
-
-## 支持的 AI 服务提供商
-
-- OpenAI (GPT-4, GPT-3.5)
-- DeepSeek
-- 智谱 AI (GLM)
-- 通义千问
-- Moonshot (Kimi)
-- Azure OpenAI
-- 本地模型 (Ollama)
-
-## 依赖的第三方项目
-
-### CipherTalk
-
-本项目集成了 [CipherTalk](https://github.com/ILoveBingLu/CipherTalk) 项目用于微信数据收集。
-
-**升级方式**:
+### CLI 命令行工具
 
 ```bash
-# 进入 third_party 目录
-cd third_party/CipherTalk
+# 全局安装 CLI
+cd cli && npm install -g .
 
-# 拉取最新代码
-git pull origin main
+# 登录
+ceylon login
 
-# 重新安装依赖（如有需要）
+# 查看认证状态
+ceylon status
+
+# 列出所有项目
+ceylon projects
+
+# 列出版本视图
+ceylon views --project <project-id>
+
+# 列出需求
+ceylon requirements --project <project-id> --view <view-id>
+
+# 创建需求
+ceylon create --project <project-id> --view <view-id> --title "需求名称"
+
+# 更新需求
+ceylon update <requirement-id> --title "新名称" --status completed
+
+# 删除需求
+ceylon delete <requirement-id>
+
+# 登出
+ceylon logout
+```
+
+## 环境配置
+
+### Web 应用
+
+1. 环境变量已预配置在以下文件：
+   - `.env.example` - 模板
+   - `.env.development` - 开发环境
+   - `.env.production` - 生产环境
+
+2. 安装依赖：
+```bash
 npm install
 ```
 
-## 配置说明
-
-### 微信配置
-
-需要在 `config.yaml` 中配置微信数据库路径和微信ID：
-
-```yaml
-wechat:
-  wxid: "your_wxid"  # 微信ID
-  db_path: "/path/to/wechat/decrypted/db"  # 解密后的数据库路径
-```
-
-### AI 服务配置
-
-```yaml
-ai:
-  provider: "deepseek"  # 服务提供商
-  api_key: "your_api_key"
-  model: "deepseek-chat"
-  base_url: "https://api.deepseek.com/v1"
-```
-
-### 导出配置
-
-```yaml
-export:
-  target: "feishu"  # 或 "notion", "local"
-  feishu:
-    app_id: "your_app_id"
-    app_secret: "your_app_secret"
-    table_id: "your_table_id"
-```
-
-## 开发
-
-### 运行测试
-
+3. 运行开发服务器：
 ```bash
-pytest tests/
+npm run dev
 ```
 
-### 代码风格
-
+4. 构建：
 ```bash
-black src/
-isort src/
-flake8 src/
+npm run build
 ```
 
-## 许可证
+### CLI 工具
 
-MIT License
+1. 安装依赖：
+```bash
+cd cli
+npm install
+```
 
-## 贡献
+2. 构建：
+```bash
+npm run build
+```
 
-欢迎提交 Issue 和 Pull Request！
+3. 全局安装：
+```bash
+npm install -g .
+```
+
+## 数据库设置
+
+项目使用 Supabase 作为后端，数据库 Schema 定义在 `sql/setup.sql` 中。
+
+### 主要表结构
+
+- `profiles` - 用户资料
+- `projects` - 项目
+- `project_members` - 项目成员关系
+- `version_views` - 版本视图
+- `requirements` - 需求
+- `cli_tokens` - CLI 认证令牌
+
+在 Supabase SQL Editor 中执行 `sql/setup.sql` 文件来创建所有表和策略。
+
+## MCP 配置
+
+项目已配置 Supabase MCP：
+
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=vaukvwgvklnpmlwhgyei"
+    }
+  }
+}
+```
+
+配置文件位置：
+- `.vscode/mcp.json` - VS Code 配置
+- `mcp.json` - 项目根目录配置
+
+## API 接口
+
+CLI 使用的 API 接口：
+
+| 接口 | 方法 | 描述 |
+|------|------|------|
+| `/api/cli/projects` | POST | 获取项目列表 |
+| `/api/cli/views` | POST | 获取版本视图列表 |
+| `/api/cli/requirements` | POST | 获取需求列表 |
+| `/api/cli/requirements/create` | POST | 创建需求 |
+| `/api/cli/requirements/update` | POST | 更新需求 |
+| `/api/cli/requirements/delete` | POST | 删除需求 |
+
+## 主题设计
+
+参考 `参考图/UI_SPEC.md`：
+
+- **锡兰橙主题色**: #C85C1B
+- **大圆角设计**: rounded-2xl (16px) 或 rounded-3xl (24px)
+- **呼吸感边界**: 使用极浅灰色调 surface-100/surface-200
+- **紧凑字间距**: -0.025em
+- **物理按压缩放**: scale(0.98)
+- **骨架屏加载**: 不使用转圈圈加载
+
+## License
+
+MIT

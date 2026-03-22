@@ -1,8 +1,0 @@
-======================================================================
-Feedback Search Results
-Query: 导出Excel
-Total feedbacks in database: 4
-Results found: 0
-======================================================================
-
-No matching feedbacks found.
