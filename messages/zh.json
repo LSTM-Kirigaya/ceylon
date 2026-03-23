@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "title": "锡兰 Ceylon - 现代化需求管理平台",
+    "description": "锡兰是一个现代化的需求管理平台，帮助团队高效管理项目需求、追踪进度、协作开发。支持版本视图、需求分类、优先级管理等功能。"
+  },
+  "common": {
+    "appName": "锡兰 CEYLON",
+    "appShortName": "锡兰",
+    "loading": "加载中...",
+    "save": "保存",
+    "cancel": "取消",
+    "delete": "删除",
+    "edit": "编辑",
+    "create": "创建",
+    "confirm": "确认",
+    "name": "名称",
+    "back": "返回",
+    "next": "下一步",
+    "skip": "跳过",
+    "done": "完成",
+    "close": "关闭",
+    "open": "打开",
+    "settings": "设置",
+    "logout": "退出登录",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "all": "全部",
+    "none": "无",
+    "required": "必填",
+    "optional": "可选",
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告",
+    "info": "提示"
+  },
+  "theme": {
+    "light": "浅色",
+    "dark": "深色",
+    "system": "跟随系统",
+    "switch": "切换主题"
+  },
+  "language": {
+    "select": "选择语言",
+    "zh": "中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "nav": {
+    "home": "首页",
+    "dashboard": "仪表盘",
+    "projects": "项目",
+    "team": "团队",
+    "profile": "个人资料"
+  },
+  "home": {
+    "hero": {
+      "title1": "智能化需求管理",
+      "title2": "让团队协作更高效",
+      "description": "锡兰是一个现代化的需求管理平台，帮助团队更好地组织、跟踪和协作处理需求",
+      "startNow": "立即开始",
+      "learnMore": "了解更多",
+      "startProject": "开始项目"
+    },
+    "features": {
+      "title": "核心功能",
+      "versionView": {
+        "title": "版本视图管理",
+        "description": "为每个项目创建多个版本视图，清晰管理不同迭代的需求"
+      },
+      "requirements": {
+        "title": "需求表格",
+        "description": "灵活的需求表格，支持优先级、类型、负责人等多维度管理"
+      },
+      "collaboration": {
+        "title": "团队协作",
+        "description": "细粒度的权限控制，支持读、写、管理三种角色"
+      },
+      "cli": {
+        "title": "CLI 工具",
+        "description": "命令行工具支持，让开发者可以在终端快速管理需求"
+      }
+    },
+    "footer": {
+      "copyright": "© 2024 锡兰 CEYLON. All rights reserved."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "欢迎回来",
+      "subtitle": "登录到您的锡兰账户",
+      "email": "邮箱",
+      "password": "密码",
+      "submit": "登录",
+      "noAccount": "还没有账户？",
+      "registerNow": "立即注册",
+      "errors": {
+        "emailRequired": "请输入邮箱",
+        "emailInvalid": "请输入有效的邮箱地址",
+        "passwordRequired": "请输入密码",
+        "passwordMin": "密码至少需要8个字符",
+        "loginFailed": "登录失败，请重试",
+        "timeout": "连接超时，请检查网络"
+      }
+    },
+    "register": {
+      "title": "创建账户",
+      "subtitle": "开始您的锡兰之旅",
+      "steps": {
+        "basic": "基本信息",
+        "avatar": "上传头像",
+        "complete": "完成"
+      },
+      "email": "邮箱",
+      "displayName": "显示名称",
+      "password": "密码",
+      "confirmPassword": "确认密码",
+      "passwordRequirements": "密码要求:",
+      "passwordRules": {
+        "length": "至少8个字符",
+        "letter": "包含英文字母",
+        "number": "包含数字"
+      },
+      "avatar": {
+        "title": "上传头像（可选）",
+        "description": "点击头像上传图片，支持 JPG、PNG 格式，最大 2MB"
+      },
+      "success": {
+        "title": "注册成功！",
+        "verifyTitle": "请验证您的邮箱",
+        "verifyMessage": "我们已向 {email} 发送了一封验证邮件，请查收并点击邮件中的确认链接完成注册。",
+        "goToLogin": "去登录",
+        "resendEmail": "重新发送验证邮件",
+        "resendSuccess": "验证邮件已重新发送！",
+        "spamTip": "提示：如果没有收到邮件，请检查垃圾邮件文件夹"
+      },
+      "hasAccount": "已有账户？",
+      "loginNow": "立即登录",
+      "errors": {
+        "emailRequired": "请输入邮箱",
+        "emailInvalid": "请输入有效的邮箱地址",
+        "passwordRequired": "请输入密码",
+        "passwordMin": "密码至少需要8个字符",
+        "passwordLetter": "密码必须包含英文字母",
+        "passwordNumber": "密码必须包含数字",
+        "confirmRequired": "请确认密码",
+        "confirmMismatch": "两次输入的密码不一致",
+        "displayNameRequired": "请输入显示名称",
+        "avatarSize": "头像图片不能超过 2MB",
+        "registerFailed": "注册失败，请重试",
+        "uploadFailed": "上传头像失败"
+      }
+    },
+    "logout": {
+      "title": "退出登录",
+      "confirm": "确定要退出登录吗？"
+    }
+  },
+  "dashboard": {
+    "title": "项目",
+    "subtitle": "管理您的项目并与团队协作",
+    "newProject": "新建项目",
+    "createProject": "创建项目",
+    "noProjects": {
+      "title": "还没有项目",
+      "description": "创建您的第一个项目，开始使用锡兰管理需求",
+      "action": "创建项目"
+    },
+    "projectCard": {
+      "noDescription": "暂无描述"
+    },
+    "menu": {
+      "open": "打开",
+      "settings": "设置",
+      "delete": "删除"
+    },
+    "createDialog": {
+      "title": "创建新项目",
+      "name": "项目名称",
+      "namePlaceholder": "我的项目",
+      "description": "描述（可选）",
+      "descriptionPlaceholder": "项目的简要描述",
+      "creating": "创建中..."
+    }
+  },
+  "project": {
+    "tabs": {
+      "requirements": "需求",
+      "team": "团队",
+      "settings": "设置"
+    },
+    "settings": {
+      "title": "项目设置",
+      "general": {
+        "title": "基本信息",
+        "name": "项目名称",
+        "description": "项目描述",
+        "save": "保存更改"
+      },
+      "danger": {
+        "title": "危险区域",
+        "delete": "删除项目",
+        "deleteWarning": "删除项目后，所有相关数据将无法恢复。请谨慎操作。",
+        "confirmDelete": "我确认删除此项目"
+      }
+    },
+    "team": {
+      "title": "团队成员",
+      "invite": "邀请成员",
+      "role": {
+        "owner": "所有者",
+        "admin": "管理员",
+        "editor": "编辑",
+        "viewer": "查看者"
+      }
+    }
+  },
+  "errors": {
+    "generic": "出错了，请稍后重试",
+    "notFound": "页面未找到",
+    "unauthorized": "未授权访问",
+    "forbidden": "禁止访问",
+    "network": "网络错误，请检查连接"
+  }
+}

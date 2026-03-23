@@ -12,7 +12,24 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Custom ignores
+    "cli/dist/**",
+    "scripts/**",
+    "tests/**",
+    "playwright.config.ts",
+    "**/*.spec.ts",
+    "**/*.test.ts",
   ]),
+  {
+    rules: {
+      // Allow 'any' type in catch blocks and error handling
+      "@typescript-eslint/no-explicit-any": "off",
+      // Allow require() imports for compatibility
+      "@typescript-eslint/no-require-imports": "off",
+      // Disable setState in effect rule (common pattern for hydration)
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

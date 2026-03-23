@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "title": "Ceylon - モダンな要件管理プラットフォーム",
+    "description": "Ceylonは、チームがプロジェクト要件を効率的に管理し、進捗を追跡し、協力するのを支援するモダンな要件管理プラットフォームです。バージョンビュー、要件分類、優先度管理などをサポートしています。"
+  },
+  "common": {
+    "appName": "セイロン CEYLON",
+    "appShortName": "セイロン",
+    "loading": "読み込み中...",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "edit": "編集",
+    "create": "作成",
+    "confirm": "確認",
+    "name": "名前",
+    "back": "戻る",
+    "next": "次へ",
+    "skip": "スキップ",
+    "done": "完了",
+    "close": "閉じる",
+    "open": "開く",
+    "settings": "設定",
+    "logout": "ログアウト",
+    "search": "検索",
+    "filter": "フィルター",
+    "sort": "並び替え",
+    "all": "すべて",
+    "none": "なし",
+    "required": "必須",
+    "optional": "任意",
+    "success": "成功",
+    "error": "エラー",
+    "warning": "警告",
+    "info": "情報"
+  },
+  "theme": {
+    "light": "ライト",
+    "dark": "ダーク",
+    "system": "システム",
+    "switch": "テーマを切り替え"
+  },
+  "language": {
+    "select": "言語を選択",
+    "zh": "中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "nav": {
+    "home": "ホーム",
+    "dashboard": "ダッシュボード",
+    "projects": "プロジェクト",
+    "team": "チーム",
+    "profile": "プロフィール"
+  },
+  "home": {
+    "hero": {
+      "title1": "インテリジェントな要件管理",
+      "title2": "チーム協力をより効率的に",
+      "description": "Ceylonは、チームが要件をより良く整理、追跡、協力するのを支援するモダンな要件管理プラットフォームです",
+      "startNow": "今すぐ始める",
+      "learnMore": "詳細を見る",
+      "startProject": "プロジェクトを開始"
+    },
+    "features": {
+      "title": "主な機能",
+      "versionView": {
+        "title": "バージョンビュー管理",
+        "description": "各プロジェクトに複数のバージョンビューを作成し、異なるイテレーションの要件を明確に管理"
+      },
+      "requirements": {
+        "title": "要件テーブル",
+        "description": "優先度、タイプ、担当者などの多次元管理をサポートする柔軟な要件テーブル"
+      },
+      "collaboration": {
+        "title": "チーム協力",
+        "description": "読み取り、書き込み、管理の3つの役割をサポートするきめ細かい権限制御"
+      },
+      "cli": {
+        "title": "CLIツール",
+        "description": "コマンドラインツールのサポートにより、開発者はターミナルから要件を迅速に管理できます"
+      }
+    },
+    "footer": {
+      "copyright": "© 2024 セイロン CEYLON. All rights reserved."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "おかえりなさい",
+      "subtitle": "Ceylonアカウントにログイン",
+      "email": "メールアドレス",
+      "password": "パスワード",
+      "submit": "ログイン",
+      "noAccount": "アカウントをお持ちでないですか？",
+      "registerNow": "今すぐ登録",
+      "errors": {
+        "emailRequired": "メールアドレスを入力してください",
+        "emailInvalid": "有効なメールアドレスを入力してください",
+        "passwordRequired": "パスワードを入力してください",
+        "passwordMin": "パスワードは8文字以上必要です",
+        "loginFailed": "ログインに失敗しました。もう一度お試しください",
+        "timeout": "接続がタイムアウトしました。ネットワークを確認してください"
+      }
+    },
+    "register": {
+      "title": "アカウント作成",
+      "subtitle": "Ceylonでの旅を始めましょう",
+      "steps": {
+        "basic": "基本情報",
+        "avatar": "アバターアップロード",
+        "complete": "完了"
+      },
+      "email": "メールアドレス",
+      "displayName": "表示名",
+      "password": "パスワード",
+      "confirmPassword": "パスワード確認",
+      "passwordRequirements": "パスワード要件:",
+      "passwordRules": {
+        "length": "8文字以上",
+        "letter": "英字を含む",
+        "number": "数字を含む"
+      },
+      "avatar": {
+        "title": "アバターアップロード（任意）",
+        "description": "アバターをクリックしてアップロード。JPG、PNG形式対応、最大2MB"
+      },
+      "success": {
+        "title": "登録成功！",
+        "verifyTitle": "メールアドレスを確認してください",
+        "verifyMessage": "{email}に確認メールを送信しました。受信箱を確認し、確認リンクをクリックして登録を完了してください。",
+        "goToLogin": "ログインへ",
+        "resendEmail": "確認メールを再送信",
+        "resendSuccess": "確認メールを再送信しました！",
+        "spamTip": "ヒント：メールが見つからない場合は、迷惑メールフォルダを確認してください"
+      },
+      "hasAccount": "すでにアカウントをお持ちですか？",
+      "loginNow": "今すぐログイン",
+      "errors": {
+        "emailRequired": "メールアドレスを入力してください",
+        "emailInvalid": "有効なメールアドレスを入力してください",
+        "passwordRequired": "パスワードを入力してください",
+        "passwordMin": "パスワードは8文字以上必要です",
+        "passwordLetter": "パスワードには英字を含める必要があります",
+        "passwordNumber": "パスワードには数字を含める必要があります",
+        "confirmRequired": "パスワードを確認してください",
+        "confirmMismatch": "パスワードが一致しません",
+        "displayNameRequired": "表示名を入力してください",
+        "avatarSize": "アバター画像は2MB未満である必要があります",
+        "registerFailed": "登録に失敗しました。もう一度お試しください",
+        "uploadFailed": "アバターのアップロードに失敗しました"
+      }
+    },
+    "logout": {
+      "title": "ログアウト",
+      "confirm": "ログアウトしてもよろしいですか？"
+    }
+  },
+  "dashboard": {
+    "title": "プロジェクト",
+    "subtitle": "プロジェクトを管理し、チームと協力する",
+    "newProject": "新規プロジェクト",
+    "createProject": "プロジェクト作成",
+    "noProjects": {
+      "title": "まだプロジェクトがありません",
+      "description": "最初のプロジェクトを作成して、Ceylonで要件管理を開始しましょう",
+      "action": "プロジェクトを作成"
+    },
+    "projectCard": {
+      "noDescription": "説明なし"
+    },
+    "menu": {
+      "open": "開く",
+      "settings": "設定",
+      "delete": "削除"
+    },
+    "createDialog": {
+      "title": "新規プロジェクト作成",
+      "name": "プロジェクト名",
+      "namePlaceholder": "マイプロジェクト",
+      "description": "説明（任意）",
+      "descriptionPlaceholder": "プロジェクトの簡単な説明",
+      "creating": "作成中..."
+    }
+  },
+  "project": {
+    "tabs": {
+      "requirements": "要件",
+      "team": "チーム",
+      "settings": "設定"
+    },
+    "settings": {
+      "title": "プロジェクト設定",
+      "general": {
+        "title": "基本情報",
+        "name": "プロジェクト名",
+        "description": "プロジェクト説明",
+        "save": "変更を保存"
+      },
+      "danger": {
+        "title": "危険区域",
+        "delete": "プロジェクト削除",
+        "deleteWarning": "削除すると、関連するすべてのデータは復元できなくなります。慎重に操作してください。",
+        "confirmDelete": "このプロジェクトを削除することを確認します"
+      }
+    },
+    "team": {
+      "title": "チームメンバー",
+      "invite": "メンバーを招待",
+      "role": {
+        "owner": "所有者",
+        "admin": "管理者",
+        "editor": "編集者",
+        "viewer": "閲覧者"
+      }
+    }
+  },
+  "errors": {
+    "generic": "エラーが発生しました。しばらくしてからもう一度お試しください",
+    "notFound": "ページが見つかりません",
+    "unauthorized": "未承認のアクセス",
+    "forbidden": "アクセスが禁止されています",
+    "network": "ネットワークエラー。接続を確認してください"
+  }
+}

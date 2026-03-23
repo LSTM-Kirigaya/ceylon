@@ -1,0 +1,225 @@
+{
+  "metadata": {
+    "title": "Ceylon - Modern Requirements Management Platform",
+    "description": "Ceylon is a modern requirements management platform that helps teams efficiently manage project requirements, track progress, and collaborate. Supports version views, requirement categorization, priority management, and more."
+  },
+  "common": {
+    "appName": "Ceylon CEYLON",
+    "appShortName": "Ceylon",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "confirm": "Confirm",
+    "name": "Name",
+    "back": "Back",
+    "next": "Next",
+    "skip": "Skip",
+    "done": "Done",
+    "close": "Close",
+    "open": "Open",
+    "settings": "Settings",
+    "logout": "Logout",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "all": "All",
+    "none": "None",
+    "required": "Required",
+    "optional": "Optional",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "switch": "Switch Theme"
+  },
+  "language": {
+    "select": "Select Language",
+    "zh": "中文",
+    "en": "English",
+    "ja": "日本語"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "team": "Team",
+    "profile": "Profile"
+  },
+  "home": {
+    "hero": {
+      "title1": "Intelligent Requirements Management",
+      "title2": "Making Team Collaboration More Efficient",
+      "description": "Ceylon is a modern requirements management platform that helps teams better organize, track, and collaborate on requirements",
+      "startNow": "Get Started",
+      "learnMore": "Learn More",
+      "startProject": "Start Project"
+    },
+    "features": {
+      "title": "Core Features",
+      "versionView": {
+        "title": "Version View Management",
+        "description": "Create multiple version views for each project to clearly manage requirements for different iterations"
+      },
+      "requirements": {
+        "title": "Requirements Table",
+        "description": "Flexible requirements table supporting multi-dimensional management including priority, type, and assignee"
+      },
+      "collaboration": {
+        "title": "Team Collaboration",
+        "description": "Fine-grained permission control supporting read, write, and admin roles"
+      },
+      "cli": {
+        "title": "CLI Tool",
+        "description": "Command line tool support allowing developers to quickly manage requirements from the terminal"
+      }
+    },
+    "footer": {
+      "copyright": "© 2024 Ceylon CEYLON. All rights reserved."
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome Back",
+      "subtitle": "Sign in to your Ceylon account",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign In",
+      "noAccount": "Don't have an account?",
+      "registerNow": "Sign Up Now",
+      "errors": {
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Please enter your password",
+        "passwordMin": "Password must be at least 8 characters",
+        "loginFailed": "Login failed, please try again",
+        "timeout": "Connection timeout, please check your network"
+      }
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Start your journey with Ceylon",
+      "steps": {
+        "basic": "Basic Info",
+        "avatar": "Upload Avatar",
+        "complete": "Complete"
+      },
+      "email": "Email",
+      "displayName": "Display Name",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "passwordRequirements": "Password Requirements:",
+      "passwordRules": {
+        "length": "At least 8 characters",
+        "letter": "Contains a letter",
+        "number": "Contains a number"
+      },
+      "avatar": {
+        "title": "Upload Avatar (Optional)",
+        "description": "Click avatar to upload, supports JPG, PNG format, max 2MB"
+      },
+      "success": {
+        "title": "Registration Successful!",
+        "verifyTitle": "Please Verify Your Email",
+        "verifyMessage": "We've sent a verification email to {email}. Please check your inbox and click the confirmation link to complete registration.",
+        "goToLogin": "Go to Login",
+        "resendEmail": "Resend Verification Email",
+        "resendSuccess": "Verification email resent!",
+        "spamTip": "Tip: If you don't see the email, please check your spam folder"
+      },
+      "hasAccount": "Already have an account?",
+      "loginNow": "Sign In Now",
+      "errors": {
+        "emailRequired": "Please enter your email",
+        "emailInvalid": "Please enter a valid email address",
+        "passwordRequired": "Please enter a password",
+        "passwordMin": "Password must be at least 8 characters",
+        "passwordLetter": "Password must contain a letter",
+        "passwordNumber": "Password must contain a number",
+        "confirmRequired": "Please confirm your password",
+        "confirmMismatch": "Passwords do not match",
+        "displayNameRequired": "Please enter a display name",
+        "avatarSize": "Avatar image must be less than 2MB",
+        "registerFailed": "Registration failed, please try again",
+        "uploadFailed": "Failed to upload avatar"
+      }
+    },
+    "logout": {
+      "title": "Logout",
+      "confirm": "Are you sure you want to logout?"
+    }
+  },
+  "dashboard": {
+    "title": "Projects",
+    "subtitle": "Manage your projects and collaborate with your team",
+    "newProject": "New Project",
+    "createProject": "Create Project",
+    "noProjects": {
+      "title": "No projects yet",
+      "description": "Create your first project to start managing requirements with Ceylon",
+      "action": "Create a project"
+    },
+    "projectCard": {
+      "noDescription": "No description"
+    },
+    "menu": {
+      "open": "Open",
+      "settings": "Settings",
+      "delete": "Delete"
+    },
+    "createDialog": {
+      "title": "Create New Project",
+      "name": "Project Name",
+      "namePlaceholder": "My Project",
+      "description": "Description (Optional)",
+      "descriptionPlaceholder": "Brief description of your project",
+      "creating": "Creating..."
+    }
+  },
+  "project": {
+    "tabs": {
+      "requirements": "Requirements",
+      "team": "Team",
+      "settings": "Settings"
+    },
+    "settings": {
+      "title": "Project Settings",
+      "general": {
+        "title": "General Information",
+        "name": "Project Name",
+        "description": "Project Description",
+        "save": "Save Changes"
+      },
+      "danger": {
+        "title": "Danger Zone",
+        "delete": "Delete Project",
+        "deleteWarning": "Once deleted, all related data cannot be recovered. Please proceed with caution.",
+        "confirmDelete": "I confirm I want to delete this project"
+      }
+    },
+    "team": {
+      "title": "Team Members",
+      "invite": "Invite Member",
+      "role": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "editor": "Editor",
+        "viewer": "Viewer"
+      }
+    }
+  },
+  "errors": {
+    "generic": "Something went wrong, please try again later",
+    "notFound": "Page not found",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "network": "Network error, please check your connection"
+  }
+}
