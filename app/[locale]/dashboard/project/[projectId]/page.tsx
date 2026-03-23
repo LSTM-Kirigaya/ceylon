@@ -36,7 +36,7 @@ import {
   ChevronRight,
   Add,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
@@ -74,56 +74,36 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
   const fetchProjectData = async () => {
     setLoading(true)
     try {
-      // Fetch project
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
-
-      if (projectError) throw projectError
+      const { project: projectData } = await apiJson<{ project: Project }>(
+        `/api/projects/${projectId}`
+      )
       setProject(projectData)
 
-      // Fetch version views
-      const { data: viewsData, error: viewsError } = await supabase
-        .from('version_views')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: true })
-
-      if (viewsError) throw viewsError
+      const { views: viewsData } = await apiJson<{ views: VersionView[] }>(
+        `/api/projects/${projectId}/views`
+      )
       setVersionViews(viewsData || [])
 
-      // Fetch stats
-      await fetchStats(viewsData?.map(v => v.id) || [])
+      const { stats: s } = await apiJson<{
+        stats: {
+          totalRequirements: number
+          completed: number
+          inProgress: number
+          pending: number
+          bugs: number
+        }
+      }>(`/api/projects/${projectId}/stats`)
+      setStats({
+        totalRequirements: s.totalRequirements,
+        completed: s.completed,
+        inProgress: s.inProgress,
+        pending: s.pending,
+        bugs: s.bugs,
+      })
     } catch (error) {
       console.error('Error fetching project data:', error)
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchStats = async (viewIds: string[]) => {
-    if (viewIds.length === 0) return
-
-    try {
-      const { data: requirements, error } = await supabase
-        .from('requirements')
-        .select('status, type')
-        .in('version_view_id', viewIds)
-
-      if (error) throw error
-
-      const stats = {
-        totalRequirements: requirements?.length || 0,
-        completed: requirements?.filter(r => r.status === 'completed').length || 0,
-        inProgress: requirements?.filter(r => r.status === 'in_progress').length || 0,
-        pending: requirements?.filter(r => r.status === 'pending').length || 0,
-        bugs: requirements?.filter(r => r.type === 'Bug').length || 0,
-      }
-      setStats(stats)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
     }
   }
 
@@ -191,6 +171,41 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              {/* Project Icon */}
+              {project.icon_url ? (
+                <Box
+                  component="img"
+                  src={project.icon_url}
+                  alt={project.name}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 2,
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    backgroundColor: isDark ? 'rgba(200, 92, 27, 0.12)' : 'rgba(200, 92, 27, 0.08)',
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Folder 
+                    sx={{ 
+                      color: isDark ? 'rgba(200, 92, 27, 0.8)' : 'rgba(200, 92, 27, 0.7)',
+                      fontSize: 22,
+                    }} 
+                  />
+                </Box>
+              )}
               <Typography
                 variant="h4"
                 sx={{

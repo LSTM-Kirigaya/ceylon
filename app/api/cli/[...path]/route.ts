@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { getSupabaseUrl, getSupabaseServiceRoleKey } from '@/lib/supabase-env'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+function serviceSupabase() {
+  return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey())
+}
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
-// Helper to verify token and get user
 async function verifyToken(request: NextRequest): Promise<{ userId: string; email: string } | null> {
   const authHeader = request.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {
@@ -16,6 +15,7 @@ async function verifyToken(request: NextRequest): Promise<{ userId: string; emai
   const token = authHeader.slice(7)
   
   try {
+    const supabase = serviceSupabase()
     const { data: { user }, error } = await supabase.auth.getUser(token)
     if (error || !user) {
       return null
@@ -73,6 +73,7 @@ export async function POST(
 }
 
 async function handleGetProjects(userId: string) {
+  const supabase = serviceSupabase()
   // Get owned projects
   const { data: ownedProjects, error: ownedError } = await supabase
     .from('projects')
@@ -109,6 +110,7 @@ async function handleGetViews(projectId: string) {
     return NextResponse.json({ error: 'Project ID required' }, { status: 400 })
   }
 
+  const supabase = serviceSupabase()
   const { data: views, error } = await supabase
     .from('version_views')
     .select('*')
@@ -125,6 +127,7 @@ async function handleGetRequirements(viewId: string) {
     return NextResponse.json({ error: 'View ID required' }, { status: 400 })
   }
 
+  const supabase = serviceSupabase()
   const { data: requirements, error } = await supabase
     .from('requirements')
     .select('*')
@@ -137,6 +140,7 @@ async function handleGetRequirements(viewId: string) {
 }
 
 async function handleCreateRequirement(body: any, userId: string) {
+  const supabase = serviceSupabase()
   const { viewId, title, description, priority, type } = body
 
   if (!viewId || !title) {
@@ -173,6 +177,7 @@ async function handleCreateRequirement(body: any, userId: string) {
 }
 
 async function handleUpdateRequirement(body: any) {
+  const supabase = serviceSupabase()
   const { reqId, updates } = body
 
   if (!reqId || !updates) {
@@ -200,6 +205,7 @@ async function handleDeleteRequirement(reqId: string) {
     )
   }
 
+  const supabase = serviceSupabase()
   const { error } = await supabase
     .from('requirements')
     .delete()

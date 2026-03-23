@@ -25,7 +25,7 @@ import {
   ChevronRight,
   AccountCircle,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
@@ -98,16 +98,10 @@ export default function ProfilePage() {
       }
 
       setAvatarUrl(data.url)
-      
-      // Update profile in store
-      const { data: updatedProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profile.id)
-        .single()
-      
-      if (updatedProfile) {
-        setProfile(updatedProfile)
+
+      const session = await apiJson<{ profile: typeof profile | null }>('/api/auth/session')
+      if (session.profile) {
+        setProfile(session.profile)
       }
 
       setMessage({ type: 'success', text: '头像上传成功' })
@@ -125,22 +119,12 @@ export default function ProfilePage() {
     setMessage(null)
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
+      const { profile: updatedProfile } = await apiJson<{ profile: typeof profile }>('/api/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({
           display_name: displayName.trim() || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', profile.id)
-
-      if (error) throw error
-
-      // Refresh profile
-      const { data: updatedProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profile.id)
-        .single()
+        }),
+      })
 
       if (updatedProfile) {
         setProfile(updatedProfile)

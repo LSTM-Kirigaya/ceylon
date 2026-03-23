@@ -26,7 +26,7 @@ import {
   Delete,
   Add,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Project, VersionView } from '@/types'
@@ -60,25 +60,14 @@ export default function ViewPage({ params }: { params: Promise<{ locale: string;
   const fetchData = async () => {
     setLoading(true)
     try {
-      // Fetch project
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
-
-      if (projectError) throw projectError
+      const { project: projectData } = await apiJson<{ project: Project }>(
+        `/api/projects/${projectId}`
+      )
       setProject(projectData)
 
-      // Fetch view
-      const { data: viewData, error: viewError } = await supabase
-        .from('version_views')
-        .select('*')
-        .eq('id', viewId)
-        .eq('project_id', projectId)
-        .single()
-
-      if (viewError) throw viewError
+      const { view: viewData } = await apiJson<{ view: VersionView }>(
+        `/api/version-views/${viewId}?projectId=${encodeURIComponent(projectId)}`
+      )
       setView(viewData)
       setEditName(viewData.name)
       setEditDesc(viewData.description || '')
@@ -94,15 +83,13 @@ export default function ViewPage({ params }: { params: Promise<{ locale: string;
 
     setSaving(true)
     try {
-      const { error } = await supabase
-        .from('version_views')
-        .update({
+      await apiJson(`/api/version-views/${viewId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
           name: editName.trim(),
           description: editDesc.trim() || null,
-        })
-        .eq('id', viewId)
-
-      if (error) throw error
+        }),
+      })
 
       await fetchData()
       setEditDialogOpen(false)
@@ -117,12 +104,7 @@ export default function ViewPage({ params }: { params: Promise<{ locale: string;
     if (!confirm('确定要删除这个版本视图吗？')) return
 
     try {
-      const { error } = await supabase
-        .from('version_views')
-        .delete()
-        .eq('id', viewId)
-
-      if (error) throw error
+      await apiJson(`/api/version-views/${viewId}`, { method: 'DELETE' })
 
       router.push(`/${locale}/dashboard/project/${projectId}`)
     } catch (error) {

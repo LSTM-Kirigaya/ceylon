@@ -2,77 +2,69 @@
 
 import { useEffect, ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/authStore'
 
 interface AuthProviderProps {
   children: ReactNode
 }
 
-const PUBLIC_PATHS = ['/', '/login', '/register', '/auth/callback']
+function isPublicPathname(pathname: string | null | undefined): boolean {
+  if (!pathname) return false
+  if (pathname === '/') return true
+  const prefixes = ['/login', '/register', '/auth/callback'] as const
+  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const { setUser, setProfile, setLoading, refreshProfile } = useAuthStore()
+  const user = useAuthStore((s) => s.user)
+  const loading = useAuthStore((s) => s.loading)
+  const setUser = useAuthStore((s) => s.setUser)
+  const setProfile = useAuthStore((s) => s.setProfile)
+  const setLoading = useAuthStore((s) => s.setLoading)
 
   useEffect(() => {
-    // Check initial session
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
-      
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        setProfile(profile)
-      }
-      
-      setLoading(false)
-    }
+    let cancelled = false
 
-    checkSession()
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setUser(session?.user ?? null)
-        
-        if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          setProfile(profile)
-        } else {
+    const loadSession = async () => {
+      try {
+        const res = await fetch('/api/auth/session', { credentials: 'include' })
+        const data = await res.json()
+        if (cancelled) return
+        setUser(data.user ?? null)
+        setProfile(data.profile ?? null)
+      } catch {
+        if (!cancelled) {
+          setUser(null)
           setProfile(null)
         }
-        
-        setLoading(false)
+      } finally {
+        if (!cancelled) setLoading(false)
       }
-    )
+    }
 
-    return () => subscription.unsubscribe()
+    loadSession()
+
+    const interval = setInterval(loadSession, 120_000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
   }, [setUser, setProfile, setLoading])
 
-  // Redirect logic
   useEffect(() => {
-    const { user, loading } = useAuthStore.getState()
-    
     if (loading) return
 
-    const isPublicPath = PUBLIC_PATHS.some(path => pathname?.startsWith(path))
-    
-    if (!user && !isPublicPath) {
+    const isPublic = isPublicPathname(pathname)
+
+    if (!user && !isPublic) {
       router.push('/login')
     } else if (user && (pathname === '/login' || pathname === '/register')) {
       router.push('/dashboard')
     }
-  }, [pathname, router])
+  }, [pathname, router, user, loading])
 
   return <>{children}</>
 }

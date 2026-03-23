@@ -9,8 +9,10 @@ test.describe('Database connectivity', () => {
   const coreTables = ['profiles', 'projects', 'project_members', 'version_views', 'requirements']
 
   test('should connect to database using environment variables', async () => {
-    expect(process.env.NEXT_PUBLIC_SUPABASE_URL).toBeTruthy()
-    expect(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY).toBeTruthy()
+    const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anon = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    expect(url).toBeTruthy()
+    expect(anon).toBeTruthy()
     expect(process.env.SUPABASE_SERVICE_ROLE_KEY).toBeTruthy()
   })
 

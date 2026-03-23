@@ -14,6 +14,14 @@ import { useThemeStore } from '@/stores/themeStore'
 import { locales, localeNames, type Locale } from '@/i18n/config'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 
+// Cookie name for locale
+const LOCALE_COOKIE = 'NEXT_LOCALE'
+
+function setLocaleCookie(locale: Locale) {
+  // Set cookie with 1 year expiration
+  document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=${60 * 60 * 24 * 365}`
+}
+
 export function LanguageSwitcher() {
   const t = useTranslations('language')
   const locale = useLocale() as Locale
@@ -41,9 +49,13 @@ export function LanguageSwitcher() {
 
   const handleLanguageSelect = (newLocale: Locale) => {
     if (!mounted) return
-    // Replace the current locale in the pathname with the new one
-    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
-    router.push(newPathname)
+    
+    // Set locale cookie
+    setLocaleCookie(newLocale)
+    
+    // Reload page to apply new locale
+    window.location.reload()
+    
     handleMenuClose()
   }
 

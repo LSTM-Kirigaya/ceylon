@@ -47,14 +47,14 @@ const getLightTheme = (): Theme =>
       h6: { letterSpacing: '-0.025em' },
     },
     shape: {
-      borderRadius: 16,
+      borderRadius: 8,
     },
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
             textTransform: 'none',
-            borderRadius: 12,
+            borderRadius: 8,
             '&:active': {
               transform: 'scale(0.98)',
             },
@@ -64,7 +64,7 @@ const getLightTheme = (): Theme =>
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 8,
             border: '1px solid rgba(0,0,0,0.08)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
           },
@@ -73,7 +73,7 @@ const getLightTheme = (): Theme =>
       MuiPaper: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 8,
           },
         },
       },
@@ -111,14 +111,14 @@ const getDarkTheme = (): Theme =>
       h6: { letterSpacing: '-0.025em' },
     },
     shape: {
-      borderRadius: 16,
+      borderRadius: 8,
     },
     components: {
       MuiButton: {
         styleOverrides: {
           root: {
             textTransform: 'none',
-            borderRadius: 12,
+            borderRadius: 8,
             '&:active': {
               transform: 'scale(0.98)',
             },
@@ -128,7 +128,7 @@ const getDarkTheme = (): Theme =>
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.08)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
             backgroundColor: '#1c1917',
@@ -138,7 +138,7 @@ const getDarkTheme = (): Theme =>
       MuiPaper: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
+            borderRadius: 8,
             backgroundColor: '#1c1917',
           },
         },

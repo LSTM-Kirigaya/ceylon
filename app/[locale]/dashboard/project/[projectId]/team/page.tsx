@@ -39,7 +39,7 @@ import {
   Person,
   ChevronRight,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
@@ -75,22 +75,21 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
-
-      if (projectError) throw projectError
+      const { project: projectData } = await apiJson<{ project: Project }>(
+        `/api/projects/${projectId}`
+      )
       setProject(projectData)
 
-      const { data: membersData, error: membersError } = await supabase
-        .from('project_members')
-        .select('*, profile:profiles(*)')
-        .eq('project_id', projectId)
+      const { members: membersData } = await apiJson<{
+        members: (ProjectMember & { profile?: Profile | Profile[] | null })[]
+      }>(`/api/projects/${projectId}/members`)
 
-      if (membersError) throw membersError
-      setMembers(membersData?.map(m => ({ ...m, profile: m.profile })) || [])
+      setMembers(
+        (membersData ?? []).map((m) => ({
+          ...m,
+          profile: Array.isArray(m.profile) ? m.profile[0] : m.profile ?? undefined,
+        }))
+      )
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -124,15 +123,13 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
         return
       }
 
-      const { error: insertError } = await supabase
-        .from('project_members')
-        .insert({
-          project_id: projectId,
+      await apiJson(`/api/projects/${projectId}/members`, {
+        method: 'POST',
+        body: JSON.stringify({
           user_id: selectedUser.id,
           role: inviteRole,
-        })
-
-      if (insertError) throw insertError
+        }),
+      })
 
       await fetchData()
       setSuccessMessage(`已成功邀请 ${selectedUser.display_name || selectedUser.email}`)
@@ -161,12 +158,7 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
 
   const handleRemoveMember = async (memberId: string) => {
     try {
-      const { error } = await supabase
-        .from('project_members')
-        .delete()
-        .eq('id', memberId)
-
-      if (error) throw error
+      await apiJson(`/api/projects/${projectId}/members/${memberId}`, { method: 'DELETE' })
       await fetchData()
     } catch (error) {
       console.error('Error removing member:', error)
@@ -175,12 +167,10 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
 
   const handleUpdateRole = async (memberId: string, newRole: 'read' | 'write' | 'admin') => {
     try {
-      const { error } = await supabase
-        .from('project_members')
-        .update({ role: newRole })
-        .eq('id', memberId)
-
-      if (error) throw error
+      await apiJson(`/api/projects/${projectId}/members/${memberId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole }),
+      })
       await fetchData()
     } catch (error) {
       console.error('Error updating role:', error)

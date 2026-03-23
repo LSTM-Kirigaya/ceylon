@@ -1,14 +1,13 @@
 'use client'
 
 import { create } from 'zustand'
-import { supabase } from '@/lib/supabase'
 import { Profile } from '@/types'
 
 interface AuthState {
-  user: any | null
+  user: { id: string; email?: string } | null
   profile: Profile | null
   loading: boolean
-  setUser: (user: any | null) => void
+  setUser: (user: AuthState['user']) => void
   setProfile: (profile: Profile | null) => void
   setLoading: (loading: boolean) => void
   signOut: () => Promise<void>
@@ -23,7 +22,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setProfile: (profile) => set({ profile }),
   setLoading: (loading) => set({ loading }),
   signOut: async () => {
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
     set({ user: null, profile: null })
   },
   refreshProfile: async () => {
@@ -32,13 +31,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ profile: null })
       return
     }
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-    if (!error && data) {
-      set({ profile: data as Profile })
+    const res = await fetch('/api/auth/session', { credentials: 'include' })
+    const data = await res.json().catch(() => ({}))
+    if (data.profile) {
+      set({ profile: data.profile as Profile })
     }
   },
 }))

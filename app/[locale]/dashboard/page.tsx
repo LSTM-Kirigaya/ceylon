@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
   Box,
@@ -31,8 +31,11 @@ import {
   Folder,
   Delete,
   Search,
+  CloudUpload,
+  Close,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
+import { uploadProjectIcon } from '@/lib/storage'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
@@ -43,49 +46,29 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
   const { locale } = use(params)
   const router = useRouter()
   const t = useTranslations()
-  const { profile } = useAuthStore()
+  const { profile, user, loading: authLoading } = useAuthStore()
   const { getEffectiveMode } = useThemeStore()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDesc, setNewProjectDesc] = useState('')
+  const [newProjectIcon, setNewProjectIcon] = useState<File | null>(null)
+  const [newProjectIconPreview, setNewProjectIconPreview] = useState<string | null>(null)
   const [creating, setCreating] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const searchParams = useSearchParams()
+  const searchQuery = searchParams.get('search') || ''
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
 
-  useEffect(() => {
-    fetchProjects()
-  }, [])
-
   const fetchProjects = async () => {
     setLoading(true)
     try {
-      const { data: ownedProjects } = await supabase
-        .from('projects')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      const { data: memberProjects } = await supabase
-        .from('project_members')
-        .select('project_id, projects(*)')
-        .order('created_at', { ascending: false })
-
-      const allProjects = [
-        ...(ownedProjects || []),
-        ...(memberProjects?.map(m => m.projects) || []),
-      ]
-
-      const uniqueProjects = allProjects.filter(
-        (project, index, self) =>
-          index === self.findIndex(p => p.id === project.id)
-      )
-
-      setProjects(uniqueProjects)
+      const { projects: list } = await apiJson<{ projects: Project[] }>('/api/projects')
+      setProjects(list ?? [])
     } catch (error) {
       console.error('Error fetching projects:', error)
     } finally {
@@ -93,30 +76,48 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
     }
   }
 
+  useEffect(() => {
+    if (authLoading) return
+    if (!user) {
+      setProjects([])
+      setLoading(false)
+      return
+    }
+    fetchProjects()
+  }, [authLoading, user])
+
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return
 
     setCreating(true)
     try {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) throw new Error('Not authenticated')
+      let iconUrl: string | null = null
 
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
+      if (newProjectIcon) {
+        const { url, error: uploadError } = await uploadProjectIcon('', newProjectIcon)
+
+        if (uploadError) {
+          throw uploadError
+        }
+
+        iconUrl = url
+      }
+
+      const { project: data } = await apiJson<{ project: Project }>('/api/projects', {
+        method: 'POST',
+        body: JSON.stringify({
           name: newProjectName.trim(),
           description: newProjectDesc.trim() || null,
-          owner_id: userData.user.id,
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+          icon_url: iconUrl,
+        }),
+      })
 
       setProjects([data, ...projects])
       setCreateDialogOpen(false)
       setNewProjectName('')
       setNewProjectDesc('')
+      setNewProjectIcon(null)
+      setNewProjectIconPreview(null)
     } catch (error) {
       console.error('Error creating project:', error)
     } finally {
@@ -126,12 +127,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId)
-
-      if (error) throw error
+      await apiJson(`/api/projects/${projectId}`, { method: 'DELETE' })
 
       setProjects(projects.filter(p => p.id !== projectId))
     } catch (error) {
@@ -198,13 +194,13 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                     color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                   }}
                 >
-                  管理你的项目和工作空间
+                  在控制台中管理你的项目
                 </Typography>
               </Box>
 
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 {/* Stats */}
-                <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 3, mr: 2 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 3 }}>
                   <Box>
                     <Typography sx={{ fontSize: '0.75rem', color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                       项目总数
@@ -230,50 +226,10 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                     </Typography>
                   </Box>
                 </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={() => setCreateDialogOpen(true)}
-                  sx={{
-                    backgroundColor: CEYLON_ORANGE,
-                    '&:hover': { backgroundColor: '#A34712' },
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 2,
-                    py: 0.75,
-                    borderRadius: 2,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  新建项目
-                </Button>
               </Box>
             </Box>
 
-            {/* Search Bar */}
-            <Box sx={{ mt: 3, maxWidth: 400 }}>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="搜索项目..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search sx={{ fontSize: 18, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
-                    </InputAdornment>
-                  ),
-                }}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                  },
-                }}
-              />
-            </Box>
+
           </Container>
         </Box>
 
@@ -393,25 +349,40 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                     >
                       <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              backgroundColor: isDark ? 'rgba(200, 92, 27, 0.12)' : 'rgba(200, 92, 27, 0.08)',
-                              borderRadius: 2,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}
-                          >
-                            <Folder 
-                              sx={{ 
-                                color: isDark ? 'rgba(200, 92, 27, 0.8)' : 'rgba(200, 92, 27, 0.7)',
-                                fontSize: 22,
-                              }} 
+                          {project.icon_url ? (
+                            <Box
+                              component="img"
+                              src={project.icon_url}
+                              alt={project.name}
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 2,
+                                objectFit: 'cover',
+                                flexShrink: 0,
+                              }}
                             />
-                          </Box>
+                          ) : (
+                            <Box
+                              sx={{
+                                width: 40,
+                                height: 40,
+                                backgroundColor: isDark ? 'rgba(200, 92, 27, 0.12)' : 'rgba(200, 92, 27, 0.08)',
+                                borderRadius: 2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                              }}
+                            >
+                              <Folder 
+                                sx={{ 
+                                  color: isDark ? 'rgba(200, 92, 27, 0.8)' : 'rgba(200, 92, 27, 0.7)',
+                                  fontSize: 22,
+                                }} 
+                              />
+                            </Box>
+                          )}
                           <IconButton
                             size="small"
                             onClick={(e) => handleMenuOpen(e, project)}
@@ -493,6 +464,89 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
       >
         <DialogTitle sx={{ pb: 1 }}>创建新项目</DialogTitle>
         <DialogContent>
+          {/* Icon Upload */}
+          <Box sx={{ mb: 2, mt: 1 }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+                mb: 1,
+                display: 'block',
+              }}
+            >
+              项目图标（可选）
+            </Typography>
+            {newProjectIconPreview ? (
+              <Box sx={{ position: 'relative', display: 'inline-block' }}>
+                <Box
+                  component="img"
+                  src={newProjectIconPreview}
+                  alt="Icon preview"
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 2,
+                    objectFit: 'cover',
+                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                  }}
+                />
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setNewProjectIcon(null)
+                    setNewProjectIconPreview(null)
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    backgroundColor: isDark ? '#2d2d2d' : '#ffffff',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                    '&:hover': {
+                      backgroundColor: isDark ? '#3d3d3d' : '#f5f5f5',
+                    },
+                  }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              </Box>
+            ) : (
+              <Button
+                component="label"
+                variant="outlined"
+                sx={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 2,
+                  borderStyle: 'dashed',
+                  borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                  color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+                  flexDirection: 'column',
+                  gap: 0.5,
+                  '&:hover': {
+                    borderColor: CEYLON_ORANGE,
+                    color: CEYLON_ORANGE,
+                    backgroundColor: isDark ? 'rgba(199, 78, 26, 0.1)' : 'rgba(199, 78, 26, 0.05)',
+                  },
+                }}
+              >
+                <CloudUpload />
+                <Typography variant="caption">上传</Typography>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      setNewProjectIcon(file)
+                      setNewProjectIconPreview(URL.createObjectURL(file))
+                    }
+                  }}
+                />
+              </Button>
+            )}
+          </Box>
           <TextField
             fullWidth
             label="项目名称"

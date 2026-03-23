@@ -4,7 +4,7 @@
     "description": "Ceylon is a modern requirements management platform that helps teams efficiently manage project requirements, track progress, and collaborate. Supports version views, requirement categorization, priority management, and more."
   },
   "common": {
-    "appName": "Ceylon CEYLON",
+    "appName": "Ceylon",
     "appShortName": "Ceylon",
     "loading": "Loading...",
     "save": "Save",
@@ -55,34 +55,41 @@
   },
   "home": {
     "hero": {
-      "title1": "Intelligent Requirements Management",
-      "title2": "Making Team Collaboration More Efficient",
-      "description": "Ceylon is a modern requirements management platform that helps teams better organize, track, and collaborate on requirements",
-      "startNow": "Get Started",
+      "badge": "AI-Powered Requirements Platform",
+      "title": "Let AI Handle Your Requirements Workflow",
+      "subtitle": "Automatically transform user feedback into requirements documents, achieving an intelligent closed loop for software iteration. Discover new requirements from feedback and keep your product evolving.",
+      "startNow": "Start Free",
       "learnMore": "Learn More",
-      "startProject": "Start Project"
+      "dashboard": "Go to Console",
+      "startProject": "Start a project",
+      "scrollHint": "Scroll down to explore"
     },
     "features": {
-      "title": "Core Features",
-      "versionView": {
-        "title": "Version View Management",
-        "description": "Create multiple version views for each project to clearly manage requirements for different iterations"
+      "overline": "Core Capabilities",
+      "title": "AI-Native Design, Intelligence-Driven",
+      "aiFeedback": {
+        "title": "Intelligent Feedback Processing",
+        "description": "Automatically analyze user feedback and intelligently extract requirement highlights into your documents. No manual sorting needed—let every user voice drive product improvement."
       },
-      "requirements": {
-        "title": "Requirements Table",
-        "description": "Flexible requirements table supporting multi-dimensional management including priority, type, and assignee"
+      "smartIteration": {
+        "title": "Automated Iteration Loop",
+        "description": "Integrate with AI tools to automatically track requirement implementation status. From user feedback to requirement updates to version iteration, form a complete automated workflow."
       },
-      "collaboration": {
-        "title": "Team Collaboration",
-        "description": "Fine-grained permission control supporting read, write, and admin roles"
+      "smartImport": {
+        "title": "Smart Requirement Import",
+        "description": "Generate multiple requirement proposals from user feedback, presented in tables for your selection. Flexibly accept, modify, or reject—make requirement decisions smarter."
       },
-      "cli": {
-        "title": "CLI Tool",
-        "description": "Command line tool support allowing developers to quickly manage requirements from the terminal"
+      "aiCli": {
+        "title": "Local AI Integration",
+        "description": "CLI tool designed for local AI agents. Works with OpenClaw, Cursor, and other tools to automatically manage requirements. Let your AI assistant directly operate requirement documents for end-to-end automation."
       }
     },
+    "cli": {
+      "title": "CLI Tool Built for Local AI",
+      "description": "Once installed, your AI assistant can directly read and modify requirement documents. Integrate with various AI tools for fully automated requirement management."
+    },
     "footer": {
-      "copyright": "© 2024 Ceylon CEYLON. All rights reserved."
+      "copyright": "© 2024 Ceylon. All rights reserved."
     }
   },
   "auth": {

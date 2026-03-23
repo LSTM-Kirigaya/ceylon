@@ -23,7 +23,7 @@ import {
   Settings as SettingsIcon,
   ChevronRight,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
@@ -57,13 +57,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
   const fetchProject = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*')
-        .eq('id', projectId)
-        .single()
-
-      if (error) throw error
+      const { project: data } = await apiJson<{ project: Project }>(`/api/projects/${projectId}`)
       setProject(data)
       setName(data.name)
       setDescription(data.description || '')
@@ -84,15 +78,13 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
     setMessage(null)
 
     try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
+      await apiJson(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
           name: name.trim(),
           description: description.trim() || null,
-        })
-        .eq('id', projectId)
-
-      if (error) throw error
+        }),
+      })
 
       setMessage({ type: 'success', text: t('common.success') })
     } catch (error: any) {
@@ -109,12 +101,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
 
     setDeleting(true)
     try {
-      const { error } = await supabase
-        .from('projects')
-        .delete()
-        .eq('id', projectId)
-
-      if (error) throw error
+      await apiJson(`/api/projects/${projectId}`, { method: 'DELETE' })
 
       router.push(`/${locale}/dashboard`)
     } catch (error: any) {

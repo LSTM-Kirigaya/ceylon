@@ -36,10 +36,10 @@ import {
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { supabase } from '@/lib/supabase'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { Logo } from '@/components/Logo'
 
 export default function RegisterPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params)
@@ -113,23 +113,21 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
   const uploadAvatar = async (userId: string): Promise<string | null> => {
     if (!avatarFile) return null
 
-    const fileExt = avatarFile.name.split('.').pop()
-    const fileName = `${userId}/avatar.${fileExt}`
+    const formData = new FormData()
+    formData.append('file', avatarFile)
+    formData.append('userId', userId)
 
-    const { error: uploadError } = await supabase.storage
-      .from('avatars')
-      .upload(fileName, avatarFile, { upsert: true })
-
-    if (uploadError) {
-      console.error('Avatar upload error:', uploadError)
+    const res = await fetch('/api/avatar/upload', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      console.error('Avatar upload error:', data.error)
       return null
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('avatars')
-      .getPublicUrl(fileName)
-
-    return publicUrl
+    return data.url ?? null
   }
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -137,18 +135,19 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
     setError(null)
 
     try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            display_name: data.displayName,
-          },
-        },
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          displayName: data.displayName,
+        }),
       })
-
-      if (signUpError) {
-        throw signUpError
+      const authData = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(authData.error || t('auth.register.errors.registerFailed'))
       }
 
       if (authData.user) {
@@ -169,16 +168,8 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
     setError(null)
 
     try {
-      let avatarUrl = null
       if (avatarFile) {
-        avatarUrl = await uploadAvatar(registeredUser.id)
-      }
-
-      if (avatarUrl) {
-        await supabase
-          .from('profiles')
-          .update({ avatar_url: avatarUrl })
-          .eq('id', registeredUser.id)
+        await uploadAvatar(registeredUser.id)
       }
 
       setActiveStep(2)
@@ -478,14 +469,20 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
                 startIcon={<MarkEmailRead />}
                 onClick={async () => {
                   try {
-                    const { error } = await supabase.auth.resend({
-                      type: 'signup',
-                      email: getValues('email'),
+                    const res = await fetch('/api/auth/resend', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
+                      body: JSON.stringify({
+                        type: 'signup',
+                        email: getValues('email'),
+                      }),
                     })
-                    if (error) throw error
+                    const body = await res.json().catch(() => ({}))
+                    if (!res.ok) throw new Error(body.error || t('errors.generic'))
                     alert(t('auth.register.success.resendSuccess'))
-                  } catch (err: any) {
-                    alert(err.message || t('errors.generic'))
+                  } catch (err: unknown) {
+                    alert(err instanceof Error ? err.message : t('errors.generic'))
                   }
                 }}
                 sx={{
@@ -539,28 +536,8 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
         >
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  backgroundColor: CEYLON_ORANGE,
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 2,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: 'white',
-                    fontWeight: 700,
-                    fontSize: 24,
-                  }}
-                >
-                  C
-                </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Logo width={56} height={56} />
               </Box>
               <Typography
                 variant="h4"

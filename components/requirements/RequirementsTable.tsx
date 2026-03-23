@@ -42,7 +42,7 @@ import {
   ArrowUpward,
   ArrowDownward,
 } from '@mui/icons-material'
-import { supabase } from '@/lib/supabase'
+import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Requirement, ProjectMember, REQUIREMENT_TYPES, REQUIREMENT_STATUS, getPriorityLabel, getPriorityColor } from '@/types'
@@ -97,22 +97,27 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const fetchData = async () => {
     setLoading(true)
     try {
-      const { data: reqData, error: reqError } = await supabase
-        .from('requirements')
-        .select('*, assignee:profiles(*)')
-        .eq('version_view_id', versionViewId)
-        .order('requirement_number', { ascending: true })
+      const { requirements: reqData } = await apiJson<{
+        requirements: (Requirement & { assignee?: unknown })[]
+      }>(`/api/version-views/${versionViewId}/requirements`)
 
-      if (reqError) throw reqError
-      setRequirements(reqData?.map(r => ({ ...r, assignee: r.assignee })) || [])
+      setRequirements(
+        (reqData ?? []).map((r) => ({
+          ...r,
+          assignee: Array.isArray(r.assignee) ? r.assignee[0] : r.assignee,
+        })) as Requirement[]
+      )
 
-      const { data: membersData, error: membersError } = await supabase
-        .from('project_members')
-        .select('*, profile:profiles(*)')
-        .eq('project_id', projectId)
+      const { members: membersData } = await apiJson<{
+        members: (ProjectMember & { profile?: unknown })[]
+      }>(`/api/projects/${projectId}/members`)
 
-      if (membersError) throw membersError
-      setMembers(membersData?.map(m => ({ ...m, profile: m.profile })) || [])
+      setMembers(
+        (membersData ?? []).map((m) => ({
+          ...m,
+          profile: Array.isArray(m.profile) ? m.profile[0] : m.profile,
+        })) as ProjectMember[]
+      )
     } catch (error) {
       console.error('Error fetching data:', error)
     } finally {
@@ -183,44 +188,30 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
     setSaving(true)
     try {
-      const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) throw new Error('Not authenticated')
-
       if (editingRequirement) {
-        const { error } = await supabase
-          .from('requirements')
-          .update({
+        await apiJson(`/api/requirements/${editingRequirement.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
             title: formData.title.trim(),
             description: formData.description.trim() || null,
             assignee_id: formData.assignee_id || null,
             priority: formData.priority,
             type: formData.type,
             status: formData.status,
-          })
-          .eq('id', editingRequirement.id)
-
-        if (error) throw error
+          }),
+        })
       } else {
-        const { data: nextNum, error: rpcError } = await supabase
-          .rpc('get_next_requirement_number', { p_version_view_id: versionViewId })
-
-        if (rpcError) throw rpcError
-
-        const { error } = await supabase
-          .from('requirements')
-          .insert({
-            version_view_id: versionViewId,
-            requirement_number: nextNum,
+        await apiJson(`/api/version-views/${versionViewId}/requirements`, {
+          method: 'POST',
+          body: JSON.stringify({
             title: formData.title.trim(),
             description: formData.description.trim() || null,
             assignee_id: formData.assignee_id || null,
             priority: formData.priority,
             type: formData.type,
             status: formData.status,
-            created_by: userData.user.id,
-          })
-
-        if (error) throw error
+          }),
+        })
       }
 
       await fetchData()
@@ -234,12 +225,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('requirements')
-        .delete()
-        .eq('id', id)
-
-      if (error) throw error
+      await apiJson(`/api/requirements/${id}`, { method: 'DELETE' })
       await fetchData()
     } catch (error) {
       console.error('Error deleting requirement:', error)

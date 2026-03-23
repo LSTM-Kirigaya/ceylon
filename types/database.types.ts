@@ -1,15 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
-})
-
+/** Supabase-generated-style shapes (server uses real DB; this is for typing only). */
 export type Database = {
   public: {
     Tables: {
@@ -44,6 +33,7 @@ export type Database = {
           id: string
           name: string
           description: string | null
+          icon_url: string | null
           owner_id: string
           created_at: string
           updated_at: string
@@ -52,6 +42,7 @@ export type Database = {
           id?: string
           name: string
           description?: string | null
+          icon_url?: string | null
           owner_id: string
           created_at?: string
           updated_at?: string
@@ -60,6 +51,7 @@ export type Database = {
           id?: string
           name?: string
           description?: string | null
+          icon_url?: string | null
           owner_id?: string
           created_at?: string
           updated_at?: string
@@ -140,7 +132,7 @@ export type Database = {
           description?: string | null
           assignee_id?: string | null
           priority?: number
-          type?: 'Bug' | 'Feature' | 'Improvement' | 'Documentation' | 'Security' | 'Discussion'
+          type: 'Bug' | 'Feature' | 'Improvement' | 'Documentation' | 'Security' | 'Discussion'
           status?: 'pending' | 'in_progress' | 'completed' | 'rejected'
           created_by: string
           created_at?: string

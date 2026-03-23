@@ -71,6 +71,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     manifest: "/manifest.json",
     icons: {
       icon: [
+        { url: "/icons/icon.svg", type: "image/svg+xml" },
         { url: "/icons/icon-32x32.png", sizes: "32x32", type: "image/png" },
         { url: "/icons/icon-16x16.png", sizes: "16x16", type: "image/png" },
       ],
@@ -125,12 +126,17 @@ export default async function LocaleLayout({
 }) {
   const { locale } = await params
   const messages = await getMessages()
+  const supabaseOrigin = process.env.SUPABASE_URL
 
   return (
     <html lang={locale} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://vaukvwgvklnpmlwhgyei.supabase.co" />
-        <link rel="dns-prefetch" href="https://vaukvwgvklnpmlwhgyei.supabase.co" />
+        {supabaseOrigin ? (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        ) : null}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>

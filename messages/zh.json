@@ -4,7 +4,7 @@
     "description": "锡兰是一个现代化的需求管理平台，帮助团队高效管理项目需求、追踪进度、协作开发。支持版本视图、需求分类、优先级管理等功能。"
   },
   "common": {
-    "appName": "锡兰 CEYLON",
+    "appName": "锡兰",
     "appShortName": "锡兰",
     "loading": "加载中...",
     "save": "保存",
@@ -48,41 +48,51 @@
   },
   "nav": {
     "home": "首页",
-    "dashboard": "仪表盘",
+    "dashboard": "控制台",
     "projects": "项目",
     "team": "团队",
-    "profile": "个人资料"
+    "profile": "个人资料",
+    "docs": "文档",
+    "blog": "博客",
+    "pricing": "定价"
   },
   "home": {
     "hero": {
-      "title1": "智能化需求管理",
-      "title2": "让团队协作更高效",
-      "description": "锡兰是一个现代化的需求管理平台，帮助团队更好地组织、跟踪和协作处理需求",
-      "startNow": "立即开始",
+      "badge": "AI 驱动的需求管理平台",
+      "title": "让 AI 接管你的需求工作流",
+      "subtitle": "自动将用户反馈转化为需求文档，实现软件迭代的智能闭环。从反馈挖掘新需求，让产品进化永不停歇。",
+      "startNow": "免费开始使用",
       "learnMore": "了解更多",
-      "startProject": "开始项目"
+      "dashboard": "控制台",
+      "startProject": "开始项目",
+      "scrollHint": "向下滚动探索更多"
     },
     "features": {
-      "title": "核心功能",
-      "versionView": {
-        "title": "版本视图管理",
-        "description": "为每个项目创建多个版本视图，清晰管理不同迭代的需求"
+      "overline": "核心能力",
+      "title": "AI 原生设计，智能驱动",
+      "aiFeedback": {
+        "title": "智能反馈处理",
+        "description": "自动分析用户反馈，智能提取需求要点并更新到文档。无需人工整理，让每一条用户声音都转化为产品改进。"
       },
-      "requirements": {
-        "title": "需求表格",
-        "description": "灵活的需求表格，支持优先级、类型、负责人等多维度管理"
+      "smartIteration": {
+        "title": "迭代闭环自动化",
+        "description": "配合 AI 工具，自动追踪需求实现状态。从用户反馈到需求更新再到版本迭代，形成完整的自动化工作流。"
       },
-      "collaboration": {
-        "title": "团队协作",
-        "description": "细粒度的权限控制，支持读、写、管理三种角色"
+      "smartImport": {
+        "title": "智能需求导入",
+        "description": "基于用户反馈自动生成多套需求方案，以表格形式呈现供你选择。灵活接受、修改或拒绝，让需求决策更智能。"
       },
-      "cli": {
-        "title": "CLI 工具",
-        "description": "命令行工具支持，让开发者可以在终端快速管理需求"
+      "aiCli": {
+        "title": "本地 AI 集成",
+        "description": "CLI 工具专为本地 AI 设计，可配合 OpenClaw、Cursor 等工具自动管理需求。让 AI 助手直接操作需求文档，实现端到端自动化。"
       }
     },
+    "cli": {
+      "title": "为本地 AI 打造的 CLI 工具",
+      "description": "安装 CLI 后，你的 AI 助手可以直接读取和修改需求文档。配合各类 AI 工具，让需求管理链路完全自动化。"
+    },
     "footer": {
-      "copyright": "© 2024 锡兰 CEYLON. All rights reserved."
+      "copyright": "© 2024 锡兰. All rights reserved."
     }
   },
   "auth": {
@@ -213,6 +223,104 @@
         "editor": "编辑",
         "viewer": "查看者"
       }
+    }
+  },
+  "pricing": {
+    "title": "选择您的方案",
+    "subtitle": "从个人开发者到专业团队，我们都有适合您的方案",
+    "mostPopular": "最受欢迎",
+    "perMonth": "/月",
+    "plans": {
+      "free": {
+        "name": "免费版",
+        "description": "适合个人开发者",
+        "price": "0",
+        "features": "本地 MCP 服务器开发|基础 VSCode 插件功能|本地测试用例管理|社区支持|无云备份|无团队协作",
+        "cta": "开始使用"
+      },
+      "pro": {
+        "name": "专业版",
+        "description": "适合小型团队",
+        "price": "10",
+        "features": "云备份 50 个测试用例|30 天版本历史|最多 3 人团队协作|1 个云部署实例|每月 1000 次 API 调用|优先邮件支持",
+        "cta": "升级到专业版"
+      },
+      "team": {
+        "name": "团队版",
+        "description": "适合专业团队",
+        "price": "20",
+        "features": "无限云备份|永久版本历史|最多 10 人团队协作|5 个云部署实例|每月 10000 次 API 调用|优先技术支持",
+        "cta": "联系销售"
+      }
+    }
+  },
+  "blog": {
+    "title": "开发博客",
+    "subtitle": "记录锡兰的每一步进化，分享我们的思考与成长",
+    "categories": {
+      "all": "全部",
+      "journey": "历程",
+      "release": "发布",
+      "tech": "技术深度",
+      "case": "案例研究"
+    },
+    "author": "锡兰团队",
+    "readMore": "阅读更多"
+  },
+  "docs": {
+    "title": "文档",
+    "subtitle": "欢迎使用锡兰文档。在这里您可以找到开始使用我们 AI 驱动需求管理平台所需的一切。",
+    "sections": {
+      "gettingStarted": "入门指南",
+      "coreConcepts": "核心概念",
+      "cli": "CLI 工具"
+    },
+    "items": {
+      "introduction": "简介",
+      "quickStart": "快速开始",
+      "installation": "安装",
+      "projects": "项目",
+      "requirements": "需求",
+      "versionViews": "版本视图",
+      "cliInstallation": "CLI 安装",
+      "commands": "命令",
+      "configuration": "配置"
+    },
+    "quickLinks": {
+      "quickStart": {
+        "title": "快速开始",
+        "desc": "几分钟内上手"
+      },
+      "coreConcepts": {
+        "title": "核心概念",
+        "desc": "了解基本原理"
+      },
+      "apiReference": {
+        "title": "API 参考",
+        "desc": "集成我们的 API"
+      },
+      "configuration": {
+        "title": "配置",
+        "desc": "自定义您的设置"
+      }
+    },
+    "whatIsCeylon": {
+      "title": "什么是锡兰？",
+      "p1": "锡兰是一个 AI 驱动的需求管理平台，旨在帮助团队简化产品开发工作流程。通过智能反馈处理、自动迭代循环和无缝本地 AI 集成，锡兰改变了您从概念到交付的需求管理方式。",
+      "p2": "我们的平台支持整个需求生命周期 — 从捕获初步想法到跟踪跨多个版本的实现。无论您是独立开发者还是大型团队的一员，锡兰都能适应您的工作流程。"
+    }
+  },
+  "user": {
+    "role": {
+      "admin": "管理员",
+      "super_user": "高级用户",
+      "user": "普通用户"
+    },
+    "subscription": {
+      "free": "免费版",
+      "pro": "专业版",
+      "team": "团队版",
+      "enterprise": "企业版"
     }
   },
   "errors": {

@@ -1,12 +1,16 @@
 import chalk from 'chalk'
 import inquirer from 'inquirer'
-import { createClient } from '@supabase/supabase-js'
-import { saveToken, removeToken, getToken, getConfig } from '../utils/config'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { saveToken, removeToken, getToken } from '../utils/config'
 
-const SUPABASE_URL = 'https://vaukvwgvklnpmlwhgyei.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhdWt2d2d2a2xucG1sd2hneWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTU0MDMsImV4cCI6MjA4OTc3MTQwM30.8fmv1ppusEdHEDvEnHGzKgf9g_zsTToyx832BL3yopo'
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+function getSupabaseClient(): SupabaseClient {
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) {
+    throw new Error('Set SUPABASE_URL and SUPABASE_ANON_KEY (or legacy NEXT_PUBLIC_*) in your environment.')
+  }
+  return createClient(url, key)
+}
 
 interface UserInfo {
   id: string
@@ -15,6 +19,7 @@ interface UserInfo {
 }
 
 export async function login(): Promise<void> {
+  const supabase = getSupabaseClient()
   console.log(chalk.blue('🔐 Ceylon Login\n'))
   console.log(chalk.gray('Please enter your credentials:\n'))
 
@@ -56,7 +61,6 @@ export async function login(): Promise<void> {
     throw new Error('Login failed. Please check your credentials.')
   }
 
-  // Save the access token
   await saveToken(data.session.access_token)
 
   console.log(chalk.green('\n✓ Login successful!'))
@@ -64,6 +68,7 @@ export async function login(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  const supabase = getSupabaseClient()
   const { error } = await supabase.auth.signOut()
   if (error) {
     console.warn(chalk.yellow('Warning:'), error.message)
@@ -72,15 +77,19 @@ export async function logout(): Promise<void> {
 }
 
 export async function getTokenStatus(): Promise<{ authenticated: boolean; user?: UserInfo }> {
+  const supabase = getSupabaseClient()
   const token = await getToken()
-  
+
   if (!token) {
     return { authenticated: false }
   }
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(token)
-    
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token)
+
     if (error || !user) {
       return { authenticated: false }
     }

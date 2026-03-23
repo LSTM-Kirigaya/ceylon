@@ -26,10 +26,10 @@ import {
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
-import { supabase } from '@/lib/supabase'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { Logo } from '@/components/Logo'
 
 export default function LoginPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params)
@@ -74,29 +74,23 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
         setTimeout(() => reject(new Error(t('auth.login.errors.timeout'))), 10000)
       })
       
-      const signInPromise = supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
+      const loginPromise = fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      }).then(async (res) => {
+        const body = await res.json().catch(() => ({}))
+        if (!res.ok) {
+          throw new Error(body.error || t('auth.login.errors.loginFailed'))
+        }
+        return body
       })
-      
-      const { data: signInData, error: signInError } = await Promise.race([
-        signInPromise,
-        timeoutPromise as any
-      ])
 
-      if (signInError) {
-        console.error('Sign in error:', signInError)
-        throw signInError
-      }
-
-      if (!signInData?.session) {
-        throw new Error(t('auth.login.errors.loginFailed'))
-      }
+      await Promise.race([loginPromise, timeoutPromise as Promise<unknown>])
 
       console.log('Login successful, redirecting...')
-      
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
+      await new Promise((resolve) => setTimeout(resolve, 200))
       window.location.href = `/${locale}/dashboard`
     } catch (err: any) {
       console.error('Login error:', err)
@@ -130,28 +124,8 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
         >
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ textAlign: 'center', mb: 4 }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  backgroundColor: CEYLON_ORANGE,
-                  borderRadius: 2,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 2,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: 'white',
-                    fontWeight: 700,
-                    fontSize: 24,
-                  }}
-                >
-                  C
-                </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                <Logo width={56} height={56} />
               </Box>
               <Typography
                 variant="h4"
@@ -265,7 +239,7 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
               >
                 {t('auth.login.noAccount')}{' '}
                 <Link
-                  href={`/${locale}/register`}
+                  href="/register"
                   style={{
                     color: CEYLON_ORANGE,
                     textDecoration: 'none',

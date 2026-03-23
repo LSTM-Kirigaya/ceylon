@@ -1,21 +1,22 @@
-import createMiddleware from 'next-intl/middleware'
+import { NextRequest, NextResponse } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware'
+import { createMiddlewareSupabaseClient } from '@/lib/supabase-server'
 import { locales, defaultLocale } from './i18n/config'
 
-export default createMiddleware({
+const intlMiddleware = createIntlMiddleware({
   locales,
   defaultLocale,
-  localePrefix: 'always',
+  localePrefix: 'never',
+  localeDetection: false,
 })
 
+export default async function middleware(request: NextRequest) {
+  const response = intlMiddleware(request)
+  const supabase = createMiddlewareSupabaseClient(request, response)
+  await supabase.auth.getUser()
+  return response
+}
+
 export const config = {
-  matcher: [
-    // Enable a redirect to a matching locale at the root
-    '/',
-    // Set a cookie to remember the previous locale for
-    // all requests that have a locale prefix
-    '/(zh|en|ja)/:path*',
-    // Enable redirects that add missing locales
-    // (e.g., `/dashboard` to `/zh/dashboard`)
-    '/((?!api|_next|_vercel|.*\\..*).*)',
-  ],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 }

@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+import { getSupabaseUrl, getSupabaseServiceRoleKey } from '@/lib/supabase-env'
+import { getRouteSupabaseUser, unauthorized } from '@/lib/api-route-helpers'
 
 export async function GET(request: NextRequest) {
+  const { user } = await getRouteSupabaseUser()
+  if (!user) return unauthorized()
+
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')
     const projectId = searchParams.get('projectId')
 
     if (!query || query.trim().length < 2) {
-      return NextResponse.json(
-        { error: 'Search query must be at least 2 characters' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Search query must be at least 2 characters' }, { status: 400 })
     }
 
-    // Create service role client to bypass RLS
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    const supabase = createClient(getSupabaseUrl(), getSupabaseServiceRoleKey())
 
-    // Search users by display_name or email
     const { data: users, error } = await supabase
       .from('profiles')
       .select('id, email, display_name, avatar_url, created_at')
@@ -29,42 +26,34 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error searching users:', error)
-      return NextResponse.json(
-        { error: 'Failed to search users' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to search users' }, { status: 500 })
     }
 
-    // If projectId is provided, filter out existing members
     if (projectId) {
       const { data: existingMembers } = await supabase
         .from('project_members')
         .select('user_id')
         .eq('project_id', projectId)
 
-      const existingMemberIds = new Set(existingMembers?.map(m => m.user_id) || [])
-      
-      // Also get project owner
+      const existingMemberIds = new Set(existingMembers?.map((m) => m.user_id) || [])
+
       const { data: project } = await supabase
         .from('projects')
         .select('owner_id')
         .eq('id', projectId)
         .single()
-      
+
       if (project) {
         existingMemberIds.add(project.owner_id)
       }
 
-      const filteredUsers = users?.filter(u => !existingMemberIds.has(u.id)) || []
+      const filteredUsers = users?.filter((u) => !existingMemberIds.has(u.id)) || []
       return NextResponse.json({ users: filteredUsers })
     }
 
     return NextResponse.json({ users: users || [] })
   } catch (error) {
     console.error('Error in user search:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

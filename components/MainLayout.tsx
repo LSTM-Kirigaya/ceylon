@@ -1,7 +1,7 @@
 'use client'
 
-import { ReactNode, useState, useEffect } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { ReactNode, useState, useEffect, useCallback } from 'react'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import {
   Box,
@@ -16,27 +16,30 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Tooltip,
-  TextField,
-  InputAdornment,
   Button,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
-  Dashboard,
   Folder,
   Settings,
   Logout,
   Search,
   Add,
-  ChevronLeft,
   AccountCircle,
   Home,
+  LightMode,
+  DarkMode,
+  Computer,
+  Language,
+  KeyboardCommandKey,
+  CreditCard,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
-import { LanguageSwitcher } from './LanguageSwitcher'
+import { Logo } from './Logo'
+import { CommandPalette } from './CommandPalette'
+import { locales, localeNames, type Locale } from '@/i18n/config'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -48,21 +51,38 @@ const collapsedDrawerWidth = 72
 export default function MainLayout({ children }: MainLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const locale = useLocale()
+  const locale = useLocale() as Locale
   const t = useTranslations()
   const { profile, signOut } = useAuthStore()
-  const { getEffectiveMode } = useThemeStore()
+  const { mode, setMode, getEffectiveMode } = useThemeStore()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [mounted, setMounted] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [sidebarHovered, setSidebarHovered] = useState(false)
+  const searchParams = useSearchParams()
+  const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
+  // Keyboard shortcut to open command palette (Cmd+K or Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCommandPaletteOpen(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
+  const isDashboard = pathname === `/${locale}/dashboard`
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -90,91 +110,45 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return pathname === path || pathname.startsWith(`${path}/`)
   }
 
-  const currentSidebarWidth = sidebarCollapsed ? collapsedDrawerWidth : drawerWidth
+  const isSidebarExpanded = !sidebarCollapsed || sidebarHovered
+  const currentSidebarWidth = isSidebarExpanded ? drawerWidth : collapsedDrawerWidth
+
+  // Theme options
+  const themeIcons = [
+    { mode: 'light' as const, icon: <LightMode fontSize="small" />, label: t('theme.light') },
+    { mode: 'dark' as const, icon: <DarkMode fontSize="small" />, label: t('theme.dark') },
+    { mode: 'system' as const, icon: <Computer fontSize="small" />, label: t('theme.system') },
+  ]
+
+  const handleThemeSelect = (themeMode: 'light' | 'dark' | 'system') => {
+    setMode(themeMode)
+  }
+
+  // Language menu
+  const handleLangMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation()
+    setLangAnchorEl(event.currentTarget)
+  }
+
+  const handleLangMenuClose = () => {
+    setLangAnchorEl(null)
+  }
+
+  const handleLanguageSelect = (newLocale: Locale) => {
+    const newPathname = pathname.replace(`/${locale}`, `/${newLocale}`)
+    router.push(newPathname)
+    handleLangMenuClose()
+    handleProfileMenuClose()
+  }
 
   const sidebarContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Sidebar Header */}
-      <Box sx={{ 
-        p: 2, 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: 1.5,
-        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-      }}>
-        <IconButton
-          onClick={() => handleNavigation(`/${locale}/dashboard`)}
-          sx={{
-            width: 36,
-            height: 36,
-            backgroundColor: CEYLON_ORANGE,
-            borderRadius: 1.5,
-            '&:hover': {
-              backgroundColor: '#A34712',
-            },
-            flexShrink: 0,
-          }}
-        >
-          <Typography sx={{ color: 'white', fontWeight: 700, fontSize: 16 }}>
-            C
-          </Typography>
-        </IconButton>
-        {!sidebarCollapsed && (
-          <Typography 
-            sx={{ 
-              color: isDark ? 'white' : '#1c1917', 
-              fontWeight: 600,
-              fontSize: '1rem',
-              flex: 1,
-            }}
-          >
-            Ceylon
-          </Typography>
-        )}
-        {!sidebarCollapsed && (
-          <Tooltip title="收起侧边栏">
-            <IconButton 
-              size="small" 
-              onClick={() => setSidebarCollapsed(true)}
-              sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}
-            >
-              <ChevronLeft fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        )}
-      </Box>
-
-      {/* Search Projects - only when expanded */}
-      {!sidebarCollapsed && (
-        <Box sx={{ p: 2, pb: 1 }}>
-          <TextField
-            fullWidth
-            size="small"
-            placeholder="搜索项目..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search sx={{ fontSize: 18, color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                fontSize: '0.875rem',
-              },
-            }}
-          />
-        </Box>
-      )}
-
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflowX: 'hidden', width: '100%', minWidth: collapsedDrawerWidth }}>
       {/* New Project Button */}
-      <Box sx={{ px: 2, py: 1 }}>
+      <Box sx={{ px: 2, py: 2 }}>
         <Button
           fullWidth
           variant="contained"
-          startIcon={<Add />}
+          startIcon={isSidebarExpanded ? <Add /> : undefined}
           onClick={() => handleNavigation(`/${locale}/dashboard`)}
           sx={{
             backgroundColor: CEYLON_ORANGE,
@@ -182,193 +156,92 @@ export default function MainLayout({ children }: MainLayoutProps) {
             textTransform: 'none',
             fontWeight: 600,
             borderRadius: 2,
-            justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            minWidth: sidebarCollapsed ? 44 : 'auto',
-            px: sidebarCollapsed ? 1 : 2,
+            justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
+            minWidth: isSidebarExpanded ? 'auto' : 44,
+            px: isSidebarExpanded ? 2 : 1,
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+            overflow: 'hidden',
           }}
         >
-          {sidebarCollapsed ? <Add /> : '新建项目'}
+          {isSidebarExpanded ? '新建项目' : <Add />}
         </Button>
       </Box>
 
       {/* Navigation */}
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
-        {/* Home */}
-        <Tooltip title="首页" placement="right" disableHoverListener={!sidebarCollapsed}>
-          <Box
-            onClick={() => handleNavigation(`/${locale}/dashboard`)}
-            sx={{
-              mx: 1.5,
-              mb: 0.5,
-              px: sidebarCollapsed ? 1.5 : 2,
-              py: 1,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              cursor: 'pointer',
-              backgroundColor: isPathActive(`/${locale}/dashboard`) && !pathname.includes('/project/')
-                ? isDark ? 'rgba(200, 92, 27, 0.15)' : 'rgba(200, 92, 27, 0.08)'
-                : 'transparent',
-              color: isPathActive(`/${locale}/dashboard`) && !pathname.includes('/project/')
-                ? CEYLON_ORANGE
-                : isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-              '&:hover': {
-                backgroundColor: isPathActive(`/${locale}/dashboard`) && !pathname.includes('/project/')
-                  ? isDark ? 'rgba(200, 92, 27, 0.2)' : 'rgba(200, 92, 27, 0.12)'
-                  : isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-              },
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            }}
-          >
-            <Home sx={{ fontSize: 20 }} />
-            {!sidebarCollapsed && (
-              <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                首页
-              </Typography>
-            )}
-          </Box>
-        </Tooltip>
+        {/* 我的项目 */}
+        <Box
+          onClick={() => handleNavigation(`/${locale}/dashboard`)}
+          sx={{
+            mx: 1.5,
+            mb: 0.5,
+            px: isSidebarExpanded ? 2 : 1.5,
+            py: 1,
+            borderRadius: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            cursor: 'pointer',
+            backgroundColor: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+              ? isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
+              : 'transparent',
+            color: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+              ? isDark ? '#ffffff' : '#1c1917'
+              : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            '&:hover': {
+              backgroundColor: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+                ? isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
+                : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            },
+            justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <Folder sx={{ fontSize: 20 }} />
+          {isSidebarExpanded && (
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              我的项目
+            </Typography>
+          )}
+        </Box>
 
-        {/* Projects Section */}
-        {!sidebarCollapsed && (
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              px: 2, 
-              py: 1.5, 
-              display: 'block',
-              color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
-              fontWeight: 600,
-              fontSize: '0.75rem',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            项目
-          </Typography>
-        )}
-        
-        <Tooltip title="所有项目" placement="right" disableHoverListener={!sidebarCollapsed}>
-          <Box
-            onClick={() => handleNavigation(`/${locale}/dashboard`)}
-            sx={{
-              mx: 1.5,
-              mb: 0.5,
-              px: sidebarCollapsed ? 1.5 : 2,
-              py: 1,
-              borderRadius: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              cursor: 'pointer',
-              backgroundColor: pathname === `/${locale}/dashboard`
-                ? isDark ? 'rgba(200, 92, 27, 0.15)' : 'rgba(200, 92, 27, 0.08)'
-                : 'transparent',
-              color: pathname === `/${locale}/dashboard`
-                ? CEYLON_ORANGE
-                : isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-              '&:hover': {
-                backgroundColor: pathname === `/${locale}/dashboard`
-                  ? isDark ? 'rgba(200, 92, 27, 0.2)' : 'rgba(200, 92, 27, 0.12)'
-                  : isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-              },
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            }}
-          >
-            <Folder sx={{ fontSize: 20 }} />
-            {!sidebarCollapsed && (
-              <Typography sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                所有项目
-              </Typography>
-            )}
-          </Box>
-        </Tooltip>
+        {/* 订阅套餐 */}
+        <Box
+          onClick={() => handleNavigation(`/${locale}/dashboard/subscription`)}
+          sx={{
+            mx: 1.5,
+            mb: 0.5,
+            px: isSidebarExpanded ? 2 : 1.5,
+            py: 1,
+            borderRadius: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            cursor: 'pointer',
+            backgroundColor: pathname === `/${locale}/dashboard/subscription`
+              ? isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
+              : 'transparent',
+            color: pathname === `/${locale}/dashboard/subscription`
+              ? isDark ? '#ffffff' : '#1c1917'
+              : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+            '&:hover': {
+              backgroundColor: pathname === `/${locale}/dashboard/subscription`
+                ? isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
+                : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            },
+            justifyContent: isSidebarExpanded ? 'flex-start' : 'center',
+            transition: 'all 0.2s ease',
+          }}
+        >
+          <CreditCard sx={{ fontSize: 20 }} />
+          {isSidebarExpanded && (
+            <Typography sx={{ fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              订阅套餐
+            </Typography>
+          )}
+        </Box>
       </Box>
-
-      {/* Sidebar Footer - User */}
-      <Box sx={{ 
-        p: 2, 
-        borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-      }}>
-        <Tooltip title={profile?.display_name || profile?.email} placement="right" disableHoverListener={!sidebarCollapsed}>
-          <Box
-            onClick={handleProfileMenuOpen}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              cursor: 'pointer',
-              p: 0.5,
-              borderRadius: 2,
-              '&:hover': {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-              },
-              justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
-            }}
-          >
-            <Avatar
-              src={profile?.avatar_url || undefined}
-              sx={{
-                width: 32,
-                height: 32,
-                backgroundColor: CEYLON_ORANGE,
-                fontSize: '0.8rem',
-                fontWeight: 600,
-              }}
-            >
-              {profile?.display_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U'}
-            </Avatar>
-            {!sidebarCollapsed && (
-              <Box sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
-                <Typography 
-                  noWrap 
-                  sx={{ 
-                    fontSize: '0.875rem', 
-                    fontWeight: 600,
-                    color: isDark ? 'white' : '#1c1917',
-                  }}
-                >
-                  {profile?.display_name || profile?.email?.split('@')[0]}
-                </Typography>
-                <Typography 
-                  noWrap 
-                  sx={{ 
-                    fontSize: '0.75rem', 
-                    color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                  }}
-                >
-                  {profile?.email}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Tooltip>
-      </Box>
-
-      {/* Expand button when collapsed */}
-      {sidebarCollapsed && (
-        <Tooltip title="展开侧边栏" placement="right">
-          <IconButton
-            size="small"
-            onClick={() => setSidebarCollapsed(false)}
-            sx={{
-              position: 'absolute',
-              right: -12,
-              top: 24,
-              width: 24,
-              height: 24,
-              backgroundColor: isDark ? '#1c1917' : '#ffffff',
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-              '&:hover': {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-              },
-            }}
-          >
-            <MenuIcon sx={{ fontSize: 14, transform: 'rotate(180deg)' }} />
-          </IconButton>
-        </Tooltip>
-      )}
     </Box>
   )
 
@@ -383,83 +256,142 @@ export default function MainLayout({ children }: MainLayoutProps) {
         position="fixed"
         sx={{
           width: '100%',
-          backgroundColor: isDark ? '#0c0a09' : '#fafaf9',
+          background: 'transparent',
           boxShadow: 'none',
           borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
         <Toolbar sx={{ minHeight: 56, px: 2, gap: 2 }}>
-          {/* Mobile Menu Button */}
-          <IconButton
-            color="inherit"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ display: { md: 'none' }, color: isDark ? 'white' : '#1c1917' }}
-          >
-            <MenuIcon />
-          </IconButton>
+          {/* Left: Mobile Menu Button + Logo + Title */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ display: { md: 'none' }, color: isDark ? 'white' : '#1c1917' }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          {/* Breadcrumb or Page Title */}
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              flex: 1, 
-              color: isDark ? 'white' : '#1c1917',
-              fontSize: '1rem',
-              fontWeight: 600,
-            }}
-          >
-            {pathname.includes('/dashboard/project/') ? '项目详情' : 
-             pathname.includes('/profile') ? '个人资料' :
-             pathname.includes('/settings') ? '设置' :
-             'Dashboard'}
-          </Typography>
-
-          {/* Right Side Tools */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LanguageSwitcher />
+            <IconButton
+              onClick={() => handleNavigation(`/${locale}/dashboard`)}
+              sx={{
+                width: 32,
+                height: 32,
+                borderRadius: 1,
+                p: 0,
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Logo width={32} height={32} />
+            </IconButton>
             
-            <Tooltip title="设置">
-              <IconButton
-                onClick={() => handleNavigation(`/${locale}/settings`)}
-                sx={{
-                  color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                  '&:hover': {
-                    color: CEYLON_ORANGE,
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-                  },
-                }}
-              >
-                <Settings />
-              </IconButton>
-            </Tooltip>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                color: isDark ? 'white' : '#1c1917',
+                fontSize: '1.1rem',
+                fontWeight: 700,
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              Ceylon
+            </Typography>
+          </Box>
 
-            <Tooltip title="个人资料">
-              <IconButton
-                onClick={() => handleNavigation(`/${locale}/profile`)}
+          {/* Spacer */}
+          <Box sx={{ flex: 1 }} />
+
+          {/* Right: Search + Avatar */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Search Button - Styled like reference image */}
+            <Button
+              onClick={() => setCommandPaletteOpen(true)}
+              sx={{
+                display: { xs: 'none', sm: 'flex' },
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1.5,
+                px: 2,
+                py: 0.75,
+                minWidth: 200,
+                borderRadius: 10,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+                textTransform: 'none',
+                fontSize: '0.9rem',
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+                },
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Search sx={{ fontSize: 18, opacity: 0.7 }} />
+                <Typography sx={{ 
+                  fontSize: '0.9rem', 
+                  color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                }}>
+                  搜索...
+                </Typography>
+              </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 0.3,
+                fontSize: '0.75rem',
+                fontWeight: 500,
+                color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
+                fontFamily: 'monospace',
+              }}>
+                <KeyboardCommandKey sx={{ fontSize: 14 }} />
+                <span>K</span>
+              </Box>
+            </Button>
+
+            {/* Mobile Search Icon */}
+            <IconButton
+              onClick={() => setCommandPaletteOpen(true)}
+              sx={{
+                display: { sm: 'none' },
+                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+              }}
+            >
+              <Search />
+            </IconButton>
+
+            {/* Avatar */}
+            <IconButton
+              onClick={handleProfileMenuOpen}
+              sx={{
+                p: 0.5,
+                border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                borderRadius: 2,
+                '&:hover': {
+                  borderColor: CEYLON_ORANGE,
+                },
+              }}
+            >
+              <Avatar
+                src={profile?.avatar_url || undefined}
                 sx={{
-                  p: 0.5,
-                  border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                  borderRadius: 2,
-                  '&:hover': {
-                    borderColor: CEYLON_ORANGE,
-                  },
+                  width: 28,
+                  height: 28,
+                  backgroundColor: CEYLON_ORANGE,
+                  fontSize: '0.75rem',
                 }}
               >
-                <Avatar
-                  src={profile?.avatar_url || undefined}
-                  sx={{
-                    width: 28,
-                    height: 28,
-                    backgroundColor: CEYLON_ORANGE,
-                    fontSize: '0.75rem',
-                  }}
-                >
-                  {profile?.display_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U'}
-                </Avatar>
-              </IconButton>
-            </Tooltip>
+                {profile?.display_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U'}
+              </Avatar>
+            </IconButton>
           </Box>
         </Toolbar>
       </AppBar>
@@ -471,6 +403,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           width: { md: currentSidebarWidth }, 
           flexShrink: { md: 0 },
           display: { xs: 'none', md: 'block' },
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <Drawer
@@ -483,29 +416,33 @@ export default function MainLayout({ children }: MainLayoutProps) {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: drawerWidth,
-              backgroundColor: isDark ? '#0c0a09' : '#fafaf9',
+              backgroundColor: isDark ? '#0d0d0d' : '#f5f5f4',
             },
           }}
         >
           {sidebarContent}
         </Drawer>
-        <Drawer
-          variant="permanent"
+        {/* Desktop Sidebar with hover effect */}
+        <Box
+          onMouseEnter={() => setSidebarHovered(true)}
+          onMouseLeave={() => setSidebarHovered(false)}
           sx={{
             display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: currentSidebarWidth,
-              backgroundColor: isDark ? '#0c0a09' : '#fafaf9',
-              borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-              top: 56,
-              height: 'calc(100% - 56px)',
-            },
+            position: 'fixed',
+            left: 0,
+            top: 56,
+            height: 'calc(100% - 56px)',
+            width: currentSidebarWidth,
+            backgroundColor: isDark ? '#0d0d0d' : '#f5f5f4',
+            borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+            overflowX: 'hidden',
+            overflowY: 'auto',
+            zIndex: 1200,
+            transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
-          open
         >
           {sidebarContent}
-        </Drawer>
+        </Box>
       </Box>
 
       {/* Main Content */}
@@ -523,13 +460,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
         {children}
       </Box>
 
-      {/* Profile Menu */}
+      {/* User Profile Menu */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleProfileMenuClose}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         PaperProps={{
           sx: {
             backgroundColor: isDark ? '#1c1917' : '#ffffff',
@@ -537,8 +474,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             boxShadow: isDark 
               ? '0 4px 20px rgba(0,0,0,0.5)' 
               : '0 4px 20px rgba(0,0,0,0.1)',
-            minWidth: 180,
-            ml: 1,
+            minWidth: 200,
+            mt: 1,
           },
         }}
       >
@@ -583,6 +520,72 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemIcon>
           <ListItemText primary={t('common.settings')} />
         </MenuItem>
+
+        <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
+
+        {/* Theme Selection */}
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography 
+            variant="caption" 
+            sx={{ 
+              color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+              fontSize: '0.7rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {t('theme.switch')}
+          </Typography>
+        </Box>
+        {themeIcons.map(({ mode: themeMode, icon, label }) => (
+          <MenuItem
+            key={themeMode}
+            onClick={() => handleThemeSelect(themeMode)}
+            selected={mode === themeMode}
+            sx={{
+              py: 1,
+              pl: 2,
+              color: mode === themeMode ? CEYLON_ORANGE : isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
+              '&.Mui-selected': {
+                backgroundColor: isDark ? 'rgba(194, 65, 12, 0.15)' : 'rgba(194, 65, 12, 0.08)',
+              },
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: mode === themeMode ? CEYLON_ORANGE : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)', minWidth: 32 }}>
+              {icon}
+            </ListItemIcon>
+            <ListItemText 
+              primary={label} 
+              primaryTypographyProps={{ fontSize: '0.875rem' }}
+            />
+          </MenuItem>
+        ))}
+
+        <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
+
+        {/* Language Selection */}
+        <MenuItem 
+          onClick={handleLangMenuOpen}
+          sx={{
+            py: 1.5,
+            color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
+            '&:hover': {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+            },
+          }}
+        >
+          <ListItemIcon sx={{ color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)', minWidth: 36 }}>
+            <Language fontSize="small" />
+          </ListItemIcon>
+          <ListItemText 
+            primary={t('language.select')} 
+            secondary={localeNames[locale]}
+            secondaryTypographyProps={{ fontSize: '0.75rem' }}
+          />
+        </MenuItem>
         
         <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
         
@@ -601,6 +604,58 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemIcon>
           <ListItemText primary={t('common.logout')} />
         </MenuItem>
+      </Menu>
+
+      {/* Command Palette */}
+      <CommandPalette 
+        open={commandPaletteOpen} 
+        onClose={() => setCommandPaletteOpen(false)} 
+      />
+
+      {/* Language Submenu */}
+      <Menu
+        anchorEl={langAnchorEl}
+        open={Boolean(langAnchorEl)}
+        onClose={handleLangMenuClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#ffffff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            boxShadow: isDark 
+              ? '0 4px 20px rgba(0,0,0,0.5)' 
+              : '0 4px 20px rgba(0,0,0,0.1)',
+            minWidth: 140,
+          },
+        }}
+      >
+        {locales.map((loc) => (
+          <MenuItem
+            key={loc}
+            onClick={() => handleLanguageSelect(loc)}
+            selected={locale === loc}
+            sx={{
+              color: locale === loc ? CEYLON_ORANGE : isDark ? 'white' : '#1c1917',
+              '&.Mui-selected': {
+                backgroundColor: isDark ? 'rgba(194, 65, 12, 0.15)' : 'rgba(194, 65, 12, 0.08)',
+              },
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+              },
+            }}
+          >
+            <ListItemText 
+              primary={localeNames[loc]} 
+              sx={{ 
+                '& .MuiListItemText-primary': { 
+                  fontSize: '0.95rem',
+                  fontWeight: locale === loc ? 600 : 400,
+                } 
+              }} 
+            />
+          </MenuItem>
+        ))}
       </Menu>
     </Box>
   )
