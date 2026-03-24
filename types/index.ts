@@ -58,7 +58,22 @@ export interface Requirement {
   created_by: string
   created_at: string
   updated_at: string
+  /** Dynamic column values keyed by version_view_columns.id */
+  custom_values?: Record<string, string | null>
   assignee?: Profile
+}
+
+export type VersionViewColumnType = 'text' | 'select' | 'person'
+
+export interface VersionViewColumn {
+  id: string
+  version_view_id: string
+  name: string
+  field_type: VersionViewColumnType
+  options: string[]
+  position: number
+  created_at: string
+  updated_at: string
 }
 
 export interface CliToken {

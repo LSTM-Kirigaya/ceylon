@@ -1,6 +1,6 @@
 'use client'
 
-import { ReactNode, useState, useEffect, useCallback } from 'react'
+import { ReactNode, useState, useEffect, useCallback, useMemo } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 import {
@@ -17,6 +17,8 @@ import {
   ListItemText,
   Divider,
   Button,
+  Breadcrumbs,
+  Link as MuiLink,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -33,6 +35,7 @@ import {
   Language,
   KeyboardCommandKey,
   CreditCard,
+  ChevronRight,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -40,6 +43,7 @@ import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Logo } from './Logo'
 import { CommandPalette } from './CommandPalette'
 import { locales, localeNames, type Locale } from '@/i18n/config'
+import { apiJson } from '@/lib/client-api'
 
 interface MainLayoutProps {
   children: ReactNode
@@ -63,6 +67,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const searchParams = useSearchParams()
   const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [resolvedNames, setResolvedNames] = useState<{ projectName?: string; viewName?: string }>({})
 
   useEffect(() => {
     setMounted(true)
@@ -112,6 +117,102 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isSidebarExpanded = !sidebarCollapsed || sidebarHovered
   const currentSidebarWidth = isSidebarExpanded ? drawerWidth : collapsedDrawerWidth
+  const pathSegments = useMemo(() => pathname.split('/').filter(Boolean).slice(1), [pathname])
+
+  const breadcrumbLabelMap: Record<string, string> = {
+    dashboard: '控制台',
+    project: '项目',
+    settings: '设置',
+    team: '团队成员',
+    view: '版本视图',
+    profile: '个人资料',
+    subscription: '订阅套餐',
+  }
+
+  const breadcrumbs = pathSegments.map((segment, index) => {
+    const href = `/${locale}/${pathSegments.slice(0, index + 1).join('/')}`
+    const isLast = index === pathSegments.length - 1
+    const isUuidLike =
+      segment.length > 20 && /^[0-9a-f-]+$/i.test(segment)
+    let label = breadcrumbLabelMap[segment] || (isUuidLike ? segment.slice(0, 8) : segment)
+    if (isUuidLike && index > 0 && pathSegments[index - 1] === 'project' && resolvedNames.projectName) {
+      label = resolvedNames.projectName
+    }
+    if (isUuidLike && index > 0 && pathSegments[index - 1] === 'view' && resolvedNames.viewName) {
+      label = resolvedNames.viewName
+    }
+    return { href, isLast, label }
+  })
+
+  useEffect(() => {
+    const loadNames = async () => {
+      const projectIndex = pathSegments.findIndex((s) => s === 'project')
+      const viewIndex = pathSegments.findIndex((s) => s === 'view')
+      const projectId = projectIndex >= 0 ? pathSegments[projectIndex + 1] : undefined
+      const viewId = viewIndex >= 0 ? pathSegments[viewIndex + 1] : undefined
+      const hasProjectPage = projectId && /^[0-9a-f-]{36}$/i.test(projectId)
+      const hasViewPage = viewId && /^[0-9a-f-]{36}$/i.test(viewId)
+      if (!hasProjectPage && !hasViewPage) {
+        setResolvedNames({})
+        return
+      }
+      try {
+        const [projectRes, viewRes] = await Promise.all([
+          hasProjectPage
+            ? apiJson<{ project: { name: string } }>(`/api/projects/${projectId}`)
+            : Promise.resolve(null),
+          hasViewPage && hasProjectPage
+            ? apiJson<{ view: { name: string } }>(
+                `/api/version-views/${viewId}?projectId=${encodeURIComponent(projectId as string)}`
+              )
+            : Promise.resolve(null),
+        ])
+        const next: { projectName?: string; viewName?: string } = {
+          projectName: projectRes?.project?.name,
+          viewName: viewRes?.view?.name,
+        }
+        setResolvedNames(next)
+      } catch {
+        // Keep fallback short IDs if request fails.
+      }
+    }
+    loadNames()
+  }, [pathname])
+
+  useEffect(() => {
+    const onRename = () => {
+      setResolvedNames({})
+      void (async () => {
+        const projectIndex = pathSegments.findIndex((s) => s === 'project')
+        const viewIndex = pathSegments.findIndex((s) => s === 'view')
+        const projectId = projectIndex >= 0 ? pathSegments[projectIndex + 1] : undefined
+        const viewId = viewIndex >= 0 ? pathSegments[viewIndex + 1] : undefined
+        const hasProjectPage = projectId && /^[0-9a-f-]{36}$/i.test(projectId)
+        const hasViewPage = viewId && /^[0-9a-f-]{36}$/i.test(viewId)
+        if (!hasProjectPage && !hasViewPage) return
+        try {
+          const [projectRes, viewRes] = await Promise.all([
+            hasProjectPage
+              ? apiJson<{ project: { name: string } }>(`/api/projects/${projectId}`)
+              : Promise.resolve(null),
+            hasViewPage && hasProjectPage
+              ? apiJson<{ view: { name: string } }>(
+                  `/api/version-views/${viewId}?projectId=${encodeURIComponent(projectId as string)}`
+                )
+              : Promise.resolve(null),
+          ])
+          setResolvedNames({
+            projectName: projectRes?.project?.name,
+            viewName: viewRes?.view?.name,
+          })
+        } catch {
+          /* keep previous */
+        }
+      })()
+    }
+    window.addEventListener('ceylon-view-renamed', onRename)
+    return () => window.removeEventListener('ceylon-view-renamed', onRename)
+  }, [pathSegments])
 
   // Theme options
   const themeIcons = [
@@ -149,7 +250,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           fullWidth
           variant="contained"
           startIcon={isSidebarExpanded ? <Add /> : undefined}
-          onClick={() => handleNavigation(`/${locale}/dashboard`)}
+          onClick={() => handleNavigation(`/${locale}/dashboard?create=1`)}
           sx={{
             backgroundColor: CEYLON_ORANGE,
             '&:hover': { backgroundColor: '#A34712' },
@@ -290,13 +391,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
               <Logo width={32} height={32} />
             </IconButton>
             
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              className="select-none text-lg font-bold leading-none tracking-tight"
+              sx={{
                 color: isDark ? 'white' : '#1c1917',
-                fontSize: '1.1rem',
-                fontWeight: 700,
-                lineHeight: 1,
                 display: 'flex',
                 alignItems: 'center',
               }}
@@ -305,8 +404,44 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </Typography>
           </Box>
 
-          {/* Spacer */}
-          <Box sx={{ flex: 1 }} />
+          {/* Global breadcrumb in top navigation */}
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 2, flex: 1, minWidth: 0 }}>
+            {breadcrumbs.length > 0 && (
+              <Breadcrumbs
+                separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }} />}
+                aria-label="breadcrumb"
+                sx={{ whiteSpace: 'nowrap', overflow: 'hidden' }}
+              >
+                {breadcrumbs.map((item) =>
+                  item.isLast ? (
+                    <Typography
+                      key={item.href}
+                      sx={{
+                        color: isDark ? 'white' : '#1c1917',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                  ) : (
+                    <MuiLink
+                      key={item.href}
+                      underline="hover"
+                      onClick={() => handleNavigation(item.href)}
+                      sx={{
+                        cursor: 'pointer',
+                        color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      {item.label}
+                    </MuiLink>
+                  )
+                )}
+              </Breadcrumbs>
+            )}
+          </Box>
 
           {/* Right: Search + Avatar */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>

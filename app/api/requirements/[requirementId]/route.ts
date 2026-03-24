@@ -26,6 +26,33 @@ export async function PATCH(
     if (body.type) patch.type = body.type
     if (body.status) patch.status = body.status
 
+    if (
+      body.custom_values !== undefined &&
+      body.custom_values !== null &&
+      typeof body.custom_values === 'object' &&
+      !Array.isArray(body.custom_values)
+    ) {
+      const { data: row, error: readErr } = await supabase
+        .from('requirements')
+        .select('custom_values')
+        .eq('id', requirementId)
+        .single()
+      if (readErr) {
+        return NextResponse.json({ error: readErr.message }, { status: 400 })
+      }
+      const current = (row?.custom_values as Record<string, string> | null) || {}
+      const incoming = body.custom_values as Record<string, unknown>
+      const next: Record<string, string> = { ...current }
+      for (const [k, v] of Object.entries(incoming)) {
+        if (v === null || v === '') {
+          delete next[k]
+        } else if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') {
+          next[k] = String(v)
+        }
+      }
+      patch.custom_values = next
+    }
+
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
