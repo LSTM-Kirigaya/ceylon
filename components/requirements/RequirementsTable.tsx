@@ -34,11 +34,9 @@ import {
 } from '@mui/material'
 import {
   Add,
-  Delete,
   MoreHoriz,
   Settings,
   ViewColumn,
-  ArrowBack,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
@@ -69,7 +67,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const [addColOpen, setAddColOpen] = useState(false)
   const [newColName, setNewColName] = useState('')
-  const [newColType, setNewColType] = useState<'text' | 'select' | 'person'>('text')
+  const [newColType, setNewColType] = useState<'text' | 'select' | 'person' | 'attachment'>('text')
   const [colSaving, setColSaving] = useState(false)
 
   const [renameCol, setRenameCol] = useState<VersionViewColumn | null>(null)
@@ -334,29 +332,16 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           flexWrap: 'wrap',
           gap: 1.5,
           mb: 2,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-          <Button
-            size="small"
-            startIcon={<ArrowBack />}
-            onClick={() => router.push(`/${locale}/dashboard/project/${projectId}`)}
-            sx={{
-              textTransform: 'none',
-              color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.65)',
-            }}
-          >
-            返回项目
-          </Button>
-          <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
-            {filteredRows.length} 行
-            {searchQuery ? ` · 已筛选` : ''}
-          </Typography>
-        </Box>
+        <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', mr: 'auto' }}>
+          {filteredRows.length} 行
+          {searchQuery ? ` · 已筛选` : ''}
+        </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="视图名称与描述、删除视图">
             <Button
@@ -459,27 +444,12 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                   </Box>
                 </TableCell>
               ))}
-              <TableCell
-                align="center"
-                sx={{
-                  width: 56,
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
-                }}
-              >
-                <Tooltip title="添加列">
-                  <IconButton size="small" onClick={() => setAddColOpen(true)} sx={{ color: CEYLON_ORANGE }}>
-                    <Add fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3 + columns.length} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={2 + columns.length} align="center" sx={{ py: 6 }}>
                   <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
                     暂无数据，点击「新行」开始
                   </Typography>
@@ -667,12 +637,71 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         />
                       </TableCell>
                     )
+                    /* attachment */
+                    if (col.field_type === 'attachment') {
+                      const attachments = raw ? JSON.parse(typeof raw === 'string' ? raw : '[]') as {name: string, url: string}[] : []
+                      return (
+                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 160 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                            {attachments.map((att, idx) => (
+                              <Chip
+                                key={idx}
+                                size="small"
+                                label={att.name}
+                                component="a"
+                                href={att.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                clickable
+                                sx={{
+                                  height: 24,
+                                  fontSize: '0.75rem',
+                                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
+                                  '&:hover': { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' },
+                                }}
+                              />
+                            ))}
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.7rem', borderRadius: 1 }}
+                              onClick={() => {
+                                const input = document.createElement('input')
+                                input.type = 'file'
+                                input.onchange = async (e) => {
+                                  const file = (e.target as HTMLInputElement).files?.[0]
+                                  if (!file) return
+                                  // Upload to storage and get URL
+                                  const formData = new FormData()
+                                  formData.append('file', file)
+                                  formData.append('projectId', projectId)
+                                  try {
+                                    const res = await fetch('/api/attachments/upload', {
+                                      method: 'POST',
+                                      body: formData,
+                                    })
+                                    if (!res.ok) throw new Error('Upload failed')
+                                    const { url } = await res.json()
+                                    const newAtt = { name: file.name, url }
+                                    const newAttachments = [...attachments, newAtt]
+                                    await patchCustomCell(req.id, col.id, JSON.stringify(newAttachments))
+                                  } catch (err) {
+                                    console.error('Upload error:', err)
+                                    alert('上传失败')
+                                  }
+                                }
+                                input.click()
+                              }}
+                            >
+                              + 添加
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      )
+                    }
+                    return null
                   })}
-                  <TableCell align="center">
-                    <IconButton size="small" onClick={() => void deleteRow(req.id)} sx={{ color: '#ef4444' }}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </TableCell>
+
                 </TableRow>
               ))
             )}
@@ -732,11 +761,12 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             <Select
               label="类型"
               value={newColType}
-              onChange={(e) => setNewColType(e.target.value as 'text' | 'select' | 'person')}
+              onChange={(e) => setNewColType(e.target.value as 'text' | 'select' | 'person' | 'attachment')}
             >
               <MenuItem value="text">文本</MenuItem>
               <MenuItem value="select">单选（可新增选项）</MenuItem>
               <MenuItem value="person">人员（项目成员）</MenuItem>
+              <MenuItem value="attachment">附件</MenuItem>
             </Select>
           </FormControl>
         </DialogContent>
