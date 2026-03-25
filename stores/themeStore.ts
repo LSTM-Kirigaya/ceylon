@@ -13,7 +13,7 @@ interface ThemeState {
   getEffectiveMode: () => 'light' | 'dark'
 }
 
-// Ceylon Tea Orange color
+// ceylonm Tea Orange color
 const CEYLON_ORANGE = '#C85C1B'
 
 const getLightTheme = (): Theme =>
@@ -38,7 +38,7 @@ const getLightTheme = (): Theme =>
 
     },
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: '"Montserrat", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
       h1: { letterSpacing: '-0.025em' },
       h2: { letterSpacing: '-0.025em' },
       h3: { letterSpacing: '-0.025em' },
@@ -102,7 +102,7 @@ const getDarkTheme = (): Theme =>
 
     },
     typography: {
-      fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+      fontFamily: '"Montserrat", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
       h1: { letterSpacing: '-0.025em' },
       h2: { letterSpacing: '-0.025em' },
       h3: { letterSpacing: '-0.025em' },
