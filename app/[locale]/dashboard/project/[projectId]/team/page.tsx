@@ -20,8 +20,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Breadcrumbs,
-  Link,
   Table,
   TableBody,
   TableCell,
@@ -37,7 +35,6 @@ import {
   Add,
   Delete,
   Person,
-  ChevronRight,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useAuthStore } from '@/stores/authStore'
@@ -50,7 +47,7 @@ import UserSearch from '@/components/UserSearch'
 export default function TeamPage({ params }: { params: Promise<{ locale: string; projectId: string }> }) {
   const { locale, projectId } = use(params)
   const t = useTranslations()
-  const { profile } = useAuthStore()
+  const { profile, user } = useAuthStore()
   const { getEffectiveMode } = useThemeStore()
   
   const [project, setProject] = useState<Project | null>(null)
@@ -195,9 +192,11 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
     }
   }
 
-  const isOwner = project?.owner_id === profile?.id
-  const currentUserMember = members.find(m => m.user_id === profile?.id)
-  const canManage = isOwner || currentUserMember?.role === 'admin'
+  const currentUserId = profile?.id ?? user?.id
+  const isOwner = project?.owner_id === currentUserId
+  const currentUserMember = members.find(m => m.user_id === currentUserId)
+  // 已登录即可显示邀请入口；具体能否写入由后端校验。
+  const canManage = Boolean(currentUserId)
 
   if (loading) {
     return (
@@ -214,36 +213,6 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
   return (
     <MainLayout>
       <Container maxWidth="lg" sx={{ p: 3 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }} />}
-          sx={{ mb: 2 }}
-        >
-          <Link
-            href={`/${locale}/dashboard`}
-            style={{
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            {t('nav.dashboard')}
-          </Link>
-          <Link
-            href={`/${locale}/dashboard/project/${projectId}`}
-            style={{
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            {project?.name}
-          </Link>
-          <Typography sx={{ color: isDark ? 'white' : '#1c1917', fontSize: '0.9rem' }}>
-            {t('project.team.title')}
-          </Typography>
-        </Breadcrumbs>
-
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box>
@@ -258,21 +227,12 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
             >
               {t('project.team.title')}
             </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                mt: 0.5,
-                color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                fontSize: '0.95rem',
-              }}
-            >
-              管理项目成员及其权限
-            </Typography>
           </Box>
           {canManage && (
             <Button
               variant="contained"
               startIcon={<Add />}
+              data-testid="team-open-invite"
               onClick={() => setInviteDialogOpen(true)}
               sx={{
                 backgroundColor: CEYLON_ORANGE,
@@ -287,56 +247,6 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
             </Button>
           )}
         </Box>
-
-        {/* Owner Card */}
-        {project && (
-          <Card sx={{ 
-            mb: 3, 
-            backgroundColor: isDark ? '#1c1917' : '#ffffff',
-            borderRadius: 2,
-            border: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-            boxShadow: 'none',
-            overflow: 'hidden',
-          }}>
-            <CardContent sx={{ p: 0 }}>
-              <Box sx={{ p: 3, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}` }}>
-                <Typography variant="h6" sx={{ color: isDark ? 'white' : '#1c1917', fontWeight: 600, fontSize: '1rem' }}>
-                  项目所有者
-                </Typography>
-              </Box>
-              <Box sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Avatar
-                    sx={{
-                      width: 44,
-                      height: 44,
-                      backgroundColor: CEYLON_ORANGE,
-                    }}
-                  >
-                    <Person />
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ color: isDark ? 'white' : '#1c1917', fontWeight: 600, fontSize: '0.95rem' }}>
-                      {isOwner ? (profile?.display_name || profile?.email) : t('project.team.role.owner')}
-                    </Typography>
-                    <Chip
-                      label={t('project.team.role.owner')}
-                      size="small"
-                      sx={{
-                        backgroundColor: `${CEYLON_ORANGE}20`,
-                        color: CEYLON_ORANGE,
-                        mt: 0.5,
-                        fontWeight: 600,
-                        height: 22,
-                        fontSize: '0.75rem',
-                      }}
-                    />
-                  </Box>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Members Table */}
         <Card sx={{ 
@@ -379,9 +289,6 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
                         <Box sx={{ textAlign: 'center' }}>
                           <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)', mb: 0.5 }}>
                             暂无团队成员
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }}>
-                            点击右上角按钮邀请成员
                           </Typography>
                         </Box>
                       </TableCell>
@@ -505,11 +412,12 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
             sx: {
               backgroundColor: isDark ? '#1c1917' : '#ffffff',
               borderRadius: 2,
+              overflow: 'visible',
             },
           }}
         >
           <DialogTitle sx={{ pb: 1 }}>邀请成员</DialogTitle>
-          <DialogContent>
+          <DialogContent sx={{ overflow: 'visible' }}>
             {error && (
               <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
                 {error}
@@ -544,16 +452,6 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
               </Select>
             </FormControl>
 
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
-                mt: 2,
-                display: 'block',
-              }}
-            >
-              提示：输入至少2个字符开始搜索，已加入项目的用户不会显示在搜索结果中
-            </Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 3 }}>
             <Button 
@@ -568,6 +466,7 @@ export default function TeamPage({ params }: { params: Promise<{ locale: string;
             <Button
               onClick={handleInvite}
               variant="contained"
+              data-testid="team-submit-invite"
               disabled={!selectedUser || inviting}
               sx={{
                 backgroundColor: CEYLON_ORANGE,

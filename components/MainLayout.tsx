@@ -357,9 +357,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
         position="fixed"
         sx={{
           width: '100%',
-          background: 'transparent',
+          background: isDark ? '#0c0a09' : '#ffffff',
           boxShadow: 'none',
-          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
@@ -400,12 +400,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 alignItems: 'center',
               }}
             >
-              Ceylon
+              ceylonm
             </Typography>
           </Box>
 
           {/* Global breadcrumb in top navigation */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 2, flex: 1, minWidth: 0 }}>
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 1.5, flex: 1, minWidth: 0 }}>
             {breadcrumbs.length > 0 && (
               <Breadcrumbs
                 separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }} />}
@@ -504,29 +504,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </IconButton>
 
             {/* Avatar */}
-            <IconButton
+            <Avatar
+              src={profile?.avatar_url || undefined}
               onClick={handleProfileMenuOpen}
               sx={{
-                p: 0.5,
-                border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                borderRadius: 2,
+                width: 36,
+                height: 36,
+                backgroundColor: CEYLON_ORANGE,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                transition: 'all 0.2s ease',
                 '&:hover': {
-                  borderColor: CEYLON_ORANGE,
+                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                  transform: 'scale(1.05)',
                 },
               }}
             >
-              <Avatar
-                src={profile?.avatar_url || undefined}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  backgroundColor: CEYLON_ORANGE,
-                  fontSize: '0.75rem',
-                }}
-              >
-                {profile?.display_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U'}
-              </Avatar>
-            </IconButton>
+              {profile?.display_name?.[0]?.toUpperCase() || profile?.email?.[0]?.toUpperCase() || 'U'}
+            </Avatar>
           </Box>
         </Toolbar>
       </AppBar>
