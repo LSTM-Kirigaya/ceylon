@@ -47,7 +47,62 @@ export async function GET(
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ columns: data ?? [] })
+  const columns = data ?? []
+
+  // Merge reusable select options by project + attribute name.
+  // If the new table isn't deployed yet, fall back to view-local options.
+  try {
+    const { data: vv } = await supabase.from('version_views').select('project_id').eq('id', viewId).maybeSingle()
+    const pId = vv?.project_id ?? projectId
+    if (pId) {
+      const { data: projectOptRows, error: poErr } = await supabase
+        .from('project_select_attribute_options')
+        .select('attribute_name, options')
+        .eq('project_id', pId)
+
+      if (!poErr && Array.isArray(projectOptRows)) {
+        const byName = new Map<string, string[]>()
+        for (const row of projectOptRows) {
+          const name = (row as { attribute_name?: unknown }).attribute_name
+          const rawOpts = (row as { options?: unknown }).options
+          if (typeof name !== 'string') continue
+          const opts = Array.isArray(rawOpts)
+            ? (rawOpts as unknown[]).filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
+            : []
+          byName.set(name, opts)
+        }
+
+        const uniqPreserveOrder = (items: string[]) => {
+          const seen = new Set<string>()
+          const res: string[] = []
+          for (const it of items) {
+            const v = String(it).trim()
+            if (!v) continue
+            if (seen.has(v)) continue
+            seen.add(v)
+            res.push(v)
+          }
+          return res
+        }
+
+        const mergedColumns = columns.map((c) => {
+          if (c.field_type !== 'select') return c
+          const viewOpts = Array.isArray(c.options)
+            ? (c.options as unknown[]).filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
+            : []
+          const projectOpts = byName.get(c.name) ?? []
+          const options = uniqPreserveOrder([...viewOpts, ...projectOpts])
+          return { ...c, options }
+        })
+
+        return NextResponse.json({ columns: mergedColumns })
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return NextResponse.json({ columns })
 }
 
 export async function POST(

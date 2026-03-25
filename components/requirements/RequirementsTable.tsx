@@ -37,12 +37,14 @@ import {
   MoreHoriz,
   Settings,
   ViewColumn,
+  Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { getSelectOptionColors } from '@/lib/selectOptionColors'
 import type { Requirement, ProjectMember, VersionView, VersionViewColumn } from '@/types'
+import { getPriorityColor, getPriorityLabel, REQUIREMENT_STATUS } from '@/types'
 
 interface RequirementsTableProps {
   versionViewId: string
@@ -65,9 +67,10 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
 
-  const [addColOpen, setAddColOpen] = useState(false)
+  const [addColMenuAnchor, setAddColMenuAnchor] = useState<null | HTMLElement>(null)
+  const [addColAfterPosition, setAddColAfterPosition] = useState<number | null>(null)
   const [newColName, setNewColName] = useState('')
-  const [newColType, setNewColType] = useState<'text' | 'select' | 'person' | 'attachment'>('text')
+  const [newColType, setNewColType] = useState<'text' | 'select' | 'person'>('text')
   const [colSaving, setColSaving] = useState(false)
 
   const [renameCol, setRenameCol] = useState<VersionViewColumn | null>(null)
@@ -83,6 +86,50 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
+  const [activeSelectCell, setActiveSelectCell] = useState<{ reqId: string; key: string } | null>(
+    null
+  )
+
+  const isSelectActive = (reqId: string, key: string) =>
+    activeSelectCell?.reqId === reqId && activeSelectCell?.key === key
+
+  const selectPillSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 999,
+      minHeight: 36,
+      px: 1,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+      '& fieldset': {
+        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+      },
+      '&:hover fieldset': {
+        borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
+      },
+      '&.Mui-focused fieldset': {
+        borderColor: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)',
+      },
+    },
+    '& .MuiAutocomplete-input': {
+      fontSize: '0.85rem',
+      py: 0.75,
+      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+    },
+    '& .MuiAutocomplete-endAdornment': {
+      top: '50%',
+      transform: 'translateY(-50%)',
+      right: 10,
+    },
+    '& .MuiChip-root': {
+      height: 24,
+      borderRadius: 999,
+      fontWeight: 800,
+      fontSize: '0.75rem',
+    },
+    '& .MuiChip-deleteIcon': {
+      opacity: 0.7,
+      '&:hover': { opacity: 1 },
+    },
+  } as const
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -173,8 +220,38 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     await patchRequirement(id, { title: t })
   }
 
+  const fetchRequirementsOnly = useCallback(async () => {
+    try {
+      const reqRes = await apiJson<{ requirements: Requirement[] }>(
+        `/api/version-views/${versionViewId}/requirements`
+      )
+      setRequirements(reqRes.requirements ?? [])
+    } catch (e) {
+      console.error('fetchRequirementsOnly', e)
+    }
+  }, [versionViewId])
+
   const patchCustomCell = async (reqId: string, columnId: string, value: string | null) => {
     await patchRequirement(reqId, { custom_values: { [columnId]: value } })
+  }
+
+  const openAddColumnMenu = (
+    e: { currentTarget: HTMLElement },
+    opts?: { col?: VersionViewColumn; afterPosition?: number }
+  ) => {
+    setNewColName('')
+    const initialType = opts?.col?.field_type ?? 'text'
+    const afterPosition = opts?.col?.position !== undefined ? opts.col.position + 1 : opts?.afterPosition
+    setNewColType(initialType)
+    setAddColAfterPosition(typeof afterPosition === 'number' ? afterPosition : null)
+    setAddColMenuAnchor(e.currentTarget)
+  }
+
+  const closeAddColumnMenu = () => {
+    setAddColMenuAnchor(null)
+    setAddColAfterPosition(null)
+    setNewColName('')
+    setNewColType('text')
   }
 
   const addColumn = async () => {
@@ -184,9 +261,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     try {
       await apiJson(`/api/version-views/${versionViewId}/columns`, {
         method: 'POST',
-        body: JSON.stringify({ name, field_type: newColType, options: [] }),
+        body: JSON.stringify({
+          name,
+          field_type: newColType,
+          options: [],
+          position: addColAfterPosition ?? undefined,
+        }),
       })
-      setAddColOpen(false)
+      setAddColMenuAnchor(null)
+      setAddColAfterPosition(null)
       setNewColName('')
       setNewColType('text')
       await fetchAll()
@@ -265,7 +348,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           status: 'pending',
         }),
       })
-      await fetchAll()
+      // 静默更新：不要触发表格全量 loading/skeleton，避免“整页刷新感”
+      await fetchRequirementsOnly()
     } catch (e) {
       console.error(e)
     }
@@ -275,7 +359,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     if (!confirm('删除此行？')) return
     try {
       await apiJson(`/api/requirements/${id}`, { method: 'DELETE' })
-      await fetchAll()
+      await fetchRequirementsOnly()
     } catch (e) {
       console.error(e)
     }
@@ -354,20 +438,6 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
               视图设置
             </Button>
           </Tooltip>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={addRow}
-            sx={{
-              backgroundColor: CEYLON_ORANGE,
-              '&:hover': { backgroundColor: '#A34712' },
-              textTransform: 'none',
-              fontWeight: 600,
-              borderRadius: 2,
-            }}
-          >
-            新行
-          </Button>
         </Box>
       </Box>
 
@@ -404,6 +474,36 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
               >
                 标题
               </TableCell>
+              <TableCell
+                sx={{
+                  width: 120,
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                }}
+              >
+                优先级
+              </TableCell>
+              <TableCell
+                sx={{
+                  width: 140,
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                }}
+              >
+                状态
+              </TableCell>
+              <TableCell
+                sx={{
+                  width: 140,
+                  fontWeight: 700,
+                  fontSize: '0.75rem',
+                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                }}
+              >
+                更新时间
+              </TableCell>
               {columns.map((col) => (
                 <TableCell
                   key={col.id}
@@ -431,32 +531,75 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         }}
                       />
                     </Box>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        setHeaderMenuAnchor(e.currentTarget)
-                        setHeaderMenuCol(col)
-                      }}
-                      sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
-                    >
-                      <MoreHoriz fontSize="small" />
-                    </IconButton>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => {
+                          setHeaderMenuAnchor(e.currentTarget)
+                          setHeaderMenuCol(col)
+                        }}
+                        sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
+                        aria-label={`列操作: ${col.name}`}
+                      >
+                        <MoreHoriz fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => openAddColumnMenu(e, { col })}
+                        sx={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)' }}
+                        data-testid="requirements-add-column-plus"
+                        aria-label={`在列后添加: ${col.name}`}
+                      >
+                        <Add fontSize="small" />
+                      </IconButton>
+                    </Box>
                   </Box>
                 </TableCell>
               ))}
+              <TableCell
+                sx={{
+                  width: 44,
+                  textAlign: 'center',
+                }}
+              >
+                <IconButton
+                  size="small"
+                  onClick={(e) => openAddColumnMenu(e)}
+                  data-testid="requirements-add-column-plus"
+                  aria-label="添加新列"
+                  sx={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)' }}
+                >
+                  <Add fontSize="small" />
+                </IconButton>
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={2 + columns.length} align="center" sx={{ py: 6 }}>
-                  <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
-                    暂无数据，点击「新行」开始
-                  </Typography>
+                <TableCell colSpan={6 + columns.length} align="center" sx={{ py: 6 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
+                    <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
+                      暂无数据，点击下方 `+` 添加新行
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={() => void addRow()}
+                      sx={{
+                        width: 42,
+                        height: 42,
+                        borderRadius: 3,
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                      }}
+                    >
+                      <Add />
+                    </IconButton>
+                  </Box>
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredRows.map((req) => (
+            ) : ([
+              ...filteredRows.map((req) => (
                 <TableRow
                   key={req.id}
                   hover
@@ -492,11 +635,241 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       }}
                     />
                   </TableCell>
+                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 120 }}>
+                    <Autocomplete
+                      freeSolo
+                      openOnFocus
+                      selectOnFocus
+                      size="small"
+                      onOpen={() => setActiveSelectCell({ reqId: req.id, key: 'priority' })}
+                      onClose={() =>
+                        setActiveSelectCell((prev) =>
+                          prev?.reqId === req.id && prev?.key === 'priority' ? null : prev
+                        )
+                      }
+                      options={Array.from({ length: 11 }).map((_, i) => i)}
+                      value={typeof req.priority === 'number' ? Math.max(0, Math.min(10, req.priority)) : 5}
+                      getOptionLabel={(v) => (typeof v === 'number' ? getPriorityLabel(v) : String(v))}
+                      isOptionEqualToValue={(a, b) => a === b}
+                      sx={selectPillSx}
+                      onChange={(_, v) => {
+                        if (v === null) return
+                        let parsed: number | null = null
+                        if (typeof v === 'number') {
+                          parsed = v
+                        } else {
+                          const nums = String(v).trim().match(/(\d+)/g)
+                          if (nums?.length) parsed = Number.parseInt(nums[nums.length - 1], 10)
+                        }
+                        if (parsed === null || !Number.isFinite(parsed)) return
+                        const next = Math.max(0, Math.min(10, parsed))
+                        void patchRequirement(req.id, { priority: next })
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          placeholder="查找或创建选项"
+                          inputProps={{
+                            ...params.inputProps,
+                            readOnly: !isSelectActive(req.id, 'priority'),
+                            value:
+                              !isSelectActive(req.id, 'priority') && params.inputProps.value
+                                ? ''
+                                : params.inputProps.value,
+                            onKeyDown: (e) => {
+                              if (e.key !== 'Enter') return
+                              const target = e.currentTarget as HTMLInputElement
+                              const s = target.value.trim()
+                              const nums = s.match(/(\d+)/g)
+                              if (!nums?.length) return
+                              const parsed = Number.parseInt(nums[nums.length - 1], 10)
+                              if (!Number.isFinite(parsed)) return
+                              const next = Math.max(0, Math.min(10, parsed))
+                              e.preventDefault()
+                              void patchRequirement(req.id, { priority: next })
+                            },
+                          }}
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <Chip
+                                  size="small"
+                                  label={getPriorityLabel(
+                                    typeof req.priority === 'number'
+                                      ? Math.max(0, Math.min(10, req.priority))
+                                      : 5
+                                  )}
+                                  sx={{
+                                    backgroundColor: getPriorityColor(
+                                      typeof req.priority === 'number'
+                                        ? Math.max(0, Math.min(10, req.priority))
+                                        : 5
+                                    ),
+                                    color: '#fff',
+                                    mr: 0.75,
+                                  }}
+                                  onDelete={() => void patchRequirement(req.id, { priority: 5 })}
+                                />
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              // actual visual style lives in selectPillSx
+                            },
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box
+                          component="li"
+                          {...(() => {
+                            const { key: _key, ...rest } = props as any
+                            return rest
+                          })()}
+                        >
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                            <Chip
+                              size="small"
+                              label={getPriorityLabel(option)}
+                              sx={{
+                                backgroundColor: getPriorityColor(option),
+                                color: '#fff',
+                                fontWeight: 800,
+                                fontSize: '0.75rem',
+                              }}
+                            />
+                            <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
+                          </Box>
+                        </Box>
+                      )}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 140 }}>
+                    <Autocomplete
+                      freeSolo
+                      openOnFocus
+                      selectOnFocus
+                      size="small"
+                      disableClearable
+                      onOpen={() => setActiveSelectCell({ reqId: req.id, key: 'status' })}
+                      onClose={() =>
+                        setActiveSelectCell((prev) =>
+                          prev?.reqId === req.id && prev?.key === 'status' ? null : prev
+                        )
+                      }
+                      options={REQUIREMENT_STATUS.map((s) => s.value)}
+                      value={req.status}
+                      getOptionLabel={(v) => {
+                        const meta = REQUIREMENT_STATUS.find((s) => s.value === v)
+                        return meta?.label || String(v)
+                      }}
+                      isOptionEqualToValue={(a, b) => a === b}
+                      sx={selectPillSx}
+                      onChange={(_, v) => {
+                        if (v === null) return
+                        const next = String(v).trim()
+                        const match =
+                          REQUIREMENT_STATUS.find((s) => s.value === next)?.value ||
+                          REQUIREMENT_STATUS.find((s) => s.label === next)?.value ||
+                          null
+                        if (!match) return
+                        void patchRequirement(req.id, { status: match })
+                      }}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          variant="outlined"
+                          placeholder="查找或创建选项"
+                          inputProps={{
+                            ...params.inputProps,
+                            readOnly: !isSelectActive(req.id, 'status'),
+                            value:
+                              !isSelectActive(req.id, 'status') && params.inputProps.value
+                                ? ''
+                                : params.inputProps.value,
+                            onKeyDown: (e) => {
+                              if (e.key !== 'Enter') return
+                              const target = e.currentTarget as HTMLInputElement
+                              const s = target.value.trim()
+                              const match =
+                                REQUIREMENT_STATUS.find((x) => x.value === s)?.value ||
+                                REQUIREMENT_STATUS.find((x) => x.label === s)?.value ||
+                                null
+                              if (!match) return
+                              e.preventDefault()
+                              void patchRequirement(req.id, { status: match })
+                            },
+                          }}
+                          InputProps={{
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                {(() => {
+                                  const meta = REQUIREMENT_STATUS.find((x) => x.value === req.status)
+                                  return (
+                                    <Chip
+                                      size="small"
+                                      label={meta?.label || String(req.status)}
+                                      sx={{
+                                        backgroundColor: meta?.color || '#6b7280',
+                                        color: '#fff',
+                                        mr: 0.75,
+                                      }}
+                                      onDelete={() => void patchRequirement(req.id, { status: 'pending' })}
+                                    />
+                                  )
+                                })()}
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              // actual visual style lives in selectPillSx
+                            },
+                          }}
+                        />
+                      )}
+                      renderOption={(props, option) => {
+                        const meta = REQUIREMENT_STATUS.find((s) => s.value === option)
+                        return (
+                          <Box
+                            component="li"
+                            {...(() => {
+                              const { key: _key, ...rest } = props as any
+                              return rest
+                            })()}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                              <Chip
+                                size="small"
+                                label={meta?.label || String(option)}
+                                sx={{
+                                  backgroundColor: meta?.color || '#6b7280',
+                                  color: '#fff',
+                                  fontWeight: 800,
+                                  fontSize: '0.75rem',
+                                }}
+                              />
+                              <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
+                            </Box>
+                          </Box>
+                        )
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 140 }}>
+                    {req.updated_at ? new Date(req.updated_at).toLocaleDateString() : '—'}
+                  </TableCell>
                   {columns.map((col) => {
                     const raw = req.custom_values?.[col.id] ?? ''
                     if (col.field_type === 'text') {
                       return (
-                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle' }}>
+                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 160 }}>
                           <TextField
                             variant="standard"
                             fullWidth
@@ -524,10 +897,19 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 168 }}>
                           <Autocomplete
                             freeSolo
+                            openOnFocus
+                            selectOnFocus
                             size="small"
                             options={col.options}
                             value={raw || null}
                             isOptionEqualToValue={(a, b) => a === b}
+                            sx={selectPillSx}
+                            onOpen={() => setActiveSelectCell({ reqId: req.id, key: col.id })}
+                            onClose={() =>
+                              setActiveSelectCell((prev) =>
+                                prev?.reqId === req.id && prev?.key === col.id ? null : prev
+                              )
+                            }
                             onChange={(_, v) => {
                               if (v === null) {
                                 void onSelectChange(req, col, null)
@@ -538,8 +920,50 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                placeholder="选择或输入新选项"
+                                placeholder="查找或创建选项"
                                 variant="outlined"
+                                inputProps={{
+                                  ...params.inputProps,
+                                  readOnly: !isSelectActive(req.id, col.id),
+                                  value:
+                                    !isSelectActive(req.id, col.id) && params.inputProps.value
+                                      ? ''
+                                      : params.inputProps.value,
+                                  onKeyDown: (e) => {
+                                    if (e.key !== 'Enter') return
+                                    const target = e.currentTarget as HTMLInputElement
+                                    const v = target.value.trim()
+                                    if (!v) return
+                                    e.preventDefault()
+                                    void onSelectChange(req, col, v)
+                                  },
+                                }}
+                                InputProps={{
+                                  ...params.InputProps,
+                                  startAdornment: raw ? (
+                                    <>
+                                      {(() => {
+                                        const optIdx = col.options.indexOf(raw)
+                                        const pal = getSelectOptionColors(Math.max(0, optIdx))
+                                        return (
+                                          <Chip
+                                            size="small"
+                                            label={raw}
+                                            sx={{
+                                              backgroundColor: pal.bg,
+                                              color: pal.fg,
+                                              mr: 0.75,
+                                            }}
+                                            onDelete={() => void onSelectChange(req, col, null)}
+                                          />
+                                        )
+                                      })()}
+                                      {params.InputProps.startAdornment}
+                                    </>
+                                  ) : (
+                                    params.InputProps.startAdornment
+                                  ),
+                                }}
                                 onBlur={(e) => {
                                   const v = e.target.value?.trim() ?? ''
                                   if (!v) {
@@ -550,9 +974,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                                 }}
                                 sx={{
                                   '& .MuiOutlinedInput-root': {
-                                    borderRadius: 1.5,
-                                    fontSize: '0.85rem',
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
+                                    // actual visual style lives in selectPillSx
                                   },
                                 }}
                               />
@@ -561,17 +983,26 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                               const optIdx = col.options.indexOf(option as string)
                               const pal = getSelectOptionColors(Math.max(0, optIdx))
                               return (
-                                <Box component="li" {...props}>
-                                  <Chip
-                                    size="small"
-                                    label={option}
-                                    sx={{
-                                      backgroundColor: pal.bg,
-                                      color: pal.fg,
-                                      fontWeight: 600,
-                                      fontSize: '0.75rem',
-                                    }}
-                                  />
+                                <Box
+                                  component="li"
+                                  {...(() => {
+                                    const { key: _key, ...rest } = props as any
+                                    return rest
+                                  })()}
+                                >
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <Chip
+                                      size="small"
+                                      label={option}
+                                      sx={{
+                                        backgroundColor: pal.bg,
+                                        color: pal.fg,
+                                        fontWeight: 800,
+                                        fontSize: '0.75rem',
+                                      }}
+                                    />
+                                    <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
+                                  </Box>
                                 </Box>
                               )
                             }}
@@ -586,17 +1017,20 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         <Autocomplete
                           size="small"
                           options={members}
-                          getOptionLabel={(m) =>
-                            m.profile?.display_name || m.profile?.email || m.user_id
-                          }
+                          getOptionLabel={(m) => m.profile?.display_name || m.profile?.email || m.user_id}
                           isOptionEqualToValue={(a, b) => a.user_id === b.user_id}
                           value={mem ?? null}
-                          onChange={(_, v) =>
-                            void patchCustomCell(req.id, col.id, v ? v.user_id : null)
-                          }
+                          onChange={(_, v) => void patchCustomCell(req.id, col.id, v ? v.user_id : null)}
                           renderOption={(props, option) => {
                             return (
-                              <Box component="li" {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box
+                                component="li"
+                                {...(() => {
+                                  const { key: _key, ...rest } = props as any
+                                  return rest
+                                })()}
+                                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+                              >
                                 <Avatar
                                   src={option.profile?.avatar_url || undefined}
                                   sx={{ width: 26, height: 26, fontSize: 11, bgcolor: CEYLON_ORANGE }}
@@ -637,77 +1071,238 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         />
                       </TableCell>
                     )
-                    /* attachment */
-                    if (col.field_type === 'attachment') {
-                      const attachments = raw ? JSON.parse(typeof raw === 'string' ? raw : '[]') as {name: string, url: string}[] : []
-                      return (
-                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 160 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                            {attachments.map((att, idx) => (
-                              <Chip
-                                key={idx}
-                                size="small"
-                                label={att.name}
-                                component="a"
-                                href={att.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                clickable
-                                sx={{
-                                  height: 24,
-                                  fontSize: '0.75rem',
-                                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)',
-                                  '&:hover': { backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)' },
-                                }}
-                              />
-                            ))}
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              sx={{ minWidth: 'auto', px: 1, py: 0.25, fontSize: '0.7rem', borderRadius: 1 }}
-                              onClick={() => {
-                                const input = document.createElement('input')
-                                input.type = 'file'
-                                input.onchange = async (e) => {
-                                  const file = (e.target as HTMLInputElement).files?.[0]
-                                  if (!file) return
-                                  // Upload to storage and get URL
-                                  const formData = new FormData()
-                                  formData.append('file', file)
-                                  formData.append('projectId', projectId)
-                                  try {
-                                    const res = await fetch('/api/attachments/upload', {
-                                      method: 'POST',
-                                      body: formData,
-                                    })
-                                    if (!res.ok) throw new Error('Upload failed')
-                                    const { url } = await res.json()
-                                    const newAtt = { name: file.name, url }
-                                    const newAttachments = [...attachments, newAtt]
-                                    await patchCustomCell(req.id, col.id, JSON.stringify(newAttachments))
-                                  } catch (err) {
-                                    console.error('Upload error:', err)
-                                    alert('上传失败')
-                                  }
-                                }
-                                input.click()
-                              }}
-                            >
-                              + 添加
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      )
-                    }
                     return null
                   })}
 
+                  <TableCell
+                    sx={{
+                      width: 44,
+                      py: 0.5,
+                      verticalAlign: 'middle',
+                      textAlign: 'center',
+                    }}
+                  />
                 </TableRow>
-              ))
-            )}
+              )),
+              <TableRow
+                key="add-bottom-row"
+                sx={{
+                  '&:hover': { backgroundColor: 'transparent' },
+                }}
+              >
+                <TableCell
+                  sx={{
+                    width: 56,
+                    py: 0.25,
+                    verticalAlign: 'middle',
+                    textAlign: 'center',
+                  }}
+                >
+                  <IconButton
+                    size="small"
+                    data-testid="requirements-add-row-plus"
+                    aria-label="添加新行"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void addRow()
+                    }}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: 2,
+                      border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                    }}
+                  >
+                    <Add fontSize="small" />
+                  </IconButton>
+                </TableCell>
+                <TableCell colSpan={5 + columns.length} />
+              </TableRow>,
+            ]
+          )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      {/* 
+      <Drawer
+        anchor="right"
+        open={detailOpen}
+        onClose={closeDetail}
+        PaperProps={{
+          sx: {
+            width: 460,
+            backgroundColor: isDark ? '#1c1917' : '#ffffff',
+            borderLeft: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+          },
+        }}
+      >
+        <Box sx={{ p: 2.5, height: '100%', overflow: 'auto' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              编辑需求
+            </Typography>
+            <IconButton size="small" onClick={closeDetail} sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.55)' }}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start', mb: 2 }}>
+            <Chip
+              size="small"
+              label={`#${detailReq?.requirement_number ?? '—'}`}
+              sx={{
+                backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)',
+                fontWeight: 800,
+              }}
+            />
+          </Box>
+
+          <TextField
+            fullWidth
+            label="标题"
+            value={draftTitle}
+            onChange={(e) => setDraftTitle(e.target.value)}
+            size="small"
+            sx={{ mb: 1.5 }}
+          />
+          <TextField
+            fullWidth
+            label="描述"
+            value={draftDescription ?? ''}
+            onChange={(e) => setDraftDescription(e.target.value)}
+            size="small"
+            multiline
+            minRows={2}
+            sx={{ mb: 2 }}
+          />
+
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel>优先级</InputLabel>
+              <Select
+                label="优先级"
+                value={draftPriority}
+                onChange={(e) => setDraftPriority(Number(e.target.value))}
+              >
+                {Array.from({ length: 11 }).map((_, i) => (
+                  <MenuItem key={i} value={i}>
+                    {getPriorityLabel(i)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 190 }}>
+              <InputLabel>状态</InputLabel>
+              <Select
+                label="状态"
+                value={draftStatus}
+                onChange={(e) => setDraftStatus(String(e.target.value))}
+              >
+                {REQUIREMENT_STATUS.map((s) => (
+                  <MenuItem key={s.value} value={s.value}>
+                    {s.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Autocomplete
+            size="small"
+            options={members}
+            value={draftAssigneeId ? members.find((m) => m.user_id === draftAssigneeId) ?? null : null}
+            isOptionEqualToValue={(a, b) => a.user_id === b.user_id}
+            getOptionLabel={(m) => m.profile?.display_name || m.profile?.email || m.user_id}
+            onChange={(_, v) => setDraftAssigneeId(v ? v.user_id : null)}
+            renderInput={(params) => <TextField {...params} label="负责人" placeholder="选择成员" />}
+            sx={{ mb: 2 }}
+          />
+
+          <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', mb: 1 }}>
+            字段
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {columns.map((col) => {
+              const v = draftCustomValues[col.id] ?? null
+              if (col.field_type === 'text') {
+                return (
+                  <TextField
+                    key={col.id}
+                    fullWidth
+                    label={col.name}
+                    value={v ?? ''}
+                    onChange={(e) => setDraftCustomValues((prev) => ({ ...prev, [col.id]: e.target.value }))}
+                    size="small"
+                    multiline
+                    minRows={2}
+                  />
+                )
+              }
+
+              if (col.field_type === 'select') {
+                return (
+                  <Autocomplete
+                    key={col.id}
+                    freeSolo
+                    size="small"
+                    options={col.options}
+                    value={v ?? null}
+                    onChange={(_, next) => {
+                      const nv = typeof next === 'string' ? next : next === null ? null : null
+                      setDraftCustomValues((prev) => ({ ...prev, [col.id]: nv }))
+                    }}
+                    renderInput={(params) => <TextField {...params} label={col.name} placeholder="选择或输入" />}
+                  />
+                )
+              }
+
+              if (col.field_type === 'person') {
+                return (
+                  <Autocomplete
+                    key={col.id}
+                    size="small"
+                    options={members}
+                    value={v ? members.find((m) => m.user_id === v) ?? null : null}
+                    isOptionEqualToValue={(a, b) => a.user_id === b.user_id}
+                    getOptionLabel={(m) => m.profile?.display_name || m.profile?.email || m.user_id}
+                    onChange={(_, next) => setDraftCustomValues((prev) => ({ ...prev, [col.id]: next ? next.user_id : null }))}
+                    renderInput={(params) => <TextField {...params} label={col.name} placeholder="选择成员" />}
+                  />
+                )
+              }
+
+              return null
+            })}
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, mb: 1 }}>
+            <Button
+              color="error"
+              startIcon={<DeleteIcon fontSize="small" />}
+              onClick={() => {
+                if (!detailReq) return
+                void deleteRow(detailReq.id)
+                closeDetail()
+              }}
+            >
+              删除
+            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button variant="outlined" onClick={closeDetail}>
+                取消
+              </Button>
+              <Button variant="contained" disabled={detailSaving} onClick={() => void saveDetail()} sx={{ backgroundColor: CEYLON_ORANGE, '&:hover': { backgroundColor: '#A34712' } }}>
+                {detailSaving ? '保存中...' : '完成'}
+              </Button>
+            </Box>
+          </Box>
+        </Box>
+      </Drawer>
+      */}
 
       <Menu
         anchorEl={headerMenuAnchor}
@@ -745,9 +1340,24 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         </MenuItem>
       </Menu>
 
-      <Dialog open={addColOpen} onClose={() => setAddColOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>添加列</DialogTitle>
-        <DialogContent>
+      <Menu
+        anchorEl={addColMenuAnchor}
+        open={Boolean(addColMenuAnchor)}
+        onClose={closeAddColumnMenu}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+            width: 300,
+          },
+        }}
+      >
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            p: 2,
+          }}
+        >
           <TextField
             autoFocus
             fullWidth
@@ -755,28 +1365,38 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             value={newColName}
             onChange={(e) => setNewColName(e.target.value)}
             margin="normal"
+            size="small"
           />
-          <FormControl fullWidth margin="normal">
+
+          <FormControl fullWidth margin="normal" size="small">
             <InputLabel>类型</InputLabel>
             <Select
               label="类型"
               value={newColType}
-              onChange={(e) => setNewColType(e.target.value as 'text' | 'select' | 'person' | 'attachment')}
+              onChange={(e) => setNewColType(e.target.value as 'text' | 'select' | 'person')}
             >
               <MenuItem value="text">文本</MenuItem>
               <MenuItem value="select">单选（可新增选项）</MenuItem>
               <MenuItem value="person">人员（项目成员）</MenuItem>
-              <MenuItem value="attachment">附件</MenuItem>
             </Select>
           </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setAddColOpen(false)}>取消</Button>
-          <Button variant="contained" disabled={!newColName.trim() || colSaving} onClick={() => void addColumn()}>
-            添加
-          </Button>
-        </DialogActions>
-      </Dialog>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+            <Button size="small" onClick={closeAddColumnMenu}>
+              取消
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={!newColName.trim() || colSaving}
+              onClick={() => void addColumn()}
+              sx={{ backgroundColor: CEYLON_ORANGE, '&:hover': { backgroundColor: '#A34712' } }}
+            >
+              添加
+            </Button>
+          </Box>
+        </Box>
+      </Menu>
 
       <Dialog open={Boolean(renameCol)} onClose={() => setRenameCol(null)} maxWidth="xs" fullWidth>
         <DialogTitle>重命名列</DialogTitle>

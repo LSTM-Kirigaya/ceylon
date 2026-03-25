@@ -18,6 +18,19 @@ export async function PATCH(
 
   const { viewId, columnId } = await params
 
+  const uniqPreserveOrder = (items: string[]) => {
+    const seen = new Set<string>()
+    const res: string[] = []
+    for (const it of items) {
+      const v = String(it).trim()
+      if (!v) continue
+      if (seen.has(v)) continue
+      seen.add(v)
+      res.push(v)
+    }
+    return res
+  }
+
   try {
     const body = await request.json()
     const patch: Record<string, unknown> = {}
@@ -40,6 +53,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'No fields to update' }, { status: 400 })
     }
 
+    // Read before update for rename/delete support (best-effort).
+    const { data: beforeCol } = await supabase
+      .from('version_view_columns')
+      .select('id, version_view_id, name, field_type, options')
+      .eq('id', columnId)
+      .eq('version_view_id', viewId)
+      .maybeSingle()
+
     const { data, error } = await supabase
       .from('version_view_columns')
       .update(patch)
@@ -53,6 +74,56 @@ export async function PATCH(
     }
     if (!data) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    // Sync select options to project-level attribute storage (best-effort).
+    // This enables reusing the same attribute name's options across version views.
+    try {
+      if ((data as { field_type?: unknown }).field_type === 'select') {
+        const { data: vv } = await supabase.from('version_views').select('project_id').eq('id', viewId).single()
+        const pId = (vv as { project_id?: string | null }).project_id ?? null
+        const colName = (data as { name?: unknown }).name
+        if (pId && typeof colName === 'string' && colName.trim()) {
+          const viewOptsRaw = (data as { options?: unknown }).options
+          const viewOpts = Array.isArray(viewOptsRaw)
+            ? (viewOptsRaw as unknown[]).filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
+            : []
+
+          const { data: existingProjRow } = await supabase
+            .from('project_select_attribute_options')
+            .select('options')
+            .eq('project_id', pId)
+            .eq('attribute_name', colName)
+            .maybeSingle()
+
+          const existingRaw = (existingProjRow as { options?: unknown } | null)?.options
+          const existingOpts = Array.isArray(existingRaw)
+            ? (existingRaw as unknown[]).filter((x): x is string => typeof x === 'string').map((s) => s.trim()).filter(Boolean)
+            : []
+
+          const merged = uniqPreserveOrder([...existingOpts, ...viewOpts])
+
+          await supabase
+            .from('project_select_attribute_options')
+            .upsert({
+              project_id: pId,
+              attribute_name: colName,
+              options: merged,
+            })
+            .select()
+
+          // If column was renamed, we can optionally clean stale attribute rows.
+          if (beforeCol && typeof beforeCol.name === 'string' && beforeCol.name !== colName) {
+            await supabase
+              .from('project_select_attribute_options')
+              .delete()
+              .eq('project_id', pId)
+              .eq('attribute_name', beforeCol.name)
+          }
+        }
+      }
+    } catch (e) {
+      // ignore (table missing, RLS, etc.)
     }
 
     return NextResponse.json({ column: data })
