@@ -93,43 +93,73 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const isSelectActive = (reqId: string, key: string) =>
     activeSelectCell?.reqId === reqId && activeSelectCell?.key === key
 
-  const selectPillSx = {
-    '& .MuiOutlinedInput-root': {
-      borderRadius: 999,
-      minHeight: 36,
-      px: 1,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-      '& fieldset': {
-        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+  const PRIORITY_OPTIONS = [0, 1, 2, 3, 4, 5] as const
+  const priorityPalette: Record<number, string> = {
+    0: '#dc2626', // red
+    1: '#ea580c', // orange
+    2: '#f59e0b', // amber
+    3: '#eab308', // yellow
+    4: '#3b82f6', // blue
+    5: '#6b7280', // gray
+  }
+
+  const getPriorityColorP0P5 = (p: number) => priorityPalette[p] ?? '#6b7280'
+
+  const getSelectPillSx = (active: boolean) =>
+    ({
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 999,
+        minHeight: 36,
+        px: 1,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+        '& fieldset': {
+          borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
+        },
+        '&:hover fieldset': {
+          borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
+        },
+        '&.Mui-focused fieldset': {
+          borderColor: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)',
+        },
       },
-      '&:hover fieldset': {
-        borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
+      // Hide the duplicate text when not editing; only show the left pill chip.
+      '& .MuiAutocomplete-input': active
+        ? {
+            fontSize: '0.85rem',
+            py: 0.75,
+            color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+          }
+        : {
+            width: 0,
+            minWidth: 0,
+            opacity: 0,
+            p: 0,
+            m: 0,
+          },
+      '& .MuiAutocomplete-endAdornment': {
+        top: '50%',
+        transform: 'translateY(-50%)',
+        right: 10,
       },
-      '&.Mui-focused fieldset': {
-        borderColor: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)',
+      '& .MuiChip-root': {
+        height: 24,
+        borderRadius: 999,
+        fontWeight: 800,
+        fontSize: '0.75rem',
       },
-    },
-    '& .MuiAutocomplete-input': {
-      fontSize: '0.85rem',
-      py: 0.75,
-      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
-    },
-    '& .MuiAutocomplete-endAdornment': {
-      top: '50%',
-      transform: 'translateY(-50%)',
-      right: 10,
-    },
-    '& .MuiChip-root': {
-      height: 24,
-      borderRadius: 999,
-      fontWeight: 800,
-      fontSize: '0.75rem',
-    },
-    '& .MuiChip-deleteIcon': {
-      opacity: 0.7,
-      '&:hover': { opacity: 1 },
-    },
-  } as const
+      '& .MuiChip-deleteIcon': {
+        opacity: 0.7,
+        '&:hover': { opacity: 1 },
+      },
+    }) as const
+
+  const [optionMenuAnchor, setOptionMenuAnchor] = useState<null | HTMLElement>(null)
+  const [optionMenuContext, setOptionMenuContext] = useState<null | {
+    attributeName: string
+    oldValue: string
+  }>(null)
+  const [renameDraftValue, setRenameDraftValue] = useState('')
+  const [renaming, setRenaming] = useState(false)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -502,7 +532,6 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                   color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
                 }}
               >
-                更新时间
               </TableCell>
               {columns.map((col) => (
                 <TableCell
@@ -577,7 +606,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6 + columns.length} align="center" sx={{ py: 6 }}>
+                <TableCell colSpan={5 + columns.length} align="center" sx={{ py: 6 }}>
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                     <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
                       暂无数据，点击下方 `+` 添加新行
@@ -647,11 +676,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                           prev?.reqId === req.id && prev?.key === 'priority' ? null : prev
                         )
                       }
-                      options={Array.from({ length: 11 }).map((_, i) => i)}
-                      value={typeof req.priority === 'number' ? Math.max(0, Math.min(10, req.priority)) : 5}
+                      options={PRIORITY_OPTIONS as unknown as number[]}
+                      value={
+                        typeof req.priority === 'number'
+                          ? Math.max(0, Math.min(5, req.priority))
+                          : 5
+                      }
                       getOptionLabel={(v) => (typeof v === 'number' ? getPriorityLabel(v) : String(v))}
                       isOptionEqualToValue={(a, b) => a === b}
-                      sx={selectPillSx}
+                      sx={getSelectPillSx(isSelectActive(req.id, 'priority'))}
                       onChange={(_, v) => {
                         if (v === null) return
                         let parsed: number | null = null
@@ -662,14 +695,14 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                           if (nums?.length) parsed = Number.parseInt(nums[nums.length - 1], 10)
                         }
                         if (parsed === null || !Number.isFinite(parsed)) return
-                        const next = Math.max(0, Math.min(10, parsed))
+                        const next = Math.max(0, Math.min(5, parsed))
                         void patchRequirement(req.id, { priority: next })
                       }}
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           variant="outlined"
-                          placeholder="查找或创建选项"
+                          placeholder={isSelectActive(req.id, 'priority') ? '查找或创建选项' : ''}
                           inputProps={{
                             ...params.inputProps,
                             readOnly: !isSelectActive(req.id, 'priority'),
@@ -685,7 +718,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                               if (!nums?.length) return
                               const parsed = Number.parseInt(nums[nums.length - 1], 10)
                               if (!Number.isFinite(parsed)) return
-                              const next = Math.max(0, Math.min(10, parsed))
+                              const next = Math.max(0, Math.min(5, parsed))
                               e.preventDefault()
                               void patchRequirement(req.id, { priority: next })
                             },
@@ -698,13 +731,13 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                                   size="small"
                                   label={getPriorityLabel(
                                     typeof req.priority === 'number'
-                                      ? Math.max(0, Math.min(10, req.priority))
+                                      ? Math.max(0, Math.min(5, req.priority))
                                       : 5
                                   )}
                                   sx={{
-                                    backgroundColor: getPriorityColor(
+                                    backgroundColor: getPriorityColorP0P5(
                                       typeof req.priority === 'number'
-                                        ? Math.max(0, Math.min(10, req.priority))
+                                        ? Math.max(0, Math.min(5, req.priority))
                                         : 5
                                     ),
                                     color: '#fff',
@@ -736,13 +769,12 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                               size="small"
                               label={getPriorityLabel(option)}
                               sx={{
-                                backgroundColor: getPriorityColor(option),
+                                backgroundColor: getPriorityColorP0P5(option),
                                 color: '#fff',
                                 fontWeight: 800,
                                 fontSize: '0.75rem',
                               }}
                             />
-                            <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
                           </Box>
                         </Box>
                       )}
@@ -768,7 +800,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         return meta?.label || String(v)
                       }}
                       isOptionEqualToValue={(a, b) => a === b}
-                      sx={selectPillSx}
+                      sx={getSelectPillSx(isSelectActive(req.id, 'status'))}
                       onChange={(_, v) => {
                         if (v === null) return
                         const next = String(v).trim()
@@ -783,7 +815,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         <TextField
                           {...params}
                           variant="outlined"
-                          placeholder="查找或创建选项"
+                          placeholder={isSelectActive(req.id, 'status') ? '查找或创建选项' : ''}
                           inputProps={{
                             ...params.inputProps,
                             readOnly: !isSelectActive(req.id, 'status'),
@@ -855,15 +887,11 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                                   fontSize: '0.75rem',
                                 }}
                               />
-                              <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
                             </Box>
                           </Box>
                         )
                       }}
                     />
-                  </TableCell>
-                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 140 }}>
-                    {req.updated_at ? new Date(req.updated_at).toLocaleDateString() : '—'}
                   </TableCell>
                   {columns.map((col) => {
                     const raw = req.custom_values?.[col.id] ?? ''
@@ -903,7 +931,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                             options={col.options}
                             value={raw || null}
                             isOptionEqualToValue={(a, b) => a === b}
-                            sx={selectPillSx}
+                            sx={getSelectPillSx(isSelectActive(req.id, col.id))}
                             onOpen={() => setActiveSelectCell({ reqId: req.id, key: col.id })}
                             onClose={() =>
                               setActiveSelectCell((prev) =>
@@ -920,7 +948,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                             renderInput={(params) => (
                               <TextField
                                 {...params}
-                                placeholder="查找或创建选项"
+                                placeholder={isSelectActive(req.id, col.id) ? '查找或创建选项' : ''}
                                 variant="outlined"
                                 inputProps={{
                                   ...params.inputProps,
@@ -1001,7 +1029,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                                         fontSize: '0.75rem',
                                       }}
                                     />
-                                    <Typography sx={{ opacity: 0.45, fontWeight: 800 }}>···</Typography>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setOptionMenuAnchor(e.currentTarget)
+                                        setOptionMenuContext({
+                                          attributeName: col.name,
+                                          oldValue: String(option),
+                                        })
+                                        setRenameDraftValue(String(option))
+                                      }}
+                                      sx={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }}
+                                      aria-label="修改选项"
+                                    >
+                                      <MoreHoriz fontSize="small" />
+                                    </IconButton>
                                   </Box>
                                 </Box>
                               )
@@ -1117,13 +1161,123 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     <Add fontSize="small" />
                   </IconButton>
                 </TableCell>
-                <TableCell colSpan={5 + columns.length} />
+                <TableCell colSpan={4 + columns.length} />
               </TableRow>,
             ]
           )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Menu
+        anchorEl={optionMenuAnchor}
+        open={Boolean(optionMenuAnchor)}
+        onClose={() => {
+          setOptionMenuAnchor(null)
+          setOptionMenuContext(null)
+          setRenameDraftValue('')
+        }}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+            width: 280,
+          },
+        }}
+      >
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            p: 2,
+          }}
+        >
+          <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', mb: 1 }}>
+            修改选项
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            label="选项值"
+            value={renameDraftValue}
+            onChange={(e) => setRenameDraftValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              const ctx = optionMenuContext
+              const next = renameDraftValue.trim()
+              if (!ctx || !next || next === ctx.oldValue) return
+              void (async () => {
+                setRenaming(true)
+                try {
+                  await apiJson(`/api/projects/${projectId}/select-attributes/rename-option`, {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                      attributeName: ctx.attributeName,
+                      oldValue: ctx.oldValue,
+                      newValue: next,
+                    }),
+                  })
+                  await fetchAll()
+                  setOptionMenuAnchor(null)
+                  setOptionMenuContext(null)
+                  setRenameDraftValue('')
+                } finally {
+                  setRenaming(false)
+                }
+              })()
+            }}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+            <Button
+              size="small"
+              onClick={() => {
+                setOptionMenuAnchor(null)
+                setOptionMenuContext(null)
+                setRenameDraftValue('')
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={
+                renaming ||
+                !optionMenuContext ||
+                !renameDraftValue.trim() ||
+                renameDraftValue.trim() === optionMenuContext.oldValue
+              }
+              onClick={() => {
+                const ctx = optionMenuContext
+                const next = renameDraftValue.trim()
+                if (!ctx || !next || next === ctx.oldValue) return
+                void (async () => {
+                  setRenaming(true)
+                  try {
+                    await apiJson(`/api/projects/${projectId}/select-attributes/rename-option`, {
+                      method: 'PATCH',
+                      body: JSON.stringify({
+                        attributeName: ctx.attributeName,
+                        oldValue: ctx.oldValue,
+                        newValue: next,
+                      }),
+                    })
+                    await fetchAll()
+                    setOptionMenuAnchor(null)
+                    setOptionMenuContext(null)
+                    setRenameDraftValue('')
+                  } finally {
+                    setRenaming(false)
+                  }
+                })()
+              }}
+              sx={{ backgroundColor: CEYLON_ORANGE, '&:hover': { backgroundColor: '#A34712' } }}
+            >
+              {renaming ? '保存中...' : '保存'}
+            </Button>
+          </Box>
+        </Box>
+      </Menu>
 
       {/* 
       <Drawer
