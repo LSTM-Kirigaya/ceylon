@@ -77,6 +77,19 @@ const getLightTheme = (): Theme =>
           },
         },
       },
+      MuiToolbar: {
+        styleOverrides: {
+          root: {
+            minHeight: 'auto !important',
+            '@media (min-width: 600px)': {
+              minHeight: 'auto !important',
+            },
+            '@media (min-width: 0px) and (orientation: landscape)': {
+              minHeight: 'auto !important',
+            },
+          },
+        },
+      },
     },
   })
 
@@ -140,6 +153,19 @@ const getDarkTheme = (): Theme =>
           root: {
             borderRadius: 8,
             backgroundColor: '#1c1917',
+          },
+        },
+      },
+      MuiToolbar: {
+        styleOverrides: {
+          root: {
+            minHeight: 'auto !important',
+            '@media (min-width: 600px)': {
+              minHeight: 'auto !important',
+            },
+            '@media (min-width: 0px) and (orientation: landscape)': {
+              minHeight: 'auto !important',
+            },
           },
         },
       },
