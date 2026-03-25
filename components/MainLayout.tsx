@@ -363,7 +363,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           zIndex: (theme) => theme.zIndex.drawer + 1,
         }}
       >
-        <Toolbar sx={{ minHeight: 56, px: 2, gap: 2 }}>
+        <Toolbar sx={{ minHeight: 48, px: 1.5, gap: 1.5 }}>
           {/* Left: Mobile Menu Button + Logo + Title */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <IconButton
@@ -444,7 +444,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </Box>
 
           {/* Right: Search + Avatar */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             {/* Search Button - Styled like reference image */}
             <Button
               onClick={() => setCommandPaletteOpen(true)}
@@ -454,7 +454,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 justifyContent: 'space-between',
                 gap: 1.5,
                 px: 2,
-                py: 0.75,
+                py: 0.5,
                 minWidth: 200,
                 borderRadius: 10,
                 backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
@@ -561,8 +561,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             display: { xs: 'none', md: 'block' },
             position: 'fixed',
             left: 0,
-            top: 56,
-            height: 'calc(100% - 56px)',
+            top: 48,
+            height: 'calc(100% - 48px)',
             width: currentSidebarWidth,
             backgroundColor: isDark ? '#0d0d0d' : '#f5f5f4',
             borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
@@ -585,7 +585,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           width: { md: `calc(100% - ${currentSidebarWidth}px)` },
           minHeight: '100vh',
           backgroundColor: isDark ? '#0a0a0a' : '#fafafa',
-          pt: 7,
+          pt: 6,
         }}
       >
         {children}
