@@ -44,5 +44,7 @@ export default defineConfig({
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
         timeout: process.env.CI ? 180_000 : 120_000,
+        // Ensure Supabase and test creds reach the Next.js child (middleware requires SUPABASE_* at runtime).
+        env: { ...process.env },
       },
 })
