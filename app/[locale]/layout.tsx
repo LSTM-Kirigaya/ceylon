@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import { getMessages, getTranslations } from 'next-intl/server'
 import { locales } from '@/i18n/config'
 import { NextIntlClientProvider } from 'next-intl'
@@ -8,14 +8,10 @@ import { ThemeProvider } from "@/components/ThemeProvider"
 import { AuthProvider } from "@/components/AuthProvider"
 import { PWARegister } from "@/components/PWARegister"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 })
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
@@ -25,13 +21,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return {
     title: {
       default: t('title'),
-      template: "%s | Ceylon",
+      template: "%s | ceylonm",
     },
     description: t('description'),
-    keywords: ["requirements management", "project management", "team collaboration", "agile development", "product management", "Ceylon"],
-    authors: [{ name: "Ceylon Team" }],
-    creator: "Ceylon Team",
-    publisher: "Ceylon",
+    keywords: ["requirements management", "project management", "team collaboration", "agile development", "product management", "ceylonm"],
+    authors: [{ name: "ceylonm Team" }],
+    creator: "ceylonm Team",
+    publisher: "ceylonm",
     metadataBase: new URL("https://ceylon.app"),
     alternates: {
       canonical: "/",
@@ -40,7 +36,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       title: t('title'),
       description: t('description'),
       url: "https://ceylon.app",
-      siteName: "Ceylon",
+      siteName: "ceylonm",
       type: "website",
       images: [
         {
@@ -94,9 +90,9 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
-      title: "Ceylon",
+      title: "ceylonm",
     },
-    applicationName: "Ceylon",
+    applicationName: "ceylonm",
     formatDetection: {
       telephone: false,
     },
@@ -138,7 +134,7 @@ export default async function LocaleLayout({
           </>
         ) : null}
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${montserrat.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <AuthProvider>

@@ -1,20 +1,16 @@
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Montserrat } from "next/font/google"
 import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
   subsets: ["latin"],
-})
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 })
 
 export const metadata: Metadata = {
-  title: "Ceylon - Modern Requirements Management Platform",
-  description: "Ceylon is a modern requirements management platform",
+  title: "ceylonm - Modern Requirements Management Platform",
+  description: "ceylonm is a modern requirements management platform",
 }
 
 export const viewport: Viewport = {
@@ -30,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${montserrat.variable} antialiased`}>
         {children}
       </body>
     </html>
