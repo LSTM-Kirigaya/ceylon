@@ -48,6 +48,9 @@ import { getSelectOptionColors } from '@/lib/selectOptionColors'
 import type { Requirement, ProjectMember, VersionView, VersionViewColumn } from '@/types'
 import { getPriorityColor, getPriorityLabel, REQUIREMENT_STATUS } from '@/types'
 
+// React types used in handlers (avoid importing full React default)
+import type React from 'react'
+
 interface RequirementsTableProps {
   versionViewId: string
   projectId: string
@@ -84,7 +87,11 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const [viewSaving, setViewSaving] = useState(false)
 
   const [headerMenuAnchor, setHeaderMenuAnchor] = useState<null | HTMLElement>(null)
-  const [headerMenuCol, setHeaderMenuCol] = useState<VersionViewColumn | null>(null)
+  const [headerMenuTarget, setHeaderMenuTarget] = useState<
+    | null
+    | { kind: 'fixed'; key: 'number' | 'title' | 'priority' | 'status' }
+    | { kind: 'custom'; col: VersionViewColumn }
+  >(null)
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
@@ -148,6 +155,51 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     setSelectMenuQuery('')
   }
 
+  const [hiddenColumnKeys, setHiddenColumnKeys] = useState<string[]>([])
+  const isHidden = useCallback((k: string) => hiddenColumnKeys.includes(k), [hiddenColumnKeys])
+  const toggleHidden = useCallback((k: string) => {
+    setHiddenColumnKeys((prev) => (prev.includes(k) ? prev.filter((x) => x !== k) : [...prev, k]))
+  }, [])
+
+  const [sortState, setSortState] = useState<null | { key: string; dir: 'asc' | 'desc' }>(null)
+  const clearSort = () => setSortState(null)
+
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+  const getWidth = useCallback(
+    (k: string, fallback: number) => {
+      const v = columnWidths[k]
+      return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+    },
+    [columnWidths]
+  )
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const any = (window as any).__ceylon_resize as
+        | undefined
+        | { key: string; startX: number; startW: number }
+      if (!any) return
+      const delta = e.clientX - any.startX
+      const next = Math.max(80, Math.min(800, any.startW + delta))
+      setColumnWidths((prev) => ({ ...prev, [any.key]: next }))
+    }
+    const onUp = () => {
+      ;(window as any).__ceylon_resize = undefined
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+    return () => {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+  }, [])
+
+  const startResize = (key: string, startW: number, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    ;(window as any).__ceylon_resize = { key, startX: e.clientX, startW }
+  }
+
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
@@ -203,13 +255,34 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     return m
   }, [members])
 
+  const visibleColumns = useMemo(
+    () => columns.filter((c) => !isHidden(`c:${c.id}`)),
+    [columns, isHidden]
+  )
+
+  const getSortValue = useCallback(
+    (req: Requirement, key: string) => {
+      if (key === 'number') return req.requirement_number
+      if (key === 'title') return req.title || ''
+      if (key === 'priority') return typeof req.priority === 'number' ? req.priority : 999
+      if (key === 'status') return req.status || ''
+      if (key.startsWith('c:')) {
+        const colId = key.slice(2)
+        return (req.custom_values?.[colId] ?? '') || ''
+      }
+      return ''
+    },
+    []
+  )
+
   const filteredRows = useMemo(() => {
-    if (!searchQuery) return requirements
-    const q = searchQuery.toLowerCase()
-    return requirements.filter((req) => {
+    const base = (() => {
+      if (!searchQuery) return requirements
+      const q = searchQuery.toLowerCase()
+      return requirements.filter((req) => {
       if (req.title.toLowerCase().includes(q)) return true
       const cv = req.custom_values || {}
-      for (const c of columns) {
+      for (const c of visibleColumns) {
         const v = cv[c.id]
         if (v) {
           if (c.field_type === 'person') {
@@ -220,8 +293,19 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         }
       }
       return false
+      })
+    })()
+
+    if (!sortState) return base
+    const dir = sortState.dir === 'asc' ? 1 : -1
+    const key = sortState.key
+    return [...base].sort((a, b) => {
+      const av = getSortValue(a, key) as any
+      const bv = getSortValue(b, key) as any
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
+      return String(av).localeCompare(String(bv), 'zh-Hans-CN') * dir
     })
-  }, [requirements, searchQuery, columns, memberById])
+  }, [requirements, searchQuery, visibleColumns, memberById, sortState, getSortValue])
 
   const patchRequirement = async (id: string, patch: Record<string, unknown>) => {
     const { requirement } = await apiJson<{ requirement: Requirement }>(`/api/requirements/${id}`, {
@@ -473,34 +557,166 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             <TableRow sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
               <TableCell
                 sx={{
-                  width: 56,
+                  width: getWidth('number', 56),
+                  minWidth: getWidth('number', 56),
+                  position: 'relative',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
                 }}
               >
-                #
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                  <Typography component="span" variant="inherit" sx={{ fontWeight: 700 }}>
+                    #
+                  </Typography>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      setHeaderMenuAnchor(e.currentTarget)
+                      setHeaderMenuTarget({ kind: 'fixed', key: 'number' })
+                    }}
+                    sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
+                    aria-label="列操作: #"
+                  >
+                    <MoreHoriz fontSize="small" />
+                  </IconButton>
+                </Box>
+                <Box
+                  onMouseDown={(e) => startResize('number', getWidth('number', 56), e)}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: -3,
+                    width: 6,
+                    height: '100%',
+                    cursor: 'col-resize',
+                    zIndex: 2,
+                  }}
+                />
               </TableCell>
               <TableCell
                 sx={{
-                  minWidth: 200,
+                  width: getWidth('title', 260),
+                  minWidth: getWidth('title', 200),
+                  position: 'relative',
                   fontWeight: 700,
                   fontSize: '0.75rem',
                   color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
                 }}
               >
-                标题
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                  <Typography component="span" variant="inherit" sx={{ fontWeight: 700 }}>
+                    标题
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        setHeaderMenuAnchor(e.currentTarget)
+                        setHeaderMenuTarget({ kind: 'fixed', key: 'title' })
+                      }}
+                      sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
+                      aria-label="列操作: 标题"
+                    >
+                      <MoreHoriz fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+                <Box
+                  onMouseDown={(e) => startResize('title', getWidth('title', 260), e)}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    right: -3,
+                    width: 6,
+                    height: '100%',
+                    cursor: 'col-resize',
+                    zIndex: 2,
+                  }}
+                />
               </TableCell>
-              <TableCell
-                sx={{
-                  width: 120,
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
-                }}
-              >
-                优先级
-              </TableCell>
+              {!isHidden('priority') && (
+                <TableCell
+                  sx={{
+                    width: getWidth('priority', 120),
+                    minWidth: getWidth('priority', 120),
+                    position: 'relative',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                    <Typography component="span" variant="inherit" sx={{ fontWeight: 700 }}>
+                      优先级
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        setHeaderMenuAnchor(e.currentTarget)
+                        setHeaderMenuTarget({ kind: 'fixed', key: 'priority' })
+                      }}
+                      sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
+                      aria-label="列操作: 优先级"
+                    >
+                      <MoreHoriz fontSize="small" />
+                    </IconButton>
+                  </Box>
+                  <Box
+                    onMouseDown={(e) => startResize('priority', getWidth('priority', 120), e)}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: -3,
+                      width: 6,
+                      height: '100%',
+                      cursor: 'col-resize',
+                      zIndex: 2,
+                    }}
+                  />
+                </TableCell>
+              )}
+              {!isHidden('status') && (
+                <TableCell
+                  sx={{
+                    width: getWidth('status', 140),
+                    minWidth: getWidth('status', 140),
+                    position: 'relative',
+                    fontWeight: 700,
+                    fontSize: '0.75rem',
+                    color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 0.5 }}>
+                    <Typography component="span" variant="inherit" sx={{ fontWeight: 700 }}>
+                      状态
+                    </Typography>
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        setHeaderMenuAnchor(e.currentTarget)
+                        setHeaderMenuTarget({ kind: 'fixed', key: 'status' })
+                      }}
+                      sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
+                      aria-label="列操作: 状态"
+                    >
+                      <MoreHoriz fontSize="small" />
+                    </IconButton>
+                  </Box>
+                  <Box
+                    onMouseDown={(e) => startResize('status', getWidth('status', 140), e)}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: -3,
+                      width: 6,
+                      height: '100%',
+                      cursor: 'col-resize',
+                      zIndex: 2,
+                    }}
+                  />
+                </TableCell>
+              )}
               <TableCell
                 sx={{
                   width: 140,
@@ -509,22 +725,14 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                   color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
                 }}
               >
-                状态
               </TableCell>
-              <TableCell
-                sx={{
-                  width: 140,
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
-                }}
-              >
-              </TableCell>
-              {columns.map((col) => (
+              {visibleColumns.map((col) => (
                 <TableCell
                   key={col.id}
                   sx={{
-                    minWidth: 160,
+                    width: getWidth(`c:${col.id}`, 160),
+                    minWidth: getWidth(`c:${col.id}`, 160),
+                    position: 'relative',
                     fontWeight: 700,
                     fontSize: '0.75rem',
                     color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.55)',
@@ -552,7 +760,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         size="small"
                         onClick={(e) => {
                           setHeaderMenuAnchor(e.currentTarget)
-                          setHeaderMenuCol(col)
+                          setHeaderMenuTarget({ kind: 'custom', col })
                         }}
                         sx={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.35)' }}
                         aria-label={`列操作: ${col.name}`}
@@ -570,6 +778,18 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       </IconButton>
                     </Box>
                   </Box>
+                  <Box
+                    onMouseDown={(e) => startResize(`c:${col.id}`, getWidth(`c:${col.id}`, 160), e)}
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      right: -3,
+                      width: 6,
+                      height: '100%',
+                      cursor: 'col-resize',
+                      zIndex: 2,
+                    }}
+                  />
                 </TableCell>
               ))}
               <TableCell
@@ -593,7 +813,17 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           <TableBody>
             {filteredRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5 + columns.length} align="center" sx={{ py: 6 }}>
+                <TableCell
+                  colSpan={
+                    3 + // number + title + blank cell
+                    (isHidden('priority') ? 0 : 1) +
+                    (isHidden('status') ? 0 : 1) +
+                    visibleColumns.length +
+                    1 // add-column plus
+                  }
+                  align="center"
+                  sx={{ py: 6 }}
+                >
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
                     <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
                       暂无数据，点击下方 `+` 添加新行
@@ -625,13 +855,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                 >
                   <TableCell
                     sx={{
+                      width: getWidth('number', 56),
+                      minWidth: getWidth('number', 56),
                       color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
                       fontSize: '0.8rem',
                     }}
                   >
                     {req.requirement_number}
                   </TableCell>
-                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle' }}>
+                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: getWidth('title', 260), minWidth: getWidth('title', 200) }}>
                     <TextField
                       variant="standard"
                       fullWidth
@@ -651,7 +883,10 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       }}
                     />
                   </TableCell>
-                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 120 }}>
+                  {!isHidden('priority') && (
+                    <TableCell
+                      sx={{ py: 0.5, verticalAlign: 'middle', width: getWidth('priority', 120), minWidth: getWidth('priority', 120) }}
+                    >
                     <Box
                       component="button"
                       type="button"
@@ -695,8 +930,12 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         style={{ opacity: 0.75 }}
                       />
                     </Box>
-                  </TableCell>
-                  <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 140 }}>
+                    </TableCell>
+                  )}
+                  {!isHidden('status') && (
+                    <TableCell
+                      sx={{ py: 0.5, verticalAlign: 'middle', width: getWidth('status', 140), minWidth: getWidth('status', 140) }}
+                    >
                     <Box
                       component="button"
                       type="button"
@@ -738,12 +977,21 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       })()}
                       <KeyboardArrowDown fontSize="small" style={{ opacity: 0.75 }} />
                     </Box>
-                  </TableCell>
-                  {columns.map((col) => {
+                    </TableCell>
+                  )}
+                  {visibleColumns.map((col) => {
                     const raw = req.custom_values?.[col.id] ?? ''
                     if (col.field_type === 'text') {
                       return (
-                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 160 }}>
+                        <TableCell
+                          key={col.id}
+                          sx={{
+                            py: 0.5,
+                            verticalAlign: 'middle',
+                            width: getWidth(`c:${col.id}`, 160),
+                            minWidth: getWidth(`c:${col.id}`, 160),
+                          }}
+                        >
                           <TextField
                             variant="standard"
                             fullWidth
@@ -768,7 +1016,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     }
                     if (col.field_type === 'select') {
                       return (
-                        <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 168 }}>
+                        <TableCell
+                          key={col.id}
+                          sx={{
+                            py: 0.5,
+                            verticalAlign: 'middle',
+                            width: getWidth(`c:${col.id}`, 168),
+                            minWidth: getWidth(`c:${col.id}`, 168),
+                          }}
+                        >
                           <Box
                             component="button"
                             type="button"
@@ -829,7 +1085,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     /* person */
                     const mem = raw ? memberById[raw] : undefined
                     return (
-                      <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 180 }}>
+                      <TableCell
+                        key={col.id}
+                        sx={{
+                          py: 0.5,
+                          verticalAlign: 'middle',
+                          width: getWidth(`c:${col.id}`, 180),
+                          minWidth: getWidth(`c:${col.id}`, 180),
+                        }}
+                      >
                         <Autocomplete
                           size="small"
                           options={members}
@@ -933,7 +1197,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     <Add fontSize="small" />
                   </IconButton>
                 </TableCell>
-                <TableCell colSpan={4 + columns.length} />
+                <TableCell
+                  colSpan={
+                    2 + // title + blank cell
+                    (isHidden('priority') ? 0 : 1) +
+                    (isHidden('status') ? 0 : 1) +
+                    visibleColumns.length +
+                    1 // add-column plus
+                  }
+                />
               </TableRow>,
             ]
           )}
@@ -1429,7 +1701,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         open={Boolean(headerMenuAnchor)}
         onClose={() => {
           setHeaderMenuAnchor(null)
-          setHeaderMenuCol(null)
+          setHeaderMenuTarget(null)
         }}
         transitionDuration={0}
         TransitionProps={{ timeout: 0 }}
@@ -1442,21 +1714,103 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
       >
         <MenuItem
           onClick={() => {
-            if (headerMenuCol) {
-              setRenameCol(headerMenuCol)
-              setRenameDraft(headerMenuCol.name)
+            if (headerMenuTarget?.kind === 'custom') {
+              setRenameCol(headerMenuTarget.col)
+              setRenameDraft(headerMenuTarget.col.name)
             }
             setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
           }}
+          disabled={headerMenuTarget?.kind !== 'custom'}
         >
           重命名列
         </MenuItem>
         <MenuItem
           onClick={() => {
-            if (headerMenuCol) void deleteColumn(headerMenuCol)
+            const t = headerMenuTarget
+            if (!t) return
+            const key =
+              t.kind === 'fixed' ? t.key : `c:${t.col.id}`
+            toggleHidden(key)
             setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+        >
+          {(() => {
+            const t = headerMenuTarget
+            if (!t) return '隐藏字段'
+            const key = t.kind === 'fixed' ? t.key : `c:${t.col.id}`
+            return isHidden(key) ? '显示字段' : '隐藏字段'
+          })()}
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            const t = headerMenuTarget
+            if (!t) return
+            const k = t.kind === 'fixed' ? t.key : `c:${t.col.id}`
+            setSortState({ key: k, dir: 'asc' })
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+        >
+          按该字段升序排序
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            const t = headerMenuTarget
+            if (!t) return
+            const k = t.kind === 'fixed' ? t.key : `c:${t.col.id}`
+            setSortState({ key: k, dir: 'desc' })
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+        >
+          按该字段倒序排序
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            clearSort()
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+          disabled={!sortState}
+        >
+          取消排序
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            const t = headerMenuTarget
+            if (!t || t.kind !== 'custom') return
+            openAddColumnMenu({ currentTarget: headerMenuAnchor as HTMLElement }, { afterPosition: t.col.position - 1 })
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+          disabled={headerMenuTarget?.kind !== 'custom'}
+        >
+          向左插入字段/列
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            const t = headerMenuTarget
+            if (!t || t.kind !== 'custom') return
+            openAddColumnMenu({ currentTarget: headerMenuAnchor as HTMLElement }, { col: t.col })
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
+          }}
+          disabled={headerMenuTarget?.kind !== 'custom'}
+        >
+          向右插入字段/列
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (headerMenuTarget?.kind === 'custom') void deleteColumn(headerMenuTarget.col)
+            setHeaderMenuAnchor(null)
+            setHeaderMenuTarget(null)
           }}
           sx={{ color: '#ef4444' }}
+          disabled={headerMenuTarget?.kind !== 'custom'}
         >
           删除列
         </MenuItem>
