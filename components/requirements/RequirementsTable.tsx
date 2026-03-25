@@ -51,6 +51,9 @@ import { getPriorityColor, getPriorityLabel, REQUIREMENT_STATUS } from '@/types'
 // React types used in handlers (avoid importing full React default)
 import type React from 'react'
 
+/** 编号列（#）固定像素宽，不参与列宽拖拽与 columnWidths 状态 */
+const NUMBER_COL_WIDTH_PX = 56
+
 interface RequirementsTableProps {
   versionViewId: string
   projectId: string
@@ -71,6 +74,14 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const [view, setView] = useState<VersionView | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null)
+  const [filters, setFilters] = useState<
+    { id: string; key: string; op: 'eq' | 'neq' | 'contains' | 'not_completed'; value: string }[]
+  >([])
+
+  const [draftFilterKey, setDraftFilterKey] = useState<string>('priority')
+  const [draftFilterOp, setDraftFilterOp] = useState<'eq' | 'neq' | 'contains' | 'not_completed'>('eq')
+  const [draftFilterValue, setDraftFilterValue] = useState<string>('')
 
   const [addColMenuAnchor, setAddColMenuAnchor] = useState<null | HTMLElement>(null)
   const [addColAfterPosition, setAddColAfterPosition] = useState<number | null>(null)
@@ -167,6 +178,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const getWidth = useCallback(
     (k: string, fallback: number) => {
+      if (k === 'number') return NUMBER_COL_WIDTH_PX
       const v = columnWidths[k]
       return typeof v === 'number' && Number.isFinite(v) ? v : fallback
     },
@@ -179,6 +191,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         | undefined
         | { key: string; startX: number; startW: number }
       if (!any) return
+      if (any.key === 'number') return
       const delta = e.clientX - any.startX
       const next = Math.max(80, Math.min(800, any.startW + delta))
       setColumnWidths((prev) => ({ ...prev, [any.key]: next }))
@@ -203,32 +216,25 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [reqRes, colRes, memRes, viewRes] = await Promise.all([
-        apiJson<{ requirements: Requirement[] }>(`/api/version-views/${versionViewId}/requirements`),
-        apiJson<{ columns: VersionViewColumn[] }>(
-          `/api/version-views/${versionViewId}/columns?projectId=${encodeURIComponent(projectId)}`
+      const [fullRes, memRes] = await Promise.all([
+        apiJson<{ data: { view: VersionView; columns: VersionViewColumn[]; requirements: Requirement[] } }>(
+          `/api/version-views/${versionViewId}/full?projectId=${encodeURIComponent(projectId)}`
         ),
         apiJson<{ members: ProjectMember[] }>(`/api/projects/${projectId}/members`),
-        apiJson<{ view: VersionView }>(
-          `/api/version-views/${versionViewId}?projectId=${encodeURIComponent(projectId)}`
-        ),
       ])
 
-      const rawCols = colRes.columns ?? []
-      setColumns(
-        rawCols.map((c) => ({
-          ...c,
-          options: normalizeOptions(c.options),
-        }))
-      )
-      setRequirements(reqRes.requirements ?? [])
+      const snap = fullRes.data
+      setView(snap?.view ?? null)
+
+      const rawCols = snap?.columns ?? []
+      setColumns(rawCols.map((c) => ({ ...c, options: normalizeOptions(c.options) })))
+      setRequirements(snap?.requirements ?? [])
       setMembers(
         (memRes.members ?? []).map((m) => ({
           ...m,
           profile: Array.isArray(m.profile) ? m.profile[0] : m.profile,
         }))
       )
-      setView(viewRes.view ?? null)
     } catch (e) {
       console.error('RequirementsTable fetch', e)
     } finally {
@@ -260,6 +266,70 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     [columns, isHidden]
   )
 
+  const filterFieldOptions = useMemo(() => {
+    const base = [
+      { key: 'priority', label: '优先级', type: 'select' as const },
+      { key: 'status', label: '状态', type: 'select' as const },
+      { key: 'title', label: '标题', type: 'text' as const },
+    ]
+    const dynamic = columns.map((c) => ({
+      key: `c:${c.id}`,
+      label: c.name,
+      type: c.field_type === 'text' ? ('text' as const) : c.field_type === 'person' ? ('person' as const) : ('select' as const),
+      col: c,
+    }))
+    return [...base, ...dynamic]
+  }, [columns])
+
+  const applyFilters = useCallback(
+    (req: Requirement) => {
+      for (const f of filters) {
+        if (f.key === 'priority') {
+          const p = typeof req.priority === 'number' ? req.priority : 5
+          if (f.op === 'eq' && String(p) !== f.value) return false
+          if (f.op === 'neq' && String(p) === f.value) return false
+          continue
+        }
+        if (f.key === 'status') {
+          if (f.op === 'not_completed') {
+            if (req.status === 'completed') return false
+            continue
+          }
+          if (f.op === 'eq' && req.status !== f.value) return false
+          if (f.op === 'neq' && req.status === f.value) return false
+          continue
+        }
+        if (f.key === 'title') {
+          const t = (req.title || '').toLowerCase()
+          const q = (f.value || '').toLowerCase()
+          if (f.op === 'contains' && q && !t.includes(q)) return false
+          if (f.op === 'eq' && q && t !== q) return false
+          if (f.op === 'neq' && q && t === q) return false
+          continue
+        }
+        if (f.key.startsWith('c:')) {
+          const colId = f.key.slice(2)
+          const col = columns.find((c) => c.id === colId)
+          const raw = (req.custom_values?.[colId] ?? '') as string
+          if (!col) continue
+          if (col.field_type === 'text') {
+            const t = String(raw || '').toLowerCase()
+            const q = (f.value || '').toLowerCase()
+            if (f.op === 'contains' && q && !t.includes(q)) return false
+            if (f.op === 'eq' && q && t !== q) return false
+            if (f.op === 'neq' && q && t === q) return false
+          } else {
+            // select/person treat as exact match
+            if (f.op === 'eq' && String(raw || '') !== f.value) return false
+            if (f.op === 'neq' && String(raw || '') === f.value) return false
+          }
+        }
+      }
+      return true
+    },
+    [filters, columns]
+  )
+
   const getSortValue = useCallback(
     (req: Requirement, key: string) => {
       if (key === 'number') return req.requirement_number
@@ -276,25 +346,27 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   )
 
   const filteredRows = useMemo(() => {
-    const base = (() => {
+    const searched = (() => {
       if (!searchQuery) return requirements
       const q = searchQuery.toLowerCase()
       return requirements.filter((req) => {
-      if (req.title.toLowerCase().includes(q)) return true
-      const cv = req.custom_values || {}
-      for (const c of visibleColumns) {
-        const v = cv[c.id]
-        if (v) {
-          if (c.field_type === 'person') {
-            const mem = memberById[v]
-            const label = (mem?.profile?.display_name || mem?.profile?.email || v).toLowerCase()
-            if (label.includes(q)) return true
-          } else if (String(v).toLowerCase().includes(q)) return true
+        if (req.title.toLowerCase().includes(q)) return true
+        const cv = req.custom_values || {}
+        for (const c of visibleColumns) {
+          const v = cv[c.id]
+          if (v) {
+            if (c.field_type === 'person') {
+              const mem = memberById[v]
+              const label = (mem?.profile?.display_name || mem?.profile?.email || v).toLowerCase()
+              if (label.includes(q)) return true
+            } else if (String(v).toLowerCase().includes(q)) return true
+          }
         }
-      }
-      return false
+        return false
       })
     })()
+
+    const base = filters.length > 0 ? searched.filter(applyFilters) : searched
 
     if (!sortState) return base
     const dir = sortState.dir === 'asc' ? 1 : -1
@@ -305,7 +377,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
       if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir
       return String(av).localeCompare(String(bv), 'zh-Hans-CN') * dir
     })
-  }, [requirements, searchQuery, visibleColumns, memberById, sortState, getSortValue])
+  }, [requirements, searchQuery, visibleColumns, memberById, sortState, getSortValue, applyFilters, filters.length])
 
   const patchRequirement = async (id: string, patch: Record<string, unknown>) => {
     const { requirement } = await apiJson<{ requirement: Requirement }>(`/api/requirements/${id}`, {
@@ -323,14 +395,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const fetchRequirementsOnly = useCallback(async () => {
     try {
-      const reqRes = await apiJson<{ requirements: Requirement[] }>(
-        `/api/version-views/${versionViewId}/requirements`
+      const fullRes = await apiJson<{ data: { view: VersionView; columns: VersionViewColumn[]; requirements: Requirement[] } }>(
+        `/api/version-views/${versionViewId}/full?projectId=${encodeURIComponent(projectId)}`
       )
-      setRequirements(reqRes.requirements ?? [])
+      const reqs = fullRes.data?.requirements ?? []
+      setRequirements(reqs)
     } catch (e) {
       console.error('fetchRequirementsOnly', e)
     }
-  }, [versionViewId])
+  }, [versionViewId, projectId])
 
   const patchCustomCell = async (reqId: string, columnId: string, value: string | null) => {
     await patchRequirement(reqId, { custom_values: { [columnId]: value } })
@@ -517,16 +590,61 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 1.5,
           mb: 2,
         }}
       >
-        <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', mr: 'auto' }}>
-          {filteredRows.length} 行
-          {searchQuery ? ` · 已筛选` : ''}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
+          <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
+            {filteredRows.length} 行
+            {searchQuery || filters.length > 0 ? ` · 已筛选` : ''}
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
+            sx={{ textTransform: 'none', borderRadius: 2 }}
+          >
+            筛选
+          </Button>
+          {filters.length > 0 && (
+            <Button
+              size="small"
+              onClick={() => setFilters([])}
+              sx={{ textTransform: 'none', color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)' }}
+            >
+              清空筛选
+            </Button>
+          )}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+            {filters.map((f) => {
+              const field = filterFieldOptions.find((x) => x.key === f.key)
+              const label =
+                f.key === 'priority'
+                  ? `优先级 ${f.op === 'neq' ? '≠' : '='} P${f.value}`
+                  : f.key === 'status' && f.op === 'not_completed'
+                    ? '状态 = 未完成'
+                    : f.key === 'status'
+                      ? `状态 ${f.op === 'neq' ? '≠' : '='} ${REQUIREMENT_STATUS.find((s) => s.value === f.value)?.label || f.value}`
+                      : `${field?.label || f.key} ${f.op === 'contains' ? '包含' : f.op === 'neq' ? '≠' : '='} ${f.value}`
+              return (
+                <Chip
+                  key={f.id}
+                  size="small"
+                  label={label}
+                  onDelete={() => setFilters((prev) => prev.filter((x) => x.id !== f.id))}
+                  sx={{
+                    height: 22,
+                    fontSize: '0.7rem',
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                  }}
+                />
+              )
+            })}
+          </Box>
+        </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="视图名称与描述、删除视图">
             <Button
@@ -542,6 +660,201 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         </Box>
       </Box>
 
+      <Menu
+        anchorEl={filterMenuAnchor}
+        open={Boolean(filterMenuAnchor)}
+        onClose={() => {
+          setFilterMenuAnchor(null)
+          setDraftFilterValue('')
+          setDraftFilterOp('eq')
+        }}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+            width: 360,
+          },
+        }}
+      >
+        <Box sx={{ p: 2 }} onClick={(e) => e.stopPropagation()}>
+          <Typography sx={{ fontWeight: 900, fontSize: '0.85rem', mb: 1 }}>
+            添加筛选
+          </Typography>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel>字段</InputLabel>
+            <Select
+              label="字段"
+              value={draftFilterKey}
+              onChange={(e) => {
+                const k = String(e.target.value)
+                setDraftFilterKey(k)
+                setDraftFilterValue('')
+                if (k === 'status') setDraftFilterOp('eq')
+                else if (k === 'title' || k.startsWith('c:')) setDraftFilterOp('contains')
+                else setDraftFilterOp('eq')
+              }}
+            >
+              {filterFieldOptions.map((x) => (
+                <MenuItem key={x.key} value={x.key}>
+                  {x.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel>条件</InputLabel>
+            <Select label="条件" value={draftFilterOp} onChange={(e) => setDraftFilterOp(e.target.value as any)}>
+              {draftFilterKey === 'status' ? (
+                [
+                  <MenuItem key="eq" value="eq">
+                    等于
+                  </MenuItem>,
+                  <MenuItem key="neq" value="neq">
+                    不等于
+                  </MenuItem>,
+                  <MenuItem key="not_completed" value="not_completed">
+                    未完成
+                  </MenuItem>,
+                ]
+              ) : draftFilterKey === 'title' || draftFilterKey.startsWith('c:') ? (
+                [
+                  <MenuItem key="contains" value="contains">
+                    包含
+                  </MenuItem>,
+                  <MenuItem key="eq" value="eq">
+                    等于
+                  </MenuItem>,
+                  <MenuItem key="neq" value="neq">
+                    不等于
+                  </MenuItem>,
+                ]
+              ) : (
+                [
+                  <MenuItem key="eq" value="eq">
+                    等于
+                  </MenuItem>,
+                  <MenuItem key="neq" value="neq">
+                    不等于
+                  </MenuItem>,
+                ]
+              )}
+            </Select>
+          </FormControl>
+
+          {draftFilterKey === 'priority' ? (
+            <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+              <InputLabel>值</InputLabel>
+              <Select label="值" value={draftFilterValue} onChange={(e) => setDraftFilterValue(String(e.target.value))}>
+                {[0, 1, 2, 3, 4, 5].map((p) => (
+                  <MenuItem key={p} value={String(p)}>{`P${p}`}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : draftFilterKey === 'status' ? (
+            <FormControl fullWidth size="small" sx={{ mb: 1 }} disabled={draftFilterOp === 'not_completed'}>
+              <InputLabel>值</InputLabel>
+              <Select label="值" value={draftFilterValue} onChange={(e) => setDraftFilterValue(String(e.target.value))}>
+                {REQUIREMENT_STATUS.map((s) => (
+                  <MenuItem key={s.value} value={s.value}>
+                    {s.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ) : draftFilterKey.startsWith('c:') ? (
+            (() => {
+              const colId = draftFilterKey.slice(2)
+              const col = columns.find((c) => c.id === colId)
+              if (col?.field_type === 'select') {
+                return (
+                  <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                    <InputLabel>值</InputLabel>
+                    <Select label="值" value={draftFilterValue} onChange={(e) => setDraftFilterValue(String(e.target.value))}>
+                      {(col.options ?? []).map((o) => (
+                        <MenuItem key={o} value={o}>
+                          {o}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )
+              }
+              if (col?.field_type === 'person') {
+                return (
+                  <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+                    <InputLabel>人员</InputLabel>
+                    <Select label="人员" value={draftFilterValue} onChange={(e) => setDraftFilterValue(String(e.target.value))}>
+                      {members.map((m) => (
+                        <MenuItem key={m.user_id} value={m.user_id}>
+                          {m.profile?.display_name || m.profile?.email || m.user_id}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )
+              }
+              return (
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="值"
+                  value={draftFilterValue}
+                  onChange={(e) => setDraftFilterValue(e.target.value)}
+                  sx={{ mb: 1 }}
+                />
+              )
+            })()
+          ) : (
+            <TextField
+              fullWidth
+              size="small"
+              label="值"
+              value={draftFilterValue}
+              onChange={(e) => setDraftFilterValue(e.target.value)}
+              sx={{ mb: 1 }}
+            />
+          )}
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1 }}>
+            <Button
+              size="small"
+              onClick={() => {
+                setFilterMenuAnchor(null)
+                setDraftFilterValue('')
+                setDraftFilterOp('eq')
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={
+                !draftFilterKey ||
+                (draftFilterKey === 'status'
+                  ? draftFilterOp !== 'not_completed' && !draftFilterValue
+                  : draftFilterKey === 'priority'
+                    ? !draftFilterValue
+                    : draftFilterOp !== 'not_completed' && !draftFilterValue.trim())
+              }
+              onClick={() => {
+                const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`
+                const val = draftFilterOp === 'not_completed' ? '' : draftFilterValue.trim()
+                setFilters((prev) => [...prev, { id, key: draftFilterKey, op: draftFilterOp, value: val }])
+                setFilterMenuAnchor(null)
+                setDraftFilterValue('')
+              }}
+              sx={{ backgroundColor: CEYLON_ORANGE, '&:hover': { backgroundColor: '#A34712' } }}
+            >
+              添加
+            </Button>
+          </Box>
+        </Box>
+      </Menu>
+
       <TableContainer
         component={Paper}
         sx={{
@@ -552,13 +865,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           overflowX: 'auto',
         }}
       >
-        <Table size="small" sx={{ minWidth: 720 }}>
+        <Table size="small" sx={{ minWidth: 720, tableLayout: 'fixed', width: '100%' }}>
           <TableHead>
             <TableRow sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
               <TableCell
                 sx={{
-                  width: getWidth('number', 56),
-                  minWidth: getWidth('number', 56),
+                  width: NUMBER_COL_WIDTH_PX,
+                  minWidth: NUMBER_COL_WIDTH_PX,
+                  maxWidth: NUMBER_COL_WIDTH_PX,
+                  boxSizing: 'border-box',
                   position: 'relative',
                   fontWeight: 700,
                   fontSize: '0.75rem',
@@ -581,18 +896,6 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     <MoreHoriz fontSize="small" />
                   </IconButton>
                 </Box>
-                <Box
-                  onMouseDown={(e) => startResize('number', getWidth('number', 56), e)}
-                  sx={{
-                    position: 'absolute',
-                    top: 0,
-                    right: -3,
-                    width: 6,
-                    height: '100%',
-                    cursor: 'col-resize',
-                    zIndex: 2,
-                  }}
-                />
               </TableCell>
               <TableCell
                 sx={{
@@ -855,8 +1158,10 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                 >
                   <TableCell
                     sx={{
-                      width: getWidth('number', 56),
-                      minWidth: getWidth('number', 56),
+                      width: NUMBER_COL_WIDTH_PX,
+                      minWidth: NUMBER_COL_WIDTH_PX,
+                      maxWidth: NUMBER_COL_WIDTH_PX,
+                      boxSizing: 'border-box',
                       color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
                       fontSize: '0.8rem',
                     }}

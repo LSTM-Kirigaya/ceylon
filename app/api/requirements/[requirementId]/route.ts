@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteSupabaseUser, unauthorized } from '@/lib/api-route-helpers'
+import { syncVersionViewData } from '@/lib/version-view-data'
 
 export async function PATCH(
   request: NextRequest,
@@ -68,6 +69,12 @@ export async function PATCH(
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
+    try {
+      const viewId = (data as { version_view_id?: string | null })?.version_view_id
+      if (viewId) await syncVersionViewData(supabase, viewId)
+    } catch {
+      // ignore
+    }
     return NextResponse.json({ requirement: data })
   } catch (e) {
     console.error('PATCH requirement', e)
@@ -84,11 +91,23 @@ export async function DELETE(
 
   const { requirementId } = await params
 
+  const { data: before } = await supabase
+    .from('requirements')
+    .select('version_view_id')
+    .eq('id', requirementId)
+    .maybeSingle()
+
   const { error } = await supabase.from('requirements').delete().eq('id', requirementId)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 })
   }
 
+  try {
+    const viewId = (before as { version_view_id?: string | null } | null)?.version_view_id
+    if (viewId) await syncVersionViewData(supabase, viewId)
+  } catch {
+    // ignore
+  }
   return NextResponse.json({ ok: true })
 }

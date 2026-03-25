@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteSupabaseUser, unauthorized } from '@/lib/api-route-helpers'
+import { syncVersionViewData } from '@/lib/version-view-data'
 
 function parseOptions(raw: unknown): string[] {
   if (!Array.isArray(raw)) return []
@@ -156,6 +157,11 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
+    try {
+      await syncVersionViewData(supabase, viewId)
+    } catch {
+      // ignore
+    }
     return NextResponse.json({ column: data })
   } catch (e) {
     console.error('POST column', e)

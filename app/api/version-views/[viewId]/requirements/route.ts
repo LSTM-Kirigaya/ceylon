@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getRouteSupabaseUser, unauthorized } from '@/lib/api-route-helpers'
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { syncVersionViewData } from '@/lib/version-view-data'
 
 async function attachAssignees(
   supabase: SupabaseClient,
@@ -150,6 +151,11 @@ export async function POST(
           reqRow = u.data as Record<string, unknown>
         }
       }
+      try {
+        await syncVersionViewData(supabase, viewId)
+      } catch {
+        // ignore (migration not deployed yet, etc.)
+      }
       return NextResponse.json({ requirement: reqRow })
     }
 
@@ -157,6 +163,11 @@ export async function POST(
       return NextResponse.json({ error: inserted.error.message }, { status: 400 })
     }
 
+    try {
+      await syncVersionViewData(supabase, viewId)
+    } catch {
+      // ignore
+    }
     return NextResponse.json({ requirement: inserted.data })
   } catch (e) {
     console.error('POST requirement', e)
