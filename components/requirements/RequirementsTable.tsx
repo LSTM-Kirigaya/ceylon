@@ -945,6 +945,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         anchorEl={selectMenuAnchor}
         open={Boolean(selectMenuAnchor)}
         onClose={closeSelectMenu}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
         PaperProps={{
           sx: {
             backgroundColor: isDark ? '#1c1917' : '#fff',
@@ -1139,6 +1141,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           setOptionMenuContext(null)
           setRenameDraftValue('')
         }}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
         PaperProps={{
           sx: {
             backgroundColor: isDark ? '#1c1917' : '#fff',
@@ -1427,6 +1431,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           setHeaderMenuAnchor(null)
           setHeaderMenuCol(null)
         }}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
         PaperProps={{
           sx: {
             backgroundColor: isDark ? '#1c1917' : '#fff',
@@ -1460,6 +1466,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         anchorEl={addColMenuAnchor}
         open={Boolean(addColMenuAnchor)}
         onClose={closeAddColumnMenu}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
         PaperProps={{
           sx: {
             backgroundColor: isDark ? '#1c1917' : '#fff',
