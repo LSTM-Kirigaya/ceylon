@@ -39,9 +39,10 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined
     : {
-        command: 'npm run dev',
+        // CI runs `npm run build` first; production server starts reliably. `next dev` often hits the 120s timeout on cold CI.
+        command: process.env.CI ? 'npm run start' : 'npm run dev',
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
-        timeout: 120000,
+        timeout: process.env.CI ? 180_000 : 120_000,
       },
 })
