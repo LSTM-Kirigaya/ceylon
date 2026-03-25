@@ -12,7 +12,6 @@ import {
   Avatar,
   TextField,
   Container,
-  Breadcrumbs,
   Link,
   Alert,
   Skeleton,
@@ -35,7 +34,7 @@ export default function ProfilePage() {
   const router = useRouter()
   const locale = useLocale()
   const t = useTranslations()
-  const { profile, setProfile } = useAuthStore()
+  const { profile, user, loading: authLoading, refreshProfile, setProfile } = useAuthStore()
   const { getEffectiveMode } = useThemeStore()
   
   const [displayName, setDisplayName] = useState('')
@@ -49,12 +48,25 @@ export default function ProfilePage() {
   const isDark = getEffectiveMode() === 'dark'
 
   useEffect(() => {
+    // AuthProvider controls the canonical session loading state.
+    if (authLoading) {
+      setLoading(true)
+      return
+    }
+
+    setLoading(false)
+
     if (profile) {
       setDisplayName(profile.display_name || '')
       setAvatarUrl(profile.avatar_url)
-      setLoading(false)
+      return
     }
-  }, [profile])
+
+    // Logged-in but profile missing/late: try a one-shot refresh.
+    if (user) {
+      void refreshProfile()
+    }
+  }, [authLoading, profile, user, refreshProfile])
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click()
@@ -88,6 +100,7 @@ export default function ProfilePage() {
 
       const response = await fetch('/api/avatar/upload', {
         method: 'POST',
+        credentials: 'include',
         body: formData,
       })
 
@@ -153,7 +166,36 @@ export default function ProfilePage() {
     return (
       <MainLayout>
         <Container maxWidth="md" sx={{ p: 3 }}>
-          <Alert severity="warning">请先登录</Alert>
+          <Alert
+            severity={user ? 'info' : 'warning'}
+            action={
+              user ? (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={async () => {
+                    try {
+                      await refreshProfile()
+                    } finally {
+                      // no-op
+                    }
+                  }}
+                >
+                  重试
+                </Button>
+              ) : (
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() => router.push(`/${locale}/login`)}
+                >
+                  去登录
+                </Button>
+              )
+            }
+          >
+            {user ? '正在初始化个人资料，请稍候或点击重试' : '请先登录'}
+          </Alert>
         </Container>
       </MainLayout>
     )
@@ -162,26 +204,6 @@ export default function ProfilePage() {
   return (
     <MainLayout>
       <Container maxWidth="md" sx={{ p: 3 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }} />}
-          sx={{ mb: 2 }}
-        >
-          <Link
-            href={`/${locale}/dashboard`}
-            style={{
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            {t('nav.dashboard')}
-          </Link>
-          <Typography sx={{ color: isDark ? 'white' : '#1c1917', fontSize: '0.9rem' }}>
-            {t('nav.profile')}
-          </Typography>
-        </Breadcrumbs>
-
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography

@@ -1,224 +1,61 @@
-# 锡兰 CEYLON - 智能化需求管理平台
+# <img src="public/icons/icon.svg" alt="ceylonm" width="34" /> 锡兰 CEYLON
 
-锡兰是一个现代化的需求管理平台，帮助团队更好地组织、跟踪和协作处理需求。
+![Version](https://img.shields.io/badge/version-1.0.0-orange)
+![Release Stage](https://img.shields.io/badge/release-commercial_ready-0A7F5A)
+![Product Type](https://img.shields.io/badge/product-SaaS-2563EB)
+![License](https://img.shields.io/badge/license-Commercial-7C3AED)
+![Status](https://img.shields.io/badge/status-active-success)
 
-## 技术栈
+锡兰（CEYLON）是一款面向企业团队的需求管理软件，帮助你把“反馈、决策、执行、复盘”串成可追踪的闭环。
 
-- **前端**: Next.js 14 + TypeScript + Tailwind CSS + Material UI
-- **后端**: Supabase (PostgreSQL + Auth + Storage)
-- **CLI**: Node.js + TypeScript + Commander.js
+## 产品定位
 
-## 项目结构
+- 面向产品、研发、测试与运营协同的统一需求工作台
+- 通过版本视图管理迭代范围，减少沟通损耗与需求漂移
+- 将需求记录、状态推进、负责人协作整合到一个系统中
 
-```
-ceylon/
-├── app/                    # Next.js 应用路由
-│   ├── page.tsx           # 首页
-│   ├── layout.tsx         # 根布局
-│   ├── login/             # 登录页
-│   ├── register/          # 注册页
-│   ├── dashboard/         # 控制台
-│   ├── projects/          # 项目相关页面
-│   └── api/               # API 路由
-├── components/            # React 组件
-│   ├── ThemeProvider.tsx
-│   ├── AuthProvider.tsx
-│   ├── MainLayout.tsx
-│   └── requirements/
-├── lib/                   # 工具库
-│   └── supabase.ts
-├── stores/                # Zustand 状态管理
-│   ├── themeStore.ts
-│   └── authStore.ts
-├── types/                 # TypeScript 类型
-│   └── index.ts
-├── sql/                   # 数据库 SQL 文件
-│   └── setup.sql
-├── cli/                   # CLI 命令行工具
-│   ├── src/
-│   └── dist/
-├── 参考图/                 # UI 设计参考图
-├── package.json
-├── tsconfig.json
-├── next.config.ts
-├── .env.example
-├── .env.development
-├── .env.production
-└── README.md
-```
+## 核心价值
 
-## 功能特性
+- **可追踪**：每条需求从提出到完成有清晰状态与负责人
+- **可协作**：项目成员按角色协作，分工与权限边界明确
+- **可落地**：围绕版本视图进行迭代计划与发布管理
+- **可扩展**：支持与自动化流程及命令行工作流衔接
 
-### 核心功能
+## 功能一览
 
-1. **用户认证**
-   - 邮箱注册/登录
-   - 密码强度验证（至少8位，包含数字和字母）
-   - 头像上传（Supabase Storage）
+- 项目空间管理（创建、归档、成员协作）
+- 多版本视图（按迭代组织需求）
+- 结构化需求管理（编号、类型、优先级、状态、负责人）
+- 团队权限体系（只读 / 可写 / 管理）
+- 多语言与主题体验（适配不同团队使用习惯）
 
-2. **项目管理**
-   - 创建/编辑/删除项目
-   - 项目列表展示
-   - 项目设置管理
+## 产品界面
 
-3. **团队协作**
-   - 邀请成员加入项目
-   - 三级权限控制：只读、可写、管理
-   - 创建者默认为项目所有者
+### 首页
 
-4. **版本视图管理**
-   - 为每个项目创建多个版本视图
-   - 切换不同版本视图查看需求
+![CEYLON Home](docs/assets/home.png)
 
-5. **需求管理**
-   - 需求表格展示
-   - 需求字段：
-     - 需求编号（每个版本从0开始）
-     - 需求名称
-     - 负责人
-     - 优先级（P0-P10）
-     - 类型（Bug、Feature、Improvement、Documentation、Security、Discussion）
-     - 状态（待启动、开发中、已完成、已拒绝）
-   - 创建/编辑/删除需求
+### 控制台
 
-6. **主题系统**
-   - 支持浅色、深色、跟随系统三种模式
-   - 锡兰橙主题色 (#C85C1B)
+![CEYLON Dashboard](docs/assets/dashboard.png)
 
-### CLI 命令行工具
+### 需求视图
 
-```bash
-# 全局安装 CLI
-cd cli && npm install -g .
+![CEYLON Requirements](docs/assets/requirements-view.png)
 
-# 登录
-ceylon login
+## 适用场景
 
-# 查看认证状态
-ceylon status
+- 企业内部产品需求池管理
+- 多团队并行开发下的版本协同
+- 需求评审、排期与交付过程沉淀
+- 面向客户反馈驱动的持续迭代
 
-# 列出所有项目
-ceylon projects
+## 文档导航
 
-# 列出版本视图
-ceylon views --project <project-id>
+- 产品与使用说明：`docs/start.md`
+- 技术部署与开发细节：`docs/TECHNICAL_GUIDE.md`
+- 接口与扩展能力：`docs/AUTH_ARCHITECTURE.md` 及 `docs/*`
 
-# 列出需求
-ceylon requirements --project <project-id> --view <view-id>
+## 商务与合作
 
-# 创建需求
-ceylon create --project <project-id> --view <view-id> --title "需求名称"
-
-# 更新需求
-ceylon update <requirement-id> --title "新名称" --status completed
-
-# 删除需求
-ceylon delete <requirement-id>
-
-# 登出
-ceylon logout
-```
-
-## 环境配置
-
-### Web 应用
-
-1. 环境变量已预配置在以下文件：
-   - `.env.example` - 模板
-   - `.env.development` - 开发环境
-   - `.env.production` - 生产环境
-
-2. 安装依赖：
-```bash
-npm install
-```
-
-3. 运行开发服务器：
-```bash
-npm run dev
-```
-
-4. 构建：
-```bash
-npm run build
-```
-
-### CLI 工具
-
-1. 安装依赖：
-```bash
-cd cli
-npm install
-```
-
-2. 构建：
-```bash
-npm run build
-```
-
-3. 全局安装：
-```bash
-npm install -g .
-```
-
-## 数据库设置
-
-项目使用 Supabase 作为后端，数据库 Schema 定义在 `sql/setup.sql` 中。
-
-### 主要表结构
-
-- `profiles` - 用户资料
-- `projects` - 项目
-- `project_members` - 项目成员关系
-- `version_views` - 版本视图
-- `requirements` - 需求
-- `cli_tokens` - CLI 认证令牌
-
-在 Supabase SQL Editor 中执行 `sql/setup.sql` 文件来创建所有表和策略。
-
-## MCP 配置
-
-项目已配置 Supabase MCP：
-
-```json
-{
-  "mcpServers": {
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=vaukvwgvklnpmlwhgyei"
-    }
-  }
-}
-```
-
-配置文件位置：
-- `.vscode/mcp.json` - VS Code 配置
-- `mcp.json` - 项目根目录配置
-
-## API 接口
-
-CLI 使用的 API 接口：
-
-| 接口 | 方法 | 描述 |
-|------|------|------|
-| `/api/cli/projects` | POST | 获取项目列表 |
-| `/api/cli/views` | POST | 获取版本视图列表 |
-| `/api/cli/requirements` | POST | 获取需求列表 |
-| `/api/cli/requirements/create` | POST | 创建需求 |
-| `/api/cli/requirements/update` | POST | 更新需求 |
-| `/api/cli/requirements/delete` | POST | 删除需求 |
-
-## 主题设计
-
-参考 `参考图/UI_SPEC.md`：
-
-- **锡兰橙主题色**: #C85C1B
-- **大圆角设计**: rounded-2xl (16px) 或 rounded-3xl (24px)
-- **呼吸感边界**: 使用极浅灰色调 surface-100/surface-200
-- **紧凑字间距**: -0.025em
-- **物理按压缩放**: scale(0.98)
-- **骨架屏加载**: 不使用转圈圈加载
-
-## License
-
-MIT
+如需商业合作、私有化部署或企业支持，请联系团队。

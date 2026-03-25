@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
@@ -10,8 +10,6 @@ import {
   Card,
   CardContent,
   Grid,
-  Breadcrumbs,
-  Link,
   Skeleton,
   Chip,
   IconButton,
@@ -33,7 +31,6 @@ import {
   CheckCircle,
   Schedule,
   BugReport,
-  ChevronRight,
   Add,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
@@ -65,34 +62,27 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
 
-  useEffect(() => {
-    if (projectId) {
-      fetchProjectData()
-    }
-  }, [projectId])
-
-  const fetchProjectData = async () => {
+  const fetchProjectData = useCallback(async () => {
     setLoading(true)
     try {
-      const { project: projectData } = await apiJson<{ project: Project }>(
-        `/api/projects/${projectId}`
-      )
-      setProject(projectData)
+      const [projectRes, viewsRes, statsRes] = await Promise.all([
+        apiJson<{ project: Project }>(`/api/projects/${projectId}`),
+        apiJson<{ views: VersionView[] }>(`/api/projects/${projectId}/views`),
+        apiJson<{
+          stats: {
+            totalRequirements: number
+            completed: number
+            inProgress: number
+            pending: number
+            bugs: number
+          }
+        }>(`/api/projects/${projectId}/stats`),
+      ])
 
-      const { views: viewsData } = await apiJson<{ views: VersionView[] }>(
-        `/api/projects/${projectId}/views`
-      )
-      setVersionViews(viewsData || [])
+      setProject(projectRes.project)
+      setVersionViews(viewsRes.views || [])
 
-      const { stats: s } = await apiJson<{
-        stats: {
-          totalRequirements: number
-          completed: number
-          inProgress: number
-          pending: number
-          bugs: number
-        }
-      }>(`/api/projects/${projectId}/stats`)
+      const s = statsRes.stats
       setStats({
         totalRequirements: s.totalRequirements,
         completed: s.completed,
@@ -105,7 +95,13 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
     } finally {
       setLoading(false)
     }
-  }
+  }, [projectId])
+
+  useEffect(() => {
+    if (projectId) {
+      fetchProjectData()
+    }
+  }, [projectId, fetchProjectData])
 
   const isOwner = project?.owner_id === profile?.id
 
@@ -147,26 +143,6 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
   return (
     <MainLayout>
       <Container maxWidth="lg" sx={{ p: 3 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }} />}
-          sx={{ mb: 2 }}
-        >
-          <Link
-            href={`/${locale}/dashboard`}
-            style={{
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            {t('nav.dashboard')}
-          </Link>
-          <Typography sx={{ color: isDark ? 'white' : '#1c1917', fontSize: '0.9rem' }}>
-            {project.name}
-          </Typography>
-        </Breadcrumbs>
-
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 4, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -226,16 +202,6 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
                 </IconButton>
               </Tooltip>
             </Box>
-            <Typography
-              variant="body1"
-              sx={{
-                mt: 0.5,
-                color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                fontSize: '0.95rem',
-              }}
-            >
-              {project.description || t('dashboard.projectCard.noDescription')}
-            </Typography>
           </Box>
           <Stack direction="row" spacing={1.5}>
             <Button
@@ -377,9 +343,6 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
               </Box>
               <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)', fontWeight: 600, mb: 0.5 }}>
                 还没有版本视图
-              </Typography>
-              <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }}>
-                在设置中创建你的第一个版本视图
               </Typography>
             </Card>
           ) : (

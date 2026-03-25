@@ -31,7 +31,7 @@ const testSuites = [
 ]
 
 async function runTests() {
-  console.log('🧪 Starting Ceylon Test Suite\n')
+  console.log('🧪 Starting ceylonm Test Suite\n')
   
   const results: TestResult[] = []
   const startTime = Date.now()

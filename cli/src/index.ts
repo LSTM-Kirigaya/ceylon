@@ -12,13 +12,13 @@ const program = new Command()
 
 program
   .name('ceylon')
-  .description('CLI tool for Ceylon - Intelligent Requirements Management')
+  .description('CLI tool for ceylonm - Intelligent Requirements Management')
   .version('1.0.0')
 
 // Auth commands
 program
   .command('login')
-  .description('Login to Ceylon')
+  .description('Login to ceylonm')
   .action(async () => {
     try {
       await ensureConfigDir()
@@ -31,7 +31,7 @@ program
 
 program
   .command('logout')
-  .description('Logout from Ceylon')
+  .description('Logout from ceylonm')
   .action(async () => {
     try {
       await logout()
@@ -104,10 +104,10 @@ program
       let projectId = options.project
       let viewId = options.view
 
-      if (!projectId) {
-        projectId = await selectProject()
-      }
+      // If viewId is provided, we can skip interactive project selection.
+      // Only when viewId is missing do we need projectId to select a view.
       if (!viewId) {
+        if (!projectId) projectId = await selectProject()
         viewId = await selectView(projectId)
       }
 
@@ -132,10 +132,9 @@ program
       let projectId = options.project
       let viewId = options.view
 
-      if (!projectId) {
-        projectId = await selectProject()
-      }
+      // If viewId is provided, we can skip interactive project selection.
       if (!viewId) {
+        if (!projectId) projectId = await selectProject()
         viewId = await selectView(projectId)
       }
 

@@ -15,47 +15,52 @@ VALUES
     ('attachments', 'attachments', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 3. Storage policies for project-icons
-CREATE POLICY "Project icons are publicly accessible" 
-    ON storage.objects FOR SELECT 
+-- 3. Storage policies for project-icons (idempotent for re-push / existing DBs)
+DROP POLICY IF EXISTS "Project icons are publicly accessible" ON storage.objects;
+CREATE POLICY "Project icons are publicly accessible"
+    ON storage.objects FOR SELECT
     USING (bucket_id = 'project-icons');
 
-CREATE POLICY "Project owners can upload icons" 
-    ON storage.objects FOR INSERT 
+DROP POLICY IF EXISTS "Project owners can upload icons" ON storage.objects;
+CREATE POLICY "Project owners can upload icons"
+    ON storage.objects FOR INSERT
     WITH CHECK (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
 
-CREATE POLICY "Project owners can update icons" 
-    ON storage.objects FOR UPDATE 
+DROP POLICY IF EXISTS "Project owners can update icons" ON storage.objects;
+CREATE POLICY "Project owners can update icons"
+    ON storage.objects FOR UPDATE
     USING (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
 
-CREATE POLICY "Project owners can delete icons" 
-    ON storage.objects FOR DELETE 
+DROP POLICY IF EXISTS "Project owners can delete icons" ON storage.objects;
+CREATE POLICY "Project owners can delete icons"
+    ON storage.objects FOR DELETE
     USING (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
 
 -- 4. Storage policies for attachments
-CREATE POLICY "Attachments are publicly accessible" 
-    ON storage.objects FOR SELECT 
+DROP POLICY IF EXISTS "Attachments are publicly accessible" ON storage.objects;
+CREATE POLICY "Attachments are publicly accessible"
+    ON storage.objects FOR SELECT
     USING (bucket_id = 'attachments');
 
 -- 5. Drop problematic RLS policies (that cause infinite recursion)
@@ -100,77 +105,97 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. Create new non-recursive policies for projects
-CREATE POLICY "Users can view their own projects" 
+-- 7. Create new non-recursive policies for projects (idempotent)
+DROP POLICY IF EXISTS "Users can view their own projects" ON public.projects;
+CREATE POLICY "Users can view their own projects"
     ON public.projects FOR SELECT USING (owner_id = auth.uid());
 
-CREATE POLICY "Users can view projects they are members of" 
+DROP POLICY IF EXISTS "Users can view projects they are members of" ON public.projects;
+CREATE POLICY "Users can view projects they are members of"
     ON public.projects FOR SELECT USING (public.is_project_member(id, auth.uid()));
 
-CREATE POLICY "Users can create projects" 
+DROP POLICY IF EXISTS "Users can create projects" ON public.projects;
+CREATE POLICY "Users can create projects"
     ON public.projects FOR INSERT WITH CHECK (auth.uid() = owner_id);
 
-CREATE POLICY "Project owners can update projects" 
+DROP POLICY IF EXISTS "Project owners can update projects" ON public.projects;
+CREATE POLICY "Project owners can update projects"
     ON public.projects FOR UPDATE USING (owner_id = auth.uid());
 
-CREATE POLICY "Project admins can update projects" 
+DROP POLICY IF EXISTS "Project admins can update projects" ON public.projects;
+CREATE POLICY "Project admins can update projects"
     ON public.projects FOR UPDATE USING (public.is_project_admin(id, auth.uid()));
 
-CREATE POLICY "Project owners can delete projects" 
+DROP POLICY IF EXISTS "Project owners can delete projects" ON public.projects;
+CREATE POLICY "Project owners can delete projects"
     ON public.projects FOR DELETE USING (owner_id = auth.uid());
 
-CREATE POLICY "Project admins can delete projects" 
+DROP POLICY IF EXISTS "Project admins can delete projects" ON public.projects;
+CREATE POLICY "Project admins can delete projects"
     ON public.projects FOR DELETE USING (public.is_project_admin(id, auth.uid()));
 
--- 8. Create non-recursive policies for project_members
-CREATE POLICY "Project owners can view members" 
-    ON public.project_members FOR SELECT 
+-- 8. Create non-recursive policies for project_members (idempotent)
+DROP POLICY IF EXISTS "Project owners can view members" ON public.project_members;
+CREATE POLICY "Project owners can view members"
+    ON public.project_members FOR SELECT
     USING (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project members can view other members" 
-    ON public.project_members FOR SELECT 
+DROP POLICY IF EXISTS "Project members can view other members" ON public.project_members;
+CREATE POLICY "Project members can view other members"
+    ON public.project_members FOR SELECT
     USING (public.is_project_member(project_id, auth.uid()));
 
-CREATE POLICY "Project owners can manage members" 
-    ON public.project_members FOR ALL 
+DROP POLICY IF EXISTS "Project owners can manage members" ON public.project_members;
+CREATE POLICY "Project owners can manage members"
+    ON public.project_members FOR ALL
     USING (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project admins can manage members" 
-    ON public.project_members FOR ALL 
+DROP POLICY IF EXISTS "Project admins can manage members" ON public.project_members;
+CREATE POLICY "Project admins can manage members"
+    ON public.project_members FOR ALL
     USING (public.is_project_admin(project_id, auth.uid()));
 
-CREATE POLICY "Users can view their own membership" 
+DROP POLICY IF EXISTS "Users can view their own membership" ON public.project_members;
+CREATE POLICY "Users can view their own membership"
     ON public.project_members FOR SELECT USING (user_id = auth.uid());
 
--- 9. Create non-recursive policies for version_views
-CREATE POLICY "Project owners can view version views" 
-    ON public.version_views FOR SELECT 
+-- 9. Create non-recursive policies for version_views (idempotent)
+DROP POLICY IF EXISTS "Project owners can view version views" ON public.version_views;
+CREATE POLICY "Project owners can view version views"
+    ON public.version_views FOR SELECT
     USING (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project members can view version views" 
-    ON public.version_views FOR SELECT 
+DROP POLICY IF EXISTS "Project members can view version views" ON public.version_views;
+CREATE POLICY "Project members can view version views"
+    ON public.version_views FOR SELECT
     USING (public.is_project_member(project_id, auth.uid()));
 
-CREATE POLICY "Project owners can create version views" 
-    ON public.version_views FOR INSERT 
+DROP POLICY IF EXISTS "Project owners can create version views" ON public.version_views;
+CREATE POLICY "Project owners can create version views"
+    ON public.version_views FOR INSERT
     WITH CHECK (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project writers can create version views" 
-    ON public.version_views FOR INSERT 
+DROP POLICY IF EXISTS "Project writers can create version views" ON public.version_views;
+CREATE POLICY "Project writers can create version views"
+    ON public.version_views FOR INSERT
     WITH CHECK (public.is_project_writer(project_id, auth.uid()));
 
-CREATE POLICY "Project owners can update version views" 
-    ON public.version_views FOR UPDATE 
+DROP POLICY IF EXISTS "Project owners can update version views" ON public.version_views;
+CREATE POLICY "Project owners can update version views"
+    ON public.version_views FOR UPDATE
     USING (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project writers can update version views" 
-    ON public.version_views FOR UPDATE 
+DROP POLICY IF EXISTS "Project writers can update version views" ON public.version_views;
+CREATE POLICY "Project writers can update version views"
+    ON public.version_views FOR UPDATE
     USING (public.is_project_writer(project_id, auth.uid()));
 
-CREATE POLICY "Project owners can delete version views" 
-    ON public.version_views FOR DELETE 
+DROP POLICY IF EXISTS "Project owners can delete version views" ON public.version_views;
+CREATE POLICY "Project owners can delete version views"
+    ON public.version_views FOR DELETE
     USING (EXISTS (SELECT 1 FROM public.projects WHERE id = project_id AND owner_id = auth.uid()));
 
-CREATE POLICY "Project admins can delete version views" 
-    ON public.version_views FOR DELETE 
+DROP POLICY IF EXISTS "Project admins can delete version views" ON public.version_views;
+CREATE POLICY "Project admins can delete version views"
+    ON public.version_views FOR DELETE
     USING (public.is_project_admin(project_id, auth.uid()));

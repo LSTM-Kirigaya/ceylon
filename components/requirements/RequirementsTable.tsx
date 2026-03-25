@@ -21,6 +21,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Divider,
   MenuItem,
   FormControl,
   InputLabel,
@@ -38,6 +39,7 @@ import {
   Settings,
   ViewColumn,
   Delete as DeleteIcon,
+  KeyboardArrowDown,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
@@ -86,12 +88,6 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
-  const [activeSelectCell, setActiveSelectCell] = useState<{ reqId: string; key: string } | null>(
-    null
-  )
-
-  const isSelectActive = (reqId: string, key: string) =>
-    activeSelectCell?.reqId === reqId && activeSelectCell?.key === key
 
   const PRIORITY_OPTIONS = [0, 1, 2, 3, 4, 5] as const
   const priorityPalette: Record<number, string> = {
@@ -105,53 +101,27 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const getPriorityColorP0P5 = (p: number) => priorityPalette[p] ?? '#6b7280'
 
-  const getSelectPillSx = (active: boolean) =>
-    ({
-      '& .MuiOutlinedInput-root': {
-        borderRadius: 999,
-        minHeight: 36,
-        px: 1,
-        backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-        '& fieldset': {
-          borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
-        },
-        '&:hover fieldset': {
-          borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
-        },
-        '&.Mui-focused fieldset': {
-          borderColor: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.28)',
-        },
-      },
-      // Hide the duplicate text when not editing; only show the left pill chip.
-      '& .MuiAutocomplete-input': active
-        ? {
-            fontSize: '0.85rem',
-            py: 0.75,
-            color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
-          }
-        : {
-            width: 0,
-            minWidth: 0,
-            opacity: 0,
-            p: 0,
-            m: 0,
-          },
-      '& .MuiAutocomplete-endAdornment': {
-        top: '50%',
-        transform: 'translateY(-50%)',
-        right: 10,
-      },
-      '& .MuiChip-root': {
-        height: 24,
-        borderRadius: 999,
-        fontWeight: 800,
-        fontSize: '0.75rem',
-      },
-      '& .MuiChip-deleteIcon': {
-        opacity: 0.7,
-        '&:hover': { opacity: 1 },
-      },
-    }) as const
+  const selectPillSx = {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 1,
+    width: '100%',
+    borderRadius: 999,
+    minHeight: 36,
+    px: 1,
+    cursor: 'pointer',
+    textAlign: 'left',
+    backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+    '&:hover': {
+      borderColor: isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)',
+    },
+    '&:focus-visible': {
+      outline: `2px solid ${isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.18)'}`,
+      outlineOffset: 2,
+    },
+  } as const
 
   const [optionMenuAnchor, setOptionMenuAnchor] = useState<null | HTMLElement>(null)
   const [optionMenuContext, setOptionMenuContext] = useState<null | {
@@ -160,6 +130,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   }>(null)
   const [renameDraftValue, setRenameDraftValue] = useState('')
   const [renaming, setRenaming] = useState(false)
+
+  const [selectMenuAnchor, setSelectMenuAnchor] = useState<null | HTMLElement>(null)
+  const [selectMenuQuery, setSelectMenuQuery] = useState('')
+  const [selectMenuContext, setSelectMenuContext] = useState<
+    | null
+    | {
+        kind: 'priority' | 'status' | 'custom'
+        req: Requirement
+        col?: VersionViewColumn
+      }
+  >(null)
+
+  const closeSelectMenu = () => {
+    setSelectMenuAnchor(null)
+    setSelectMenuContext(null)
+    setSelectMenuQuery('')
+  }
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -665,233 +652,92 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     />
                   </TableCell>
                   <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 120 }}>
-                    <Autocomplete
-                      freeSolo
-                      openOnFocus
-                      selectOnFocus
-                      size="small"
-                      onOpen={() => setActiveSelectCell({ reqId: req.id, key: 'priority' })}
-                      onClose={() =>
-                        setActiveSelectCell((prev) =>
-                          prev?.reqId === req.id && prev?.key === 'priority' ? null : prev
-                        )
-                      }
-                      options={PRIORITY_OPTIONS as unknown as number[]}
-                      value={
-                        typeof req.priority === 'number'
-                          ? Math.max(0, Math.min(5, req.priority))
-                          : 5
-                      }
-                      getOptionLabel={(v) => (typeof v === 'number' ? getPriorityLabel(v) : String(v))}
-                      isOptionEqualToValue={(a, b) => a === b}
-                      sx={getSelectPillSx(isSelectActive(req.id, 'priority'))}
-                      onChange={(_, v) => {
-                        if (v === null) return
-                        let parsed: number | null = null
-                        if (typeof v === 'number') {
-                          parsed = v
-                        } else {
-                          const nums = String(v).trim().match(/(\d+)/g)
-                          if (nums?.length) parsed = Number.parseInt(nums[nums.length - 1], 10)
-                        }
-                        if (parsed === null || !Number.isFinite(parsed)) return
-                        const next = Math.max(0, Math.min(5, parsed))
-                        void patchRequirement(req.id, { priority: next })
+                    <Box
+                      component="button"
+                      type="button"
+                      tabIndex={0}
+                      role="button"
+                      aria-label="编辑优先级"
+                      sx={selectPillSx}
+                      onClick={(e) => {
+                        setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                        setSelectMenuContext({ kind: 'priority', req })
+                        setSelectMenuQuery('')
                       }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          placeholder={isSelectActive(req.id, 'priority') ? '查找或创建选项' : ''}
-                          inputProps={{
-                            ...params.inputProps,
-                            readOnly: !isSelectActive(req.id, 'priority'),
-                            value:
-                              !isSelectActive(req.id, 'priority') && params.inputProps.value
-                                ? ''
-                                : params.inputProps.value,
-                            onKeyDown: (e) => {
-                              if (e.key !== 'Enter') return
-                              const target = e.currentTarget as HTMLInputElement
-                              const s = target.value.trim()
-                              const nums = s.match(/(\d+)/g)
-                              if (!nums?.length) return
-                              const parsed = Number.parseInt(nums[nums.length - 1], 10)
-                              if (!Number.isFinite(parsed)) return
-                              const next = Math.max(0, Math.min(5, parsed))
-                              e.preventDefault()
-                              void patchRequirement(req.id, { priority: next })
-                            },
-                          }}
-                          InputProps={{
-                            ...params.InputProps,
-                            startAdornment: (
-                              <>
-                                <Chip
-                                  size="small"
-                                  label={getPriorityLabel(
-                                    typeof req.priority === 'number'
-                                      ? Math.max(0, Math.min(5, req.priority))
-                                      : 5
-                                  )}
-                                  sx={{
-                                    backgroundColor: getPriorityColorP0P5(
-                                      typeof req.priority === 'number'
-                                        ? Math.max(0, Math.min(5, req.priority))
-                                        : 5
-                                    ),
-                                    color: '#fff',
-                                    mr: 0.75,
-                                  }}
-                                  onDelete={() => void patchRequirement(req.id, { priority: 5 })}
-                                />
-                                {params.InputProps.startAdornment}
-                              </>
-                            ),
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              // actual visual style lives in selectPillSx
-                            },
-                          }}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box
-                          component="li"
-                          {...(() => {
-                            const { key: _key, ...rest } = props as any
-                            return rest
-                          })()}
-                        >
-                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                            <Chip
-                              size="small"
-                              label={getPriorityLabel(option)}
-                              sx={{
-                                backgroundColor: getPriorityColorP0P5(option),
-                                color: '#fff',
-                                fontWeight: 800,
-                                fontSize: '0.75rem',
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      )}
-                    />
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return
+                        e.preventDefault()
+                        setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                        setSelectMenuContext({ kind: 'priority', req })
+                        setSelectMenuQuery('')
+                      }}
+                    >
+                      <Chip
+                        size="small"
+                        label={getPriorityLabel(
+                          typeof req.priority === 'number' ? Math.max(0, Math.min(5, req.priority)) : 5
+                        )}
+                        sx={{
+                          backgroundColor: getPriorityColorP0P5(
+                            typeof req.priority === 'number' ? Math.max(0, Math.min(5, req.priority)) : 5
+                          ),
+                          color: '#fff',
+                          fontWeight: 800,
+                          fontSize: '0.75rem',
+                        }}
+                        onDelete={(e) => {
+                          e.stopPropagation()
+                          void patchRequirement(req.id, { priority: 5 })
+                        }}
+                      />
+                      <KeyboardArrowDown
+                        fontSize="small"
+                        style={{ opacity: 0.75 }}
+                      />
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: 140 }}>
-                    <Autocomplete
-                      freeSolo
-                      openOnFocus
-                      selectOnFocus
-                      size="small"
-                      disableClearable
-                      onOpen={() => setActiveSelectCell({ reqId: req.id, key: 'status' })}
-                      onClose={() =>
-                        setActiveSelectCell((prev) =>
-                          prev?.reqId === req.id && prev?.key === 'status' ? null : prev
-                        )
-                      }
-                      options={REQUIREMENT_STATUS.map((s) => s.value)}
-                      value={req.status}
-                      getOptionLabel={(v) => {
-                        const meta = REQUIREMENT_STATUS.find((s) => s.value === v)
-                        return meta?.label || String(v)
+                    <Box
+                      component="button"
+                      type="button"
+                      tabIndex={0}
+                      role="button"
+                      aria-label="编辑状态"
+                      sx={selectPillSx}
+                      onClick={(e) => {
+                        setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                        setSelectMenuContext({ kind: 'status', req })
+                        setSelectMenuQuery('')
                       }}
-                      isOptionEqualToValue={(a, b) => a === b}
-                      sx={getSelectPillSx(isSelectActive(req.id, 'status'))}
-                      onChange={(_, v) => {
-                        if (v === null) return
-                        const next = String(v).trim()
-                        const match =
-                          REQUIREMENT_STATUS.find((s) => s.value === next)?.value ||
-                          REQUIREMENT_STATUS.find((s) => s.label === next)?.value ||
-                          null
-                        if (!match) return
-                        void patchRequirement(req.id, { status: match })
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return
+                        e.preventDefault()
+                        setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                        setSelectMenuContext({ kind: 'status', req })
+                        setSelectMenuQuery('')
                       }}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          variant="outlined"
-                          placeholder={isSelectActive(req.id, 'status') ? '查找或创建选项' : ''}
-                          inputProps={{
-                            ...params.inputProps,
-                            readOnly: !isSelectActive(req.id, 'status'),
-                            value:
-                              !isSelectActive(req.id, 'status') && params.inputProps.value
-                                ? ''
-                                : params.inputProps.value,
-                            onKeyDown: (e) => {
-                              if (e.key !== 'Enter') return
-                              const target = e.currentTarget as HTMLInputElement
-                              const s = target.value.trim()
-                              const match =
-                                REQUIREMENT_STATUS.find((x) => x.value === s)?.value ||
-                                REQUIREMENT_STATUS.find((x) => x.label === s)?.value ||
-                                null
-                              if (!match) return
-                              e.preventDefault()
-                              void patchRequirement(req.id, { status: match })
-                            },
-                          }}
-                          InputProps={{
-                            ...params.InputProps,
-                            startAdornment: (
-                              <>
-                                {(() => {
-                                  const meta = REQUIREMENT_STATUS.find((x) => x.value === req.status)
-                                  return (
-                                    <Chip
-                                      size="small"
-                                      label={meta?.label || String(req.status)}
-                                      sx={{
-                                        backgroundColor: meta?.color || '#6b7280',
-                                        color: '#fff',
-                                        mr: 0.75,
-                                      }}
-                                      onDelete={() => void patchRequirement(req.id, { status: 'pending' })}
-                                    />
-                                  )
-                                })()}
-                                {params.InputProps.startAdornment}
-                              </>
-                            ),
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              // actual visual style lives in selectPillSx
-                            },
-                          }}
-                        />
-                      )}
-                      renderOption={(props, option) => {
-                        const meta = REQUIREMENT_STATUS.find((s) => s.value === option)
+                    >
+                      {(() => {
+                        const meta = REQUIREMENT_STATUS.find((x) => x.value === req.status)
                         return (
-                          <Box
-                            component="li"
-                            {...(() => {
-                              const { key: _key, ...rest } = props as any
-                              return rest
-                            })()}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                              <Chip
-                                size="small"
-                                label={meta?.label || String(option)}
-                                sx={{
-                                  backgroundColor: meta?.color || '#6b7280',
-                                  color: '#fff',
-                                  fontWeight: 800,
-                                  fontSize: '0.75rem',
-                                }}
-                              />
-                            </Box>
-                          </Box>
+                          <Chip
+                            size="small"
+                            label={meta?.label || String(req.status)}
+                            sx={{
+                              backgroundColor: meta?.color || '#6b7280',
+                              color: '#fff',
+                              fontWeight: 800,
+                              fontSize: '0.75rem',
+                            }}
+                            onDelete={(e) => {
+                              e.stopPropagation()
+                              void patchRequirement(req.id, { status: 'pending' })
+                            }}
+                          />
                         )
-                      }}
-                    />
+                      })()}
+                      <KeyboardArrowDown fontSize="small" style={{ opacity: 0.75 }} />
+                    </Box>
                   </TableCell>
                   {columns.map((col) => {
                     const raw = req.custom_values?.[col.id] ?? ''
@@ -923,134 +769,60 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     if (col.field_type === 'select') {
                       return (
                         <TableCell key={col.id} sx={{ py: 0.5, verticalAlign: 'middle', minWidth: 168 }}>
-                          <Autocomplete
-                            freeSolo
-                            openOnFocus
-                            selectOnFocus
-                            size="small"
-                            options={col.options}
-                            value={raw || null}
-                            isOptionEqualToValue={(a, b) => a === b}
-                            sx={getSelectPillSx(isSelectActive(req.id, col.id))}
-                            onOpen={() => setActiveSelectCell({ reqId: req.id, key: col.id })}
-                            onClose={() =>
-                              setActiveSelectCell((prev) =>
-                                prev?.reqId === req.id && prev?.key === col.id ? null : prev
-                              )
-                            }
-                            onChange={(_, v) => {
-                              if (v === null) {
-                                void onSelectChange(req, col, null)
-                                return
-                              }
-                              void onSelectChange(req, col, typeof v === 'string' ? v : '')
+                          <Box
+                            component="button"
+                            type="button"
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`编辑${col.name}`}
+                            sx={selectPillSx}
+                            onClick={(e) => {
+                              setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                              setSelectMenuContext({ kind: 'custom', req, col })
+                              setSelectMenuQuery('')
                             }}
-                            renderInput={(params) => (
-                              <TextField
-                                {...params}
-                                placeholder={isSelectActive(req.id, col.id) ? '查找或创建选项' : ''}
-                                variant="outlined"
-                                inputProps={{
-                                  ...params.inputProps,
-                                  readOnly: !isSelectActive(req.id, col.id),
-                                  value:
-                                    !isSelectActive(req.id, col.id) && params.inputProps.value
-                                      ? ''
-                                      : params.inputProps.value,
-                                  onKeyDown: (e) => {
-                                    if (e.key !== 'Enter') return
-                                    const target = e.currentTarget as HTMLInputElement
-                                    const v = target.value.trim()
-                                    if (!v) return
-                                    e.preventDefault()
-                                    void onSelectChange(req, col, v)
-                                  },
-                                }}
-                                InputProps={{
-                                  ...params.InputProps,
-                                  startAdornment: raw ? (
-                                    <>
-                                      {(() => {
-                                        const optIdx = col.options.indexOf(raw)
-                                        const pal = getSelectOptionColors(Math.max(0, optIdx))
-                                        return (
-                                          <Chip
-                                            size="small"
-                                            label={raw}
-                                            sx={{
-                                              backgroundColor: pal.bg,
-                                              color: pal.fg,
-                                              mr: 0.75,
-                                            }}
-                                            onDelete={() => void onSelectChange(req, col, null)}
-                                          />
-                                        )
-                                      })()}
-                                      {params.InputProps.startAdornment}
-                                    </>
-                                  ) : (
-                                    params.InputProps.startAdornment
-                                  ),
-                                }}
-                                onBlur={(e) => {
-                                  const v = e.target.value?.trim() ?? ''
-                                  if (!v) {
-                                    if (raw) void onSelectChange(req, col, null)
-                                    return
-                                  }
-                                  if (v !== raw) void onSelectChange(req, col, v)
-                                }}
+                            onKeyDown={(e) => {
+                              if (e.key !== 'Enter' && e.key !== ' ') return
+                              e.preventDefault()
+                              setSelectMenuAnchor(e.currentTarget as HTMLElement)
+                              setSelectMenuContext({ kind: 'custom', req, col })
+                              setSelectMenuQuery('')
+                            }}
+                          >
+                            {raw ? (
+                              (() => {
+                                const optIdx = col.options.indexOf(raw)
+                                const pal = getSelectOptionColors(Math.max(0, optIdx))
+                                return (
+                                  <Chip
+                                    size="small"
+                                    label={raw}
+                                    sx={{
+                                      backgroundColor: pal.bg,
+                                      color: pal.fg,
+                                      fontWeight: 800,
+                                      fontSize: '0.75rem',
+                                    }}
+                                    onDelete={(e) => {
+                                      e.stopPropagation()
+                                      void onSelectChange(req, col, null)
+                                    }}
+                                  />
+                                )
+                              })()
+                            ) : (
+                              <Typography
+                                variant="body2"
                                 sx={{
-                                  '& .MuiOutlinedInput-root': {
-                                    // actual visual style lives in selectPillSx
-                                  },
+                                  color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)',
+                                  fontSize: '0.85rem',
                                 }}
-                              />
+                              >
+                                —
+                              </Typography>
                             )}
-                            renderOption={(props, option) => {
-                              const optIdx = col.options.indexOf(option as string)
-                              const pal = getSelectOptionColors(Math.max(0, optIdx))
-                              return (
-                                <Box
-                                  component="li"
-                                  {...(() => {
-                                    const { key: _key, ...rest } = props as any
-                                    return rest
-                                  })()}
-                                >
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                    <Chip
-                                      size="small"
-                                      label={option}
-                                      sx={{
-                                        backgroundColor: pal.bg,
-                                        color: pal.fg,
-                                        fontWeight: 800,
-                                        fontSize: '0.75rem',
-                                      }}
-                                    />
-                                    <IconButton
-                                      size="small"
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        setOptionMenuAnchor(e.currentTarget)
-                                        setOptionMenuContext({
-                                          attributeName: col.name,
-                                          oldValue: String(option),
-                                        })
-                                        setRenameDraftValue(String(option))
-                                      }}
-                                      sx={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }}
-                                      aria-label="修改选项"
-                                    >
-                                      <MoreHoriz fontSize="small" />
-                                    </IconButton>
-                                  </Box>
-                                </Box>
-                              )
-                            }}
-                          />
+                            <KeyboardArrowDown fontSize="small" style={{ opacity: 0.75 }} />
+                          </Box>
                         </TableCell>
                       )
                     }
@@ -1168,6 +940,196 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Menu
+        anchorEl={selectMenuAnchor}
+        open={Boolean(selectMenuAnchor)}
+        onClose={closeSelectMenu}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+            width: 280,
+            overflow: 'hidden',
+          },
+        }}
+        MenuListProps={{
+          dense: true,
+          onKeyDown: (e) => {
+            // Keep Enter handling on the input, not the MenuList.
+            if (e.key === 'Enter') e.preventDefault()
+          },
+        }}
+      >
+        <Box
+          onClick={(e) => e.stopPropagation()}
+          sx={{
+            p: 1,
+            pb: 0.75,
+          }}
+        >
+          <TextField
+            autoFocus
+            fullWidth
+            size="small"
+            placeholder="查找或创建选项"
+            value={selectMenuQuery}
+            onChange={(e) => setSelectMenuQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return
+              e.preventDefault()
+              const ctx = selectMenuContext
+              const q = selectMenuQuery.trim()
+              if (!ctx || !q) return
+
+              if (ctx.kind === 'priority') {
+                const nums = q.match(/(\d+)/g)
+                if (!nums?.length) return
+                const parsed = Number.parseInt(nums[nums.length - 1], 10)
+                if (!Number.isFinite(parsed)) return
+                const next = Math.max(0, Math.min(5, parsed))
+                void patchRequirement(ctx.req.id, { priority: next })
+                closeSelectMenu()
+                return
+              }
+
+              if (ctx.kind === 'status') {
+                const match =
+                  REQUIREMENT_STATUS.find((x) => x.value === q)?.value ||
+                  REQUIREMENT_STATUS.find((x) => x.label === q)?.value ||
+                  null
+                if (!match) return
+                void patchRequirement(ctx.req.id, { status: match })
+                closeSelectMenu()
+                return
+              }
+
+              // custom select: Enter creates/selects the typed option
+              if (!ctx.col) return
+              void onSelectChange(ctx.req, ctx.col, q)
+              closeSelectMenu()
+            }}
+          />
+        </Box>
+        <Divider />
+        <Box
+          sx={{
+            maxHeight: 320,
+            overflowY: 'auto',
+            py: 0.25,
+          }}
+        >
+          {(() => {
+            const ctx = selectMenuContext
+            if (!ctx) return null
+            const q = selectMenuQuery.trim().toLowerCase()
+
+            if (ctx.kind === 'priority') {
+              const opts = PRIORITY_OPTIONS.filter((p) =>
+                !q ? true : getPriorityLabel(p).toLowerCase().includes(q) || String(p).includes(q)
+              )
+              return opts.map((p) => (
+                <MenuItem
+                  key={`p-${p}`}
+                  selected={ctx.req.priority === p}
+                  onClick={() => {
+                    void patchRequirement(ctx.req.id, { priority: p })
+                    closeSelectMenu()
+                  }}
+                  sx={{ py: 0.75 }}
+                >
+                  <Chip
+                    size="small"
+                    label={getPriorityLabel(p)}
+                    sx={{
+                      backgroundColor: getPriorityColorP0P5(p),
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                </MenuItem>
+              ))
+            }
+
+            if (ctx.kind === 'status') {
+              const opts = REQUIREMENT_STATUS.filter((s) =>
+                !q ? true : s.label.toLowerCase().includes(q) || s.value.toLowerCase().includes(q)
+              )
+              return opts.map((s) => (
+                <MenuItem
+                  key={`s-${s.value}`}
+                  selected={ctx.req.status === s.value}
+                  onClick={() => {
+                    void patchRequirement(ctx.req.id, { status: s.value })
+                    closeSelectMenu()
+                  }}
+                  sx={{ py: 0.75 }}
+                >
+                  <Chip
+                    size="small"
+                    label={s.label}
+                    sx={{
+                      backgroundColor: s.color || '#6b7280',
+                      color: '#fff',
+                      fontWeight: 800,
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                </MenuItem>
+              ))
+            }
+
+            const col = ctx.col
+            if (!col) return null
+            const current = (ctx.req.custom_values?.[col.id] ?? '') as string
+            const opts = (col.options ?? []).filter((o) => (!q ? true : o.toLowerCase().includes(q)))
+            return opts.map((o) => {
+              const optIdx = col.options.indexOf(o)
+              const pal = getSelectOptionColors(Math.max(0, optIdx))
+              return (
+                <MenuItem
+                  key={`c-${col.id}-${o}`}
+                  selected={current === o}
+                  onClick={() => {
+                    void onSelectChange(ctx.req, col, o)
+                    closeSelectMenu()
+                  }}
+                  sx={{ py: 0.75, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}
+                >
+                  <Chip
+                    size="small"
+                    label={o}
+                    sx={{
+                      backgroundColor: pal.bg,
+                      color: pal.fg,
+                      fontWeight: 800,
+                      fontSize: '0.75rem',
+                    }}
+                  />
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setOptionMenuAnchor(e.currentTarget)
+                      setOptionMenuContext({
+                        attributeName: col.name,
+                        oldValue: String(o),
+                      })
+                      setRenameDraftValue(String(o))
+                    }}
+                    sx={{ color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.45)' }}
+                    aria-label="修改选项"
+                  >
+                    <MoreHoriz fontSize="small" />
+                  </IconButton>
+                </MenuItem>
+              )
+            })
+          })()}
+        </Box>
+      </Menu>
 
       <Menu
         anchorEl={optionMenuAnchor}

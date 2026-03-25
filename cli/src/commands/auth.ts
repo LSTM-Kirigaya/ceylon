@@ -20,7 +20,7 @@ interface UserInfo {
 
 export async function login(): Promise<void> {
   const supabase = getSupabaseClient()
-  console.log(chalk.blue('🔐 Ceylon Login\n'))
+  console.log(chalk.blue('🔐 ceylonm Login\n'))
   console.log(chalk.gray('Please enter your credentials:\n'))
 
   const answers = await inquirer.prompt([

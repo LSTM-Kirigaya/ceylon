@@ -43,6 +43,7 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "cheerio": "^1.2.0",
+    "chrome-devtools-mcp": "^0.20.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "pg": "^8.20.0",

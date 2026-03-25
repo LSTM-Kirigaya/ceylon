@@ -1,5 +1,5 @@
 -- =============================================
--- Ceylon Database Schema
+-- ceylonm Database Schema
 -- =============================================
 
 -- Enable UUID extension

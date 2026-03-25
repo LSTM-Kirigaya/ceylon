@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   Container,
-  Breadcrumbs,
   Link,
   Alert,
   List,
@@ -152,26 +151,6 @@ export default function SettingsPage() {
   return (
     <MainLayout>
       <Container maxWidth="md" sx={{ p: 3 }}>
-        {/* Breadcrumbs */}
-        <Breadcrumbs 
-          separator={<ChevronRight sx={{ fontSize: 16, color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)' }} />}
-          sx={{ mb: 2 }}
-        >
-          <Link
-            href={`/${locale}/dashboard`}
-            style={{
-              color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-            }}
-          >
-            {t('nav.dashboard')}
-          </Link>
-          <Typography sx={{ color: isDark ? 'white' : '#1c1917', fontSize: '0.9rem' }}>
-            {t('common.settings')}
-          </Typography>
-        </Breadcrumbs>
-
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography

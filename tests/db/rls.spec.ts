@@ -212,6 +212,7 @@ test.describe('Row Level Security Policies', () => {
       .from('projects')
       .delete()
       .eq('id', user1ProjectId)
+      .eq('owner_id', user2Id)
     
     // Project should still exist
     const { data: project } = await supabase

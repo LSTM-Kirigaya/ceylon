@@ -10,17 +10,28 @@ export async function GET(
 
   const { projectId } = await params
 
-  const { data, error } = await supabase
+  const direct = await supabase
     .from('version_views')
     .select('*')
     .eq('project_id', projectId)
     .order('created_at', { ascending: true })
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (direct.error?.message?.includes('infinite recursion')) {
+    const rpc = await supabase.rpc('list_version_views_accessible', { p_project_id: projectId })
+    if (rpc.error?.message?.includes('does not exist')) {
+      return NextResponse.json({ error: 'Database function missing: run migration 000009_project_detail_rpc.sql' }, { status: 503 })
+    }
+    if (rpc.error) {
+      return NextResponse.json({ error: rpc.error.message }, { status: 500 })
+    }
+    return NextResponse.json({ views: rpc.data ?? [] })
   }
 
-  return NextResponse.json({ views: data ?? [] })
+  if (direct.error) {
+    return NextResponse.json({ error: direct.error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ views: direct.data ?? [] })
 }
 
 export async function POST(
@@ -42,7 +53,7 @@ export async function POST(
       return NextResponse.json({ error: 'Name required' }, { status: 400 })
     }
 
-    const { data, error } = await supabase
+    const inserted = await supabase
       .from('version_views')
       .insert({
         project_id: projectId,
@@ -52,11 +63,29 @@ export async function POST(
       .select()
       .single()
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+    if (inserted.error?.message?.includes('infinite recursion')) {
+      const rpc = await supabase.rpc('insert_version_view_accessible', {
+        p_project_id: projectId,
+        p_name: name,
+        p_description: description ?? '',
+      })
+      if (rpc.error?.message?.includes('does not exist')) {
+        return NextResponse.json({ error: 'Database function missing: run migration 000010_insert_version_view_rpc.sql' }, { status: 503 })
+      }
+      if (rpc.error?.message?.includes('Forbidden')) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (rpc.error) {
+        return NextResponse.json({ error: rpc.error.message }, { status: 400 })
+      }
+      return NextResponse.json({ view: rpc.data })
     }
 
-    return NextResponse.json({ view: data })
+    if (inserted.error) {
+      return NextResponse.json({ error: inserted.error.message }, { status: 400 })
+    }
+
+    return NextResponse.json({ view: inserted.data })
   } catch (e) {
     console.error('POST views', e)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

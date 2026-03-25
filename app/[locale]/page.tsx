@@ -445,7 +445,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
       {/* Hero Section - Full Viewport Height */}
       <Box
         sx={{
-          minHeight: 'calc(100vh - 64px)',
+          minHeight: 'calc(100vh - 30px)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',

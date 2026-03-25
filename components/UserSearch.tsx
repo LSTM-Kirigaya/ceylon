@@ -208,6 +208,7 @@ export default function UserSearch({
               setShowResults(true)
             }
           }}
+          inputProps={{ 'data-testid': 'user-search-input' }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -275,6 +276,7 @@ export default function UserSearch({
                 {users.map((user) => (
                   <ListItemButton
                     key={user.id}
+                    data-testid={`user-search-option-${user.id}`}
                     onClick={() => handleSelectUser(user)}
                     sx={{
                       py: 1.5,

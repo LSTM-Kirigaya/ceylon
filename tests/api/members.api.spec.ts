@@ -90,7 +90,7 @@ test.describe('Project Members API', () => {
     // Query members
     const { data: members, error } = await supabase
       .from('project_members')
-      .select('*, profile:profiles(*)')
+      .select('*')
       .eq('project_id', projectId)
     
     expect(error).toBeNull()

@@ -117,7 +117,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isSidebarExpanded = !sidebarCollapsed || sidebarHovered
   const currentSidebarWidth = isSidebarExpanded ? drawerWidth : collapsedDrawerWidth
-  const pathSegments = useMemo(() => pathname.split('/').filter(Boolean).slice(1), [pathname])
+  const pathSegments = useMemo(() => {
+    const segments = pathname.split('/').filter(Boolean)
+    // When pathname does not include the locale segment (e.g. some test flows / redirects),
+    // avoid blindly dropping the first segment.
+    return segments[0] === locale ? segments.slice(1) : segments
+  }, [pathname, locale])
 
   const breadcrumbLabelMap: Record<string, string> = {
     dashboard: '控制台',
@@ -129,20 +134,28 @@ export default function MainLayout({ children }: MainLayoutProps) {
     subscription: '订阅套餐',
   }
 
-  const breadcrumbs = pathSegments.map((segment, index) => {
-    const href = `/${locale}/${pathSegments.slice(0, index + 1).join('/')}`
-    const isLast = index === pathSegments.length - 1
-    const isUuidLike =
-      segment.length > 20 && /^[0-9a-f-]+$/i.test(segment)
-    let label = breadcrumbLabelMap[segment] || (isUuidLike ? segment.slice(0, 8) : segment)
-    if (isUuidLike && index > 0 && pathSegments[index - 1] === 'project' && resolvedNames.projectName) {
-      label = resolvedNames.projectName
-    }
-    if (isUuidLike && index > 0 && pathSegments[index - 1] === 'view' && resolvedNames.viewName) {
-      label = resolvedNames.viewName
-    }
-    return { href, isLast, label }
-  })
+  // Some segments (e.g. "project" / "view") are route groups without dedicated pages.
+  // If we make them clickable, we might navigate to non-existent routes like:
+  //   /dashboard/project  (missing projectId) => 404
+  const breadcrumbs = pathSegments
+    .map((segment, index) => {
+      if (segment === 'project' || segment === 'view') return null
+
+      const href = `/${locale}/${pathSegments.slice(0, index + 1).join('/')}`
+      const isLast = index === pathSegments.length - 1
+      const isUuidLike = segment.length > 20 && /^[0-9a-f-]+$/i.test(segment)
+      let label = breadcrumbLabelMap[segment] || (isUuidLike ? segment.slice(0, 8) : segment)
+
+      if (isUuidLike && index > 0 && pathSegments[index - 1] === 'project' && resolvedNames.projectName) {
+        label = resolvedNames.projectName
+      }
+      if (isUuidLike && index > 0 && pathSegments[index - 1] === 'view' && resolvedNames.viewName) {
+        label = resolvedNames.viewName
+      }
+
+      return { href, isLast, label }
+    })
+    .filter((x): x is { href: string; isLast: boolean; label: string } => x !== null)
 
   useEffect(() => {
     const loadNames = async () => {

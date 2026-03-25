@@ -1,24 +1,66 @@
 import { Page } from '@playwright/test'
 import { supabase } from './supabase-client'
 import { TEST_USER } from './test-data'
+import { createServiceClient } from './supabase-client'
 
 /**
  * Authentication helpers for E2E tests
  */
 
+function sleep(ms: number) {
+  return new Promise((r) => setTimeout(r, ms))
+}
+
+function isRetryableAdminError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err)
+  const m = msg.toLowerCase()
+  return (
+    m.includes('econnreset') ||
+    m.includes('fetch failed') ||
+    m.includes('network') ||
+    m.includes('retryable')
+  )
+}
+
+async function ensureUserExists(email: string, password: string) {
+  const admin = createServiceClient()
+  const max = 4
+  for (let i = 0; i < max; i++) {
+    const ensure = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+    if (!ensure.error) return
+    const already = ensure.error.message.toLowerCase().includes('already')
+    if (already) return
+    if (i < max - 1 && isRetryableAdminError(ensure.error)) {
+      await sleep(500 * (i + 1))
+      continue
+    }
+    throw ensure.error
+  }
+}
+
 export async function signInUser(page: Page, email: string = TEST_USER.email, password: string = TEST_USER.password) {
-  // Navigate to login page
-  await page.goto('/login')
-  
-  // Fill in credentials
-  await page.fill('input[type="email"]', email)
-  await page.fill('input[type="password"]', password)
-  
-  // Click login button
+  await ensureUserExists(email, password)
+
+  // Navigate to login page (if already authenticated, app may redirect to dashboard)
+  await page.goto('/login', { waitUntil: 'domcontentloaded' })
+
+  // If already logged in, no-op.
+  if (page.url().includes('/dashboard')) return
+
+  const emailSel = 'input[name="email"], input[type="email"]'
+  await page.waitForSelector(emailSel, { state: 'visible', timeout: 30_000 })
+
+  // Fill in credentials with stable selectors for the current UI.
+  await page.fill(emailSel, email)
+  await page.fill('input[name="password"], input[type="password"]', password)
+
+  // Submit and wait for dashboard
   await page.click('button[type="submit"]')
-  
-  // Wait for navigation to dashboard
-  await page.waitForURL('/dashboard', { timeout: 10000 })
+  await page.waitForURL(/\/dashboard/, { timeout: 20000 })
 }
 
 export async function signUpUser(page: Page, email: string, password: string, displayName: string) {

@@ -79,7 +79,7 @@ export async function POST(
     const type = typeof body.type === 'string' ? body.type : 'Feature'
     const status = typeof body.status === 'string' ? body.status : 'pending'
 
-    let custom_values: Record<string, string> = {}
+    const custom_values: Record<string, string> = {}
     if (
       body.custom_values !== undefined &&
       body.custom_values !== null &&

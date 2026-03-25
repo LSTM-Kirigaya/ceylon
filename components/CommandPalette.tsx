@@ -99,8 +99,29 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
     },
   ]
 
+  const contextualCommands: CommandItem[] = []
+  if (pathname.includes('/view/') && searchQuery.trim()) {
+    contextualCommands.push({
+      id: 'search-requirements',
+      title: `在当前视图搜索需求: ${searchQuery.trim()}`,
+      description: '将搜索词应用到当前版本视图需求列表',
+      icon: <Search sx={{ fontSize: 20 }} />,
+      action: () => {
+        window.dispatchEvent(
+          new CustomEvent('requirements-global-search', {
+            detail: { query: searchQuery.trim() },
+          })
+        )
+        onClose()
+      },
+      category: 'Actions',
+    })
+  }
+
+  const allCommands = [...contextualCommands, ...commands]
+
   // Filter commands based on search
-  const filteredCommands = commands.filter(cmd => {
+  const filteredCommands = allCommands.filter(cmd => {
     if (!searchQuery || searchQuery.trim() === '') return true
     const query = searchQuery.toLowerCase().trim()
     return (

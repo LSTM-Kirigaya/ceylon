@@ -1,6 +1,6 @@
-# Ceylon Test Suite
+# ceylonm Test Suite
 
-Comprehensive test suite for the Ceylon project management application.
+Comprehensive test suite for the ceylonm project management application.
 
 ## Test Structure
 

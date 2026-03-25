@@ -16,13 +16,33 @@ export async function GET(
     q = q.eq('project_id', projectId)
   }
 
-  const { data, error } = await q.single()
+  const direct = await q.single()
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: error.code === 'PGRST116' ? 404 : 500 })
+  if (direct.error?.message?.includes('infinite recursion')) {
+    const rpc = await supabase.rpc('get_version_view_if_accessible', {
+      p_view_id: viewId,
+      p_project_id: projectId || null,
+    })
+    if (rpc.error?.message?.includes('does not exist')) {
+      return NextResponse.json({ error: 'Database function missing: run migration 000011_view_and_requirements_rpc.sql' }, { status: 503 })
+    }
+    if (rpc.error) {
+      return NextResponse.json({ error: rpc.error.message }, { status: 500 })
+    }
+    if (!rpc.data) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+    return NextResponse.json({ view: rpc.data })
   }
 
-  return NextResponse.json({ view: data })
+  if (direct.error) {
+    return NextResponse.json(
+      { error: direct.error.message },
+      { status: direct.error.code === 'PGRST116' ? 404 : 500 }
+    )
+  }
+
+  return NextResponse.json({ view: direct.data })
 }
 
 export async function PATCH(

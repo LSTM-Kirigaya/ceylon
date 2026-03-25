@@ -20,7 +20,7 @@ const TEST_EMAIL = `autotest_${timestamp}@ceylon.test`;
 const TEST_PASSWORD = 'Test123456!';
 const TEST_NAME = 'Auto Test User';
 
-console.log('🧪 Ceylon Authentication Test\n');
+console.log('🧪 ceylonm Authentication Test\n');
 console.log('Test Credentials:');
 console.log(`  Email: ${TEST_EMAIL}`);
 console.log(`  Password: ${TEST_PASSWORD}`);

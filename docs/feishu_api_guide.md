@@ -26,7 +26,7 @@
 
 ### 3. 环境变量配置
 
-创建 `.env` 文件：
+创建 `.env.development` 文件：
 
 ```bash
 FEISHU_APP_ID=cli_xxxxxxxx
@@ -43,8 +43,8 @@ import requests
 response = requests.post(
     "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
     json={
-        "app_id": app_id,       # 从 .env 读取
-        "app_secret": app_secret  # 从 .env 读取
+        "app_id": app_id,       # 从 .env.development 读取
+        "app_secret": app_secret  # 从 .env.development 读取
     },
     timeout=10
 )
@@ -206,8 +206,8 @@ import json
 
 
 def load_env():
-    """加载 .env 文件"""
-    with open('.env', 'r') as f:
+    """加载 .env.development 文件"""
+    with open('.env.development', 'r') as f:
         for line in f:
             line = line.strip()
             if line and not line.startswith('#') and '=' in line:
@@ -355,7 +355,7 @@ Access denied. One of the following scopes is required: [wiki:wiki, wiki:wiki:re
 app secret invalid
 ```
 
-**解决：** 检查 `.env` 文件中的 `FEISHU_APP_SECRET` 是否正确。
+**解决：** 检查 `.env.development` 文件中的 `FEISHU_APP_SECRET` 是否正确。
 
 ### 3. 空数据问题
 
@@ -371,7 +371,7 @@ valid_items = [item for item in items if item["title"] or item["content"]]
 
 ```bash
 # 使用现有脚本
-export $(grep -v '^#' .env | xargs)
+export $(grep -v '^#' .env.development | xargs)
 python scripts/fetch_feishu_requirements.py \
     --url "https://dcnvul43dz0u.feishu.cn/wiki/MRdKw34zEiHrttkQkX4cg3qKnUf?table=tbleySTh2QXbwRqu&view=vewMnpNgGD" \
     --output data/feishu_requirements.json

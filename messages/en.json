@@ -1,11 +1,11 @@
 {
   "metadata": {
-    "title": "Ceylon - Modern Requirements Management Platform",
-    "description": "Ceylon is a modern requirements management platform that helps teams efficiently manage project requirements, track progress, and collaborate. Supports version views, requirement categorization, priority management, and more."
+    "title": "ceylonm - Modern Requirements Management Platform",
+    "description": "ceylonm is a modern requirements management platform that helps teams efficiently manage project requirements, track progress, and collaborate. Supports version views, requirement categorization, priority management, and more."
   },
   "common": {
-    "appName": "Ceylon",
-    "appShortName": "Ceylon",
+    "appName": "ceylonm",
+    "appShortName": "ceylonm",
     "loading": "Loading...",
     "save": "Save",
     "cancel": "Cancel",
@@ -25,6 +25,7 @@
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
+    "status": "Status",
     "all": "All",
     "none": "None",
     "required": "Required",
@@ -89,13 +90,13 @@
       "description": "Once installed, your AI assistant can directly read and modify requirement documents. Integrate with various AI tools for fully automated requirement management."
     },
     "footer": {
-      "copyright": "© 2024 Ceylon. All rights reserved."
+      "copyright": "© 2024 ceylonm. All rights reserved."
     }
   },
   "auth": {
     "login": {
       "title": "Welcome Back",
-      "subtitle": "Sign in to your Ceylon account",
+      "subtitle": "Sign in to your ceylonm account",
       "email": "Email",
       "password": "Password",
       "submit": "Sign In",
@@ -112,7 +113,7 @@
     },
     "register": {
       "title": "Create Account",
-      "subtitle": "Start your journey with Ceylon",
+      "subtitle": "Start your journey with ceylonm",
       "steps": {
         "basic": "Basic Info",
         "avatar": "Upload Avatar",
@@ -170,7 +171,7 @@
     "createProject": "Create Project",
     "noProjects": {
       "title": "No projects yet",
-      "description": "Create your first project to start managing requirements with Ceylon",
+      "description": "Create your first project to start managing requirements with ceylonm",
       "action": "Create a project"
     },
     "projectCard": {

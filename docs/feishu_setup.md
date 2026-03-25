@@ -74,21 +74,21 @@ App Token 格式示例:
 
 ## 3. 配置环境变量
 
-### 方法 1: 使用 .env 文件（推荐）
+### 方法 1: 使用 .env.development 文件（推荐）
 
 1. 复制示例文件:
    ```bash
-   cp .env.example .env
+   cp .env.example .env.development
    ```
 
-2. 编辑 `.env` 文件，填入你的凭证:
+2. 编辑 `.env.development` 文件，填入你的凭证:
    ```bash
    FEISHU_APP_ID=cli_a93ed391e6389bca
    FEISHU_APP_SECRET=yl74mGIj8YD80vFMPn7qjdE04ub6I1uq
    FEISHU_APP_TOKEN=你的表格AppToken
    ```
 
-3. **确保 .env 已添加到 .gitignore**（已默认添加）
+3. **确保 .env.development 已添加到 .gitignore**（已默认添加）
 
 ### 方法 2: 使用环境变量
 
@@ -201,7 +201,7 @@ python -m src.breakdown_tasks \
 ⚠️ **重要**: 永远不要将凭证提交到 Git！
 
 已配置的防护措施：
-- `.gitignore` 已排除 `.env` 和 `*.secret`
+- `.gitignore` 已排除 `.env.development`、`.env.production` 和 `*.secret`
 - 脚本优先从环境变量读取凭证
 - 日志中不会打印敏感信息
 

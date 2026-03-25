@@ -11,12 +11,13 @@ export const STORAGE_BUCKETS = {
 export type StorageBucket = (typeof STORAGE_BUCKETS)[keyof typeof STORAGE_BUCKETS]
 
 export async function uploadProjectIcon(
-  _userId: string,
+  projectId: string,
   file: File
 ): Promise<{ url: string | null; error: Error | null }> {
   try {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('projectId', String(projectId).trim())
     const res = await fetch('/api/storage/project-icon', {
       method: 'POST',
       body: formData,

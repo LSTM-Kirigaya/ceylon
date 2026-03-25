@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { getRouteSupabaseUser, unauthorized } from '@/lib/api-route-helpers'
 import type { ProjectMember } from '@/types'
+import { getSupabaseServiceRoleKey, getSupabaseUrl } from '@/lib/supabase-env'
 
 export async function GET(
   _request: NextRequest,
@@ -31,7 +33,9 @@ export async function GET(
   }
   const profileById: Record<string, unknown> = {}
   if (userIds.length > 0) {
-    const { data: profs } = await supabase.from('profiles').select('*').in('id', userIds)
+    // Use service role to fetch member profiles; profile RLS typically restricts to self.
+    const admin = createClient(getSupabaseUrl(), getSupabaseServiceRoleKey())
+    const { data: profs } = await admin.from('profiles').select('*').in('id', userIds)
     for (const p of profs ?? []) {
       profileById[(p as { id: string }).id] = p
     }

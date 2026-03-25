@@ -39,8 +39,8 @@ test.describe('Dashboard Console Errors', () => {
       .select('*')
       .order('created_at', { ascending: false })
     
-    const isRecursionError = error?.code === '42P17' || 
-                            error?.message?.includes('infinite recursion')
+    const isRecursionError =
+      error?.code === '42P17' || error?.message?.includes('infinite recursion') === true
     
     if (isRecursionError) {
       console.error('❌ CRITICAL: Infinite recursion in projects query')
@@ -58,8 +58,8 @@ test.describe('Dashboard Console Errors', () => {
       .select('project_id, projects(*)')
       .order('created_at', { ascending: false })
     
-    const isRecursionError = error?.code === '42P17' || 
-                            error?.message?.includes('infinite recursion')
+    const isRecursionError =
+      error?.code === '42P17' || error?.message?.includes('infinite recursion') === true
     
     if (isRecursionError) {
       console.error('❌ CRITICAL: Infinite recursion in project_members query')
@@ -83,8 +83,9 @@ test.describe('Dashboard Console Errors', () => {
       .select()
       .single()
     
-    const isColumnMissing = error?.message?.includes('icon_url') &&
-                           error?.message?.includes('Could not find')
+    const isColumnMissing =
+      error?.message?.includes('icon_url') === true &&
+      error?.message?.includes('Could not find') === true
     
     if (isColumnMissing) {
       console.error('❌ CRITICAL: icon_url column missing in projects table')

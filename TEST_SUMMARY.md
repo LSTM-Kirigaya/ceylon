@@ -1,8 +1,8 @@
-# Ceylon Test Suite - Implementation Summary
+# ceylonm Test Suite - Implementation Summary
 
 ## 测试套件概述
 
-为 Ceylon 项目创建了完整的测试套件，包括 E2E 测试、API 测试和数据库测试。所有测试都是幂等的，可以在 CI/CD 环境中安全运行。
+为 ceylonm 项目创建了完整的测试套件，包括 E2E 测试、API 测试和数据库测试。所有测试都是幂等的，可以在 CI/CD 环境中安全运行。
 
 ## 创建的文件结构
 

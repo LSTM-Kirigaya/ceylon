@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, use, useMemo } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import {
   Box,
@@ -45,6 +45,7 @@ import MainLayout from '@/components/MainLayout'
 export default function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = use(params)
   const router = useRouter()
+  const pathname = usePathname()
   const t = useTranslations()
   const { profile, user, loading: authLoading } = useAuthStore()
   const { getEffectiveMode } = useThemeStore()
@@ -86,33 +87,45 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
     fetchProjects()
   }, [authLoading, user])
 
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setCreateDialogOpen(true)
+      const next = new URLSearchParams(searchParams.toString())
+      next.delete('create')
+      const q = next.toString()
+      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+    }
+  }, [searchParams, router, pathname])
+
   const handleCreateProject = async () => {
     if (!newProjectName.trim()) return
 
     setCreating(true)
     try {
-      let iconUrl: string | null = null
-
-      if (newProjectIcon) {
-        const { url, error: uploadError } = await uploadProjectIcon('', newProjectIcon)
-
-        if (uploadError) {
-          throw uploadError
-        }
-
-        iconUrl = url
-      }
-
-      const { project: data } = await apiJson<{ project: Project }>('/api/projects', {
+      const { project: created } = await apiJson<{ project: Project }>('/api/projects', {
         method: 'POST',
         body: JSON.stringify({
           name: newProjectName.trim(),
           description: newProjectDesc.trim() || null,
-          icon_url: iconUrl,
+          icon_url: null,
         }),
       })
 
-      setProjects([data, ...projects])
+      let nextProject = created
+
+      // Storage policy expects icons under foldername == projectId.
+      if (newProjectIcon) {
+        const { url, error: uploadError } = await uploadProjectIcon(created.id, newProjectIcon)
+        if (uploadError || !url) throw uploadError ?? new Error('Upload failed')
+
+        const { project: updated } = await apiJson<{ project: Project }>(`/api/projects/${created.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ icon_url: url }),
+        })
+        nextProject = updated
+      }
+
+      setProjects((prev) => [nextProject, ...prev])
       setCreateDialogOpen(false)
       setNewProjectName('')
       setNewProjectDesc('')
@@ -129,7 +142,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
     try {
       await apiJson(`/api/projects/${projectId}`, { method: 'DELETE' })
 
-      setProjects(projects.filter(p => p.id !== projectId))
+      setProjects((prev) => prev.filter((p) => p.id !== projectId))
     } catch (error) {
       console.error('Error deleting project:', error)
     }
@@ -147,9 +160,14 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
     setSelectedProject(null)
   }
 
-  const filteredProjects = projects.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (p.description?.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredProjects = useMemo(
+    () =>
+      projects.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    [projects, searchQuery]
   )
 
   const ownedCount = projects.filter((p) => p.owner_id === profile?.id).length
@@ -166,7 +184,6 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
           p: { xs: 2, md: 3 },
           pb: 2,
           backgroundColor: isDark ? '#0c0a09' : '#ffffff',
-          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
         }}>
           <Container maxWidth={false}>
             <Box sx={{ 
@@ -474,7 +491,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                 display: 'block',
               }}
             >
-              项目图标（可选）
+            项目头像（可选）
             </Typography>
             {newProjectIconPreview ? (
               <Box sx={{ position: 'relative', display: 'inline-block' }}>
@@ -543,6 +560,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                       setNewProjectIconPreview(URL.createObjectURL(file))
                     }
                   }}
+                  data-testid="create-project-icon-uploader-input"
                 />
               </Button>
             )}

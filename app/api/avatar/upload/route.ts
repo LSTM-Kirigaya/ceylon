@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File | null
+    const rawFile = formData.get('file') as unknown
+    const file = rawFile as (File & { name?: string; type?: string }) | null
     const userId = formData.get('userId') as string | null
 
     if (!file || !userId) {
@@ -19,16 +20,21 @@ export async function POST(request: NextRequest) {
     }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-    if (!allowedTypes.includes(file.type)) {
+    const mimeType = typeof file.type === 'string' ? file.type : ''
+    if (mimeType && !allowedTypes.includes(mimeType)) {
       return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
     }
 
     const maxSize = 5 * 1024 * 1024
-    if (file.size > maxSize) {
+    const size = typeof file.size === 'number' ? file.size : 0
+    if (size > maxSize) {
       return NextResponse.json({ error: 'File too large' }, { status: 400 })
     }
 
-    const fileExt = file.name.split('.').pop()
+    const rawName = typeof file.name === 'string' ? file.name : ''
+    const extFromName = rawName.includes('.') ? rawName.split('.').pop() : ''
+    const extFromType = mimeType.includes('/') ? mimeType.split('/').pop() : ''
+    const fileExt = (extFromName || extFromType || 'png').toLowerCase()
     const fileName = `${userId}-${Date.now()}.${fileExt}`
     const filePath = `${userId}/${fileName}`
 
@@ -37,6 +43,7 @@ export async function POST(request: NextRequest) {
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: true,
+        contentType: mimeType || undefined,
       })
 
     if (uploadError) {

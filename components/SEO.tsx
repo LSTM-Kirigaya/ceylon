@@ -10,10 +10,10 @@ interface SEOProps {
   noIndex?: boolean
 }
 
-const DEFAULT_TITLE = '锡兰 Ceylon - 现代化需求管理平台'
+const DEFAULT_TITLE = '锡兰 ceylonm - 现代化需求管理平台'
 const DEFAULT_DESCRIPTION = '锡兰是一个现代化的需求管理平台，帮助团队高效管理项目需求、追踪进度、协作开发。支持版本视图、需求分类、优先级管理等功能。'
-const DEFAULT_KEYWORDS = ['需求管理', '项目管理', '团队协作', '敏捷开发', '产品管理', 'Ceylon', '锡兰']
-const SITE_URL = 'https://ceylon.app'
+const DEFAULT_KEYWORDS = ['需求管理', '项目管理', '团队协作', '敏捷开发', '产品管理', 'ceylonm', '锡兰']
+const SITE_URL = 'https://ceylonm.com'
 
 export function SEO({
   title = DEFAULT_TITLE,
@@ -24,7 +24,7 @@ export function SEO({
   canonical,
   noIndex = false,
 }: SEOProps) {
-  const fullTitle = title === DEFAULT_TITLE ? title : `${title} | 锡兰 Ceylon`
+  const fullTitle = title === DEFAULT_TITLE ? title : `${title} | 锡兰 ceylonm`
   const fullUrl = canonical ? `${SITE_URL}${canonical}` : SITE_URL
 
   return (
@@ -33,7 +33,7 @@ export function SEO({
       <title>{fullTitle}</title>
       <meta name="description" content={description} />
       <meta name="keywords" content={keywords.join(', ')} />
-      <meta name="author" content="Ceylon Team" />
+      <meta name="author" content="ceylonm Team" />
       <meta name="robots" content={noIndex ? 'noindex, nofollow' : 'index, follow'} />
 
       {/* 视口和主题 */}
@@ -69,7 +69,7 @@ export function SEO({
       <meta property="og:image" content={`${SITE_URL}${ogImage}`} />
       <meta property="og:image:width" content="1200" />
       <meta property="og:image:height" content="630" />
-      <meta property="og:site_name" content="锡兰 Ceylon" />
+      <meta property="og:site_name" content="锡兰 ceylonm" />
       <meta property="og:locale" content="zh_CN" />
 
       {/* Twitter Card */}
@@ -88,7 +88,7 @@ export function SEO({
           __html: JSON.stringify({
             '@context': 'https://schema.org',
             '@type': 'WebApplication',
-            name: '锡兰 Ceylon',
+            name: '锡兰 ceylonm',
             description: description,
             url: SITE_URL,
             applicationCategory: 'Productivity',
@@ -100,7 +100,7 @@ export function SEO({
             },
             author: {
               '@type': 'Organization',
-              name: 'Ceylon Team',
+              name: 'ceylonm Team',
             },
           }),
         }}

@@ -28,7 +28,7 @@ import { Logo } from '@/components/Logo'
 const getBlogPosts = (t: (key: string) => string) => [
   {
     id: 1,
-    title: 'The Birth of Ceylon: Why We Decided to Build This Project',
+    title: 'The Birth of ceylonm: Why We Decided to Build This Project',
     category: t('blog.categories.journey'),
     date: '2024-03-15',
     gradient: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',

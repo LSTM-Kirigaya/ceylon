@@ -1,7 +1,7 @@
 {
   "name": "ceylon-cli",
   "version": "1.0.0",
-  "description": "CLI tool for Ceylon - Intelligent Requirements Management",
+  "description": "CLI tool for ceylonm - Intelligent Requirements Management",
   "main": "dist/index.js",
   "bin": {
     "ceylon": "./dist/index.js"

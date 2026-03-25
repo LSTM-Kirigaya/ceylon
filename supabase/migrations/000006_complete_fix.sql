@@ -24,40 +24,44 @@ VALUES
     ('attachments', 'attachments', true)
 ON CONFLICT (id) DO NOTHING;
 
--- 4. Storage policies for project-icons
-CREATE POLICY "Project icons are publicly accessible" 
-    ON storage.objects FOR SELECT 
+-- 4. Storage policies for project-icons (idempotent)
+DROP POLICY IF EXISTS "Project icons are publicly accessible" ON storage.objects;
+CREATE POLICY "Project icons are publicly accessible"
+    ON storage.objects FOR SELECT
     USING (bucket_id = 'project-icons');
 
-CREATE POLICY "Project owners can upload icons" 
-    ON storage.objects FOR INSERT 
+DROP POLICY IF EXISTS "Project owners can upload icons" ON storage.objects;
+CREATE POLICY "Project owners can upload icons"
+    ON storage.objects FOR INSERT
     WITH CHECK (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
 
-CREATE POLICY "Project owners can update icons" 
-    ON storage.objects FOR UPDATE 
+DROP POLICY IF EXISTS "Project owners can update icons" ON storage.objects;
+CREATE POLICY "Project owners can update icons"
+    ON storage.objects FOR UPDATE
     USING (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
 
-CREATE POLICY "Project owners can delete icons" 
-    ON storage.objects FOR DELETE 
+DROP POLICY IF EXISTS "Project owners can delete icons" ON storage.objects;
+CREATE POLICY "Project owners can delete icons"
+    ON storage.objects FOR DELETE
     USING (
-        bucket_id = 'project-icons' AND 
+        bucket_id = 'project-icons' AND
         EXISTS (
-            SELECT 1 FROM public.projects 
-            WHERE id = (storage.foldername(name))[1]::uuid 
+            SELECT 1 FROM public.projects
+            WHERE id = (storage.foldername(name))[1]::uuid
             AND owner_id = auth.uid()
         )
     );
