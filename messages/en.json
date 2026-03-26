@@ -171,7 +171,8 @@
     "title": "Admin",
     "nav": {
       "overview": "Overview & traffic",
-      "invites": "Invite codes"
+      "invites": "Invite codes",
+      "blog": "Blog management"
     },
     "backToApp": "Back to app",
     "overview": {
@@ -199,6 +200,13 @@
         "views": "Views",
         "created": "Created",
         "actions": "Actions"
+      },
+      "categories": {
+        "all": "All",
+        "journey": "Journey",
+        "release": "Release",
+        "tech": "Tech Deep Dive",
+        "case": "Case Studies"
       },
       "form": {
         "slug": "URL Slug",
@@ -245,6 +253,20 @@
         "unused": "Available"
       }
     }
+  },
+  "blog": {
+    "title": "Dev Blog",
+    "subtitle": "Updates, releases, and deep dives from the ceylonm team",
+    "empty": "No blog posts yet",
+    "categories": {
+      "all": "All",
+      "journey": "Journey",
+      "release": "Release",
+      "tech": "Tech Deep Dive",
+      "case": "Case Studies"
+    },
+    "author": "Ceylon Team",
+    "readMore": "Read more"
   },
   "dashboard": {
     "title": "Projects",

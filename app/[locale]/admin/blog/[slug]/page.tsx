@@ -56,6 +56,7 @@ interface BlogForm {
 export default function BlogEditPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter()
   const t = useTranslations('admin')
+  const tCommon = useTranslations('common')
   const { getEffectiveMode } = useThemeStore()
   const isDark = getEffectiveMode() === 'dark'
   
@@ -161,7 +162,7 @@ export default function BlogEditPage({ params }: { params: Promise<{ slug: strin
           startIcon={<ArrowBack />}
           onClick={() => router.push('/admin/blog')}
         >
-          {t('common.back')}
+          {tCommon('back')}
         </Button>
         <Typography variant="h5" fontWeight={700}>
           {isNew ? t('blog.createTitle') : t('blog.editTitle')}
@@ -180,7 +181,7 @@ export default function BlogEditPage({ params }: { params: Promise<{ slug: strin
           disabled={saving}
           variant="outlined"
         >
-          {t('common.save')}
+          {tCommon('save')}
         </Button>
         <Button
           startIcon={<Publish />}
@@ -330,7 +331,7 @@ export default function BlogEditPage({ params }: { params: Promise<{ slug: strin
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewOpen(false)}>
-            {t('common.close')}
+            {tCommon('close')}
           </Button>
         </DialogActions>
       </Dialog>

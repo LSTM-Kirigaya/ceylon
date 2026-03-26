@@ -204,6 +204,13 @@
         "created": "创建时间",
         "actions": "操作"
       },
+      "categories": {
+        "all": "全部",
+        "journey": "历程",
+        "release": "发布",
+        "tech": "技术深度",
+        "case": "案例研究"
+      },
       "form": {
         "slug": "URL 标识",
         "slugHelp": "用于 URL 的唯一标识，创建后不可修改",
@@ -341,6 +348,7 @@
   "blog": {
     "title": "开发博客",
     "subtitle": "记录锡兰的每一步进化，分享我们的思考与成长",
+    "empty": "暂无博客文章",
     "categories": {
       "all": "全部",
       "journey": "历程",

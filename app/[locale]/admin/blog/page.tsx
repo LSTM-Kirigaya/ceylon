@@ -49,6 +49,7 @@ const statuses = ['draft', 'published', 'archived']
 export default function AdminBlogPage() {
   const router = useRouter()
   const t = useTranslations('admin')
+  const tCommon = useTranslations('common')
   const { getEffectiveMode } = useThemeStore()
   const isDark = getEffectiveMode() === 'dark'
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -227,10 +228,10 @@ export default function AdminBlogPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>
-            {t('common.cancel')}
+            {tCommon('cancel')}
           </Button>
           <Button onClick={handleDelete} color="error" variant="contained">
-            {t('common.delete')}
+            {tCommon('delete')}
           </Button>
         </DialogActions>
       </Dialog>

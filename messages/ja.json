@@ -171,7 +171,8 @@
     "title": "管理",
     "nav": {
       "overview": "概要・トラフィック",
-      "invites": "招待コード"
+      "invites": "招待コード",
+      "blog": "ブログ管理"
     },
     "backToApp": "アプリに戻る",
     "overview": {
@@ -199,6 +200,13 @@
         "views": "閲覧数",
         "created": "作成日",
         "actions": "操作"
+      },
+      "categories": {
+        "all": "すべて",
+        "journey": "歩み",
+        "release": "リリース",
+        "tech": "技術深掘り",
+        "case": "事例"
       },
       "form": {
         "slug": "URLスラッグ",
@@ -245,6 +253,20 @@
         "unused": "未使用"
       }
     }
+  },
+  "blog": {
+    "title": "開発ブログ",
+    "subtitle": "Ceylon の進化と開発の学びを共有します",
+    "empty": "ブログ記事がありません",
+    "categories": {
+      "all": "すべて",
+      "journey": "歩み",
+      "release": "リリース",
+      "tech": "技術深掘り",
+      "case": "事例"
+    },
+    "author": "Ceylon チーム",
+    "readMore": "続きを読む"
   },
   "dashboard": {
     "title": "プロジェクト",
