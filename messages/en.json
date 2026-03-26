@@ -53,6 +53,9 @@
     "projects": "Projects",
     "team": "Team",
     "profile": "Profile",
+    "docs": "Docs",
+    "blog": "Blog",
+    "pricing": "Pricing",
     "adminConsole": "Admin console"
   },
   "home": {

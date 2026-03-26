@@ -16,7 +16,6 @@ import {
   LightMode,
   DarkMode,
   Computer,
-  ArrowBack,
 } from '@mui/icons-material'
 import { useThemeStore, CEYLON_ORANGE } from '@/stores/themeStore'
 import { useAuthStore } from '@/stores/authStore'
@@ -35,6 +34,12 @@ interface BlogPost {
   published_at: string
   cover_image: string | null
   view_count: number
+  author?: {
+    id: string
+    display_name: string | null
+    email: string | null
+    avatar_url: string | null
+  } | null
 }
 
 interface BlogPostContentProps {
@@ -63,6 +68,12 @@ export default function BlogPostContent({ post, locale }: BlogPostContentProps) 
   ]
 
   const currentThemeIcon = themeIcons.find((t) => t.mode === mode) || themeIcons[0]
+
+  const topNavItems = [
+    { key: 'docs', href: `/${locale}/docs` },
+    { key: 'blog', href: `/${locale}/blog` },
+    { key: 'pricing', href: `/${locale}/pricing` },
+  ] as const
 
   const getCategoryLabel = (category: string) => {
     const key = `blog.categories.${category}`
@@ -101,6 +112,35 @@ export default function BlogPostContent({ post, locale }: BlogPostContentProps) 
             >
               {t('common.appName')}
             </Typography>
+          </Box>
+
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
+            {topNavItems.map((item) => {
+              const isActive = item.key === 'blog'
+              return (
+                <Button
+                  key={item.key}
+                  onClick={() => router.push(item.href)}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: isActive
+                      ? isDark
+                        ? 'white'
+                        : '#0a0a0a'
+                      : isDark
+                        ? 'rgba(255,255,255,0.7)'
+                        : 'rgba(0,0,0,0.7)',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: isDark ? 'white' : '#0a0a0a',
+                    },
+                  }}
+                >
+                  {t(`nav.${item.key}`)}
+                </Button>
+              )
+            })}
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -152,20 +192,6 @@ export default function BlogPostContent({ post, locale }: BlogPostContentProps) 
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* Back Button */}
-      <Container maxWidth="lg" sx={{ py: 2 }}>
-        <Button
-          startIcon={<ArrowBack />}
-          onClick={() => router.push(`/${locale}/blog`)}
-          sx={{
-            color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-            textTransform: 'none',
-          }}
-        >
-          {t('common.back')}
-        </Button>
-      </Container>
 
       {/* Hero Section */}
       {post.cover_image && (
@@ -243,6 +269,8 @@ export default function BlogPostContent({ post, locale }: BlogPostContentProps) 
           >
             <Typography variant="body2">
               {t('blog.author')}
+              {post.author?.display_name ? ` ${post.author.display_name}` : ''}
+              {!post.author?.display_name && post.author?.email ? ` ${post.author.email.split('@')[0]}` : ''}
             </Typography>
             <Typography variant="body2">·</Typography>
             <Typography variant="body2">

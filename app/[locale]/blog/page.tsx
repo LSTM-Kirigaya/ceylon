@@ -35,6 +35,12 @@ interface BlogPost {
   excerpt: string
   cover_image: string | null
   view_count: number
+  author?: {
+    id: string
+    display_name: string | null
+    email: string | null
+    avatar_url: string | null
+  } | null
 }
 
 export default function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -101,6 +107,12 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
     return null
   }
 
+  const topNavItems = [
+    { key: 'docs', href: `/${locale}/docs` },
+    { key: 'blog', href: `/${locale}/blog` },
+    { key: 'pricing', href: `/${locale}/pricing` },
+  ] as const
+
   return (
     <Box
       sx={{
@@ -133,6 +145,35 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
             >
               {t('common.appName')}
             </Typography>
+          </Box>
+
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
+            {topNavItems.map((item) => {
+              const isActive = item.key === 'blog'
+              return (
+                <Button
+                  key={item.key}
+                  onClick={() => router.push(item.href)}
+                  sx={{
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: isActive
+                      ? isDark
+                        ? 'white'
+                        : '#0a0a0a'
+                      : isDark
+                        ? 'rgba(255,255,255,0.7)'
+                        : 'rgba(0,0,0,0.7)',
+                    '&:hover': {
+                      backgroundColor: 'transparent',
+                      color: isDark ? 'white' : '#0a0a0a',
+                    },
+                  }}
+                >
+                  {t(`nav.${item.key}`)}
+                </Button>
+              )
+            })}
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -358,7 +399,11 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
                       color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
-                    {t('blog.author')} · {new Date(filteredPosts[0].published_at).toLocaleDateString()}
+                    {t('blog.author')}
+                    {filteredPosts[0].author?.display_name ? ` ${filteredPosts[0].author.display_name}` : ''}
+                    {!filteredPosts[0].author?.display_name && filteredPosts[0].author?.email ? ` ${filteredPosts[0].author.email.split('@')[0]}` : ''}
+                    {' · '}
+                    {new Date(filteredPosts[0].published_at).toLocaleDateString()}
                   </Typography>
                 </Box>
               </Paper>
@@ -425,7 +470,11 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
                         color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                       }}
                     >
-                      {t('blog.author')} · {new Date(post.published_at).toLocaleDateString()}
+                      {t('blog.author')}
+                      {post.author?.display_name ? ` ${post.author.display_name}` : ''}
+                      {!post.author?.display_name && post.author?.email ? ` ${post.author.email.split('@')[0]}` : ''}
+                      {' · '}
+                      {new Date(post.published_at).toLocaleDateString()}
                     </Typography>
                   </Box>
                 </Paper>

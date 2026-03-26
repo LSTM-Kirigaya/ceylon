@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('blog_posts')
-      .select('*')
+      .select('id,slug,title,subtitle,excerpt,category,published_at,cover_image,view_count,author_id')
       .eq('status', 'published')
       .order('published_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -39,8 +39,26 @@ export async function GET(request: NextRequest) {
 
     const { count } = await countQuery
 
+    const authorIds = Array.from(
+      new Set((posts || []).map((p: any) => p.author_id).filter(Boolean)),
+    ) as string[]
+
+    const authorsById = new Map<string, any>()
+    if (authorIds.length > 0) {
+      const { data: authors } = await supabase
+        .from('profiles')
+        .select('id,display_name,email,avatar_url')
+        .in('id', authorIds)
+      for (const a of authors || []) authorsById.set(a.id, a)
+    }
+
+    const postsWithAuthors = (posts || []).map((p: any) => ({
+      ...p,
+      author: p.author_id ? authorsById.get(p.author_id) ?? null : null,
+    }))
+
     return NextResponse.json({
-      posts,
+      posts: postsWithAuthors,
       total: count || 0,
       limit,
       offset,

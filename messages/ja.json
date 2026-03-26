@@ -53,6 +53,9 @@
     "projects": "プロジェクト",
     "team": "チーム",
     "profile": "プロフィール",
+    "docs": "ドキュメント",
+    "blog": "ブログ",
+    "pricing": "料金",
     "adminConsole": "管理コンソール"
   },
   "home": {

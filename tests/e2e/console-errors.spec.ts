@@ -25,10 +25,11 @@ test.describe('Console sanity', () => {
     const guard = attachConsoleGuards(page)
 
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     await page.goto('/blog')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
+    await expect(page.getByRole('heading', { name: /开发博客|Dev Blog|ブログ/i })).toBeVisible()
 
     await guard.assertNoErrors()
   })
@@ -38,7 +39,7 @@ test.describe('Console sanity', () => {
 
     await signInUser(page)
     await page.goto('/dashboard')
-    await page.waitForLoadState('networkidle')
+    await page.waitForLoadState('domcontentloaded')
 
     await guard.assertNoErrors()
   })

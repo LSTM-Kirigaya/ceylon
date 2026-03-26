@@ -15,7 +15,7 @@ async function getBlogPost(slug: string) {
   const supabase = await createServerSupabaseClient()
   const { data: post, error } = await supabase
     .from('blog_posts')
-    .select('*')
+    .select('id,slug,title,subtitle,content,excerpt,cover_image,category,status,author_id,published_at,created_at,updated_at,meta_title,meta_description,view_count')
     .eq('slug', slug)
     .eq('status', 'published')
     .single()
@@ -24,7 +24,17 @@ async function getBlogPost(slug: string) {
     return null
   }
 
-  return post
+  let author = null
+  if (post.author_id) {
+    const { data: p } = await supabase
+      .from('profiles')
+      .select('id,display_name,email,avatar_url')
+      .eq('id', post.author_id)
+      .maybeSingle()
+    author = p ?? null
+  }
+
+  return { ...post, author }
 }
 
 export async function generateMetadata({ params }: BlogPostPageProps): Promise<Metadata> {

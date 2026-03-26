@@ -12,7 +12,9 @@ export async function GET(
 
     const { data: post, error } = await supabase
       .from('blog_posts')
-      .select('*')
+      .select(
+        'id,slug,title,subtitle,content,excerpt,cover_image,category,status,author_id,published_at,created_at,updated_at,meta_title,meta_description,view_count',
+      )
       .eq('slug', slug)
       .eq('status', 'published')
       .single()
@@ -27,7 +29,17 @@ export async function GET(
     // Increment view count asynchronously (don't await)
     supabase.rpc('increment_blog_post_view', { p_slug: slug })
 
-    return NextResponse.json({ post })
+    let author = null
+    if (post?.author_id) {
+      const { data: p } = await supabase
+        .from('profiles')
+        .select('id,display_name,email,avatar_url')
+        .eq('id', post.author_id)
+        .maybeSingle()
+      author = p ?? null
+    }
+
+    return NextResponse.json({ post: { ...post, author } })
   } catch (error) {
     return NextResponse.json(
       { error: 'Internal server error' },
