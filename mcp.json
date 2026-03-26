@@ -7,6 +7,9 @@
     "chrome-devtools": {
       "command": "npx",
       "args": ["chrome-devtools-mcp"]
+    },
+    "playwright": {
+      "url": "http://localhost:8931/mcp"
     }
   }
 }
