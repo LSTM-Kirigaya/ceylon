@@ -72,7 +72,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const [columns, setColumns] = useState<VersionViewColumn[]>([])
   const [members, setMembers] = useState<ProjectMember[]>([])
   const [view, setView] = useState<VersionView | null>(null)
-  const [loading, setLoading] = useState(true)
+  /** 首屏数据未就绪：表格区用骨架；行数单独用骨架，工具栏始终渲染 */
+  const [tableLoading, setTableLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(null)
   const [filters, setFilters] = useState<
@@ -214,7 +215,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   }
 
   const fetchAll = useCallback(async () => {
-    setLoading(true)
+    setTableLoading(true)
     try {
       const [fullRes, memRes] = await Promise.all([
         apiJson<{ data: { view: VersionView; columns: VersionViewColumn[]; requirements: Requirement[] } }>(
@@ -238,7 +239,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     } catch (e) {
       console.error('RequirementsTable fetch', e)
     } finally {
-      setLoading(false)
+      setTableLoading(false)
     }
   }, [versionViewId, projectId])
 
@@ -576,13 +577,14 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     }
   }
 
-  if (loading) {
-    return (
-      <Box data-testid="requirements-loading">
-        <Skeleton variant="rectangular" height={420} sx={{ borderRadius: 2 }} />
-      </Box>
-    )
-  }
+  const tableColSpan =
+    3 + // number + title + blank cell
+    (isHidden('priority') ? 0 : 1) +
+    (isHidden('status') ? 0 : 1) +
+    visibleColumns.length +
+    1 // add-column plus
+
+  const skeletonRowCount = 6
 
   return (
     <Box data-testid="requirements-table-root">
@@ -597,9 +599,30 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
-          <Typography variant="body2" sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
-            {filteredRows.length} 行
-            {searchQuery || filters.length > 0 ? ` · 已筛选` : ''}
+          <Typography
+            variant="body2"
+            component="span"
+            sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+          >
+            {tableLoading ? (
+              <>
+                <Skeleton
+                  variant="text"
+                  width={28}
+                  sx={{
+                    display: 'inline-block',
+                    transform: 'none',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                  }}
+                />
+                <span>行</span>
+              </>
+            ) : (
+              <>
+                {filteredRows.length} 行
+                {searchQuery || filters.length > 0 ? ` · 已筛选` : ''}
+              </>
+            )}
           </Typography>
           <Button
             size="small"
@@ -1114,16 +1137,42 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredRows.length === 0 ? (
+            {tableLoading ? (
+              [...Array(skeletonRowCount)].map((_, ri) => (
+                <TableRow key={`sk-${ri}`}>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width={20} sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width="90%" sx={{ transform: 'none' }} />
+                  </TableCell>
+                  {!isHidden('priority') && (
+                    <TableCell sx={{ py: 1.25 }}>
+                      <Skeleton variant="rounded" height={32} sx={{ borderRadius: 999, transform: 'none' }} />
+                    </TableCell>
+                  )}
+                  {!isHidden('status') && (
+                    <TableCell sx={{ py: 1.25 }}>
+                      <Skeleton variant="rounded" height={32} sx={{ borderRadius: 999, transform: 'none' }} />
+                    </TableCell>
+                  )}
+                  <TableCell sx={{ py: 1.25 }} />
+                  {visibleColumns.map((c) => (
+                    <TableCell key={c.id} sx={{ py: 1.25 }}>
+                      <Skeleton
+                        variant="rounded"
+                        height={c.field_type === 'text' ? 28 : 32}
+                        sx={{ borderRadius: c.field_type === 'text' ? 1 : 999, transform: 'none' }}
+                      />
+                    </TableCell>
+                  ))}
+                  <TableCell sx={{ py: 1.25, width: 44 }} />
+                </TableRow>
+              ))
+            ) : filteredRows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={
-                    3 + // number + title + blank cell
-                    (isHidden('priority') ? 0 : 1) +
-                    (isHidden('status') ? 0 : 1) +
-                    visibleColumns.length +
-                    1 // add-column plus
-                  }
+                  colSpan={tableColSpan}
                   align="center"
                   sx={{ py: 6 }}
                 >
