@@ -11,7 +11,6 @@ import {
   CardContent,
   Grid,
   Skeleton,
-  Chip,
   IconButton,
   Menu,
   MenuItem,
@@ -27,7 +26,6 @@ import {
   Folder,
   MoreVert,
   Visibility,
-  TrendingUp,
   CheckCircle,
   Schedule,
   BugReport,
@@ -49,7 +47,8 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
   
   const [project, setProject] = useState<Project | null>(null)
   const [versionViews, setVersionViews] = useState<VersionView[]>([])
-  const [loading, setLoading] = useState(true)
+  const [viewsLoading, setViewsLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(true)
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null)
   const [stats, setStats] = useState({
     totalRequirements: 0,
@@ -62,26 +61,31 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
 
-  const fetchProjectData = useCallback(async () => {
-    setLoading(true)
+  const fetchViewsAndProject = useCallback(async () => {
+    setViewsLoading(true)
     try {
-      const [projectRes, viewsRes, statsRes] = await Promise.all([
-        apiJson<{ project: Project }>(`/api/projects/${projectId}`),
-        apiJson<{ views: VersionView[] }>(`/api/projects/${projectId}/views`),
-        apiJson<{
-          stats: {
-            totalRequirements: number
-            completed: number
-            inProgress: number
-            pending: number
-            bugs: number
-          }
-        }>(`/api/projects/${projectId}/stats`),
-      ])
+      const res = await apiJson<{ project: Project; views: VersionView[] }>(`/api/projects/${projectId}/full`)
+      setProject(res.project)
+      setVersionViews(res.views ?? [])
+    } catch (error) {
+      console.error('Error fetching project+views:', error)
+    } finally {
+      setViewsLoading(false)
+    }
+  }, [projectId])
 
-      setProject(projectRes.project)
-      setVersionViews(viewsRes.views || [])
-
+  const fetchStats = useCallback(async () => {
+    setStatsLoading(true)
+    try {
+      const statsRes = await apiJson<{
+        stats: {
+          totalRequirements: number
+          completed: number
+          inProgress: number
+          pending: number
+          bugs: number
+        }
+      }>(`/api/projects/${projectId}/stats`)
       const s = statsRes.stats
       setStats({
         totalRequirements: s.totalRequirements,
@@ -91,19 +95,19 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
         bugs: s.bugs,
       })
     } catch (error) {
-      console.error('Error fetching project data:', error)
+      console.error('Error fetching stats:', error)
     } finally {
-      setLoading(false)
+      setStatsLoading(false)
     }
   }, [projectId])
 
   useEffect(() => {
     if (projectId) {
-      fetchProjectData()
+      // 两波请求：顶部统计数字、版本视图列表（含 project 基础信息）
+      fetchStats()
+      fetchViewsAndProject()
     }
-  }, [projectId, fetchProjectData])
-
-  const isOwner = project?.owner_id === profile?.id
+  }, [projectId, fetchStats, fetchViewsAndProject])
 
   const statCards = [
     { label: '总需求', value: stats.totalRequirements, icon: Folder, color: CEYLON_ORANGE, bgColor: isDark ? 'rgba(200, 92, 27, 0.15)' : 'rgba(200, 92, 27, 0.08)' },
@@ -112,25 +116,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
     { label: 'Bug', value: stats.bugs, icon: BugReport, color: '#ef4444', bgColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.08)' },
   ]
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <Container maxWidth="lg" sx={{ p: 3 }}>
-          <Skeleton variant="text" height={40} width={200} />
-          <Skeleton variant="text" height={20} width={300} sx={{ mt: 1 }} />
-          <Grid container spacing={3} sx={{ mt: 2 }}>
-            {[...Array(4)].map((_, i) => (
-              <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
-                <Skeleton variant="rectangular" height={100} sx={{ borderRadius: 2 }} />
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-      </MainLayout>
-    )
-  }
-
-  if (!project) {
+  if (!project && !viewsLoading) {
     return (
       <MainLayout>
         <Container maxWidth="lg" sx={{ p: 3 }}>
@@ -148,11 +134,11 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               {/* Project Icon */}
-              {project.icon_url ? (
+              {project?.icon_url ? (
                 <Box
                   component="img"
                   src={project.icon_url}
-                  alt={project.name}
+                  alt={project.name ?? 'project'}
                   sx={{
                     width: 40,
                     height: 40,
@@ -191,12 +177,13 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
                   fontSize: { xs: '1.5rem', md: '1.75rem' },
                 }}
               >
-                {project.name}
+                {project?.name ? <>{project.name}</> : <Skeleton variant="text" width={180} />}
               </Typography>
               <Tooltip title="更多操作">
                 <IconButton
                   onClick={(e) => setMenuAnchorEl(e.currentTarget)}
                   sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}
+                  disabled={!project}
                 >
                   <MoreVert />
                 </IconButton>
@@ -278,7 +265,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
                           lineHeight: 1.2,
                         }}
                       >
-                        {stat.value}
+                        {statsLoading ? <Skeleton variant="text" width={36} /> : stat.value}
                       </Typography>
                       <Typography 
                         variant="body2" 
@@ -317,7 +304,15 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
             </Button>
           </Box>
           
-          {versionViews.length === 0 ? (
+          {viewsLoading ? (
+            <Grid container spacing={2}>
+              {[...Array(3)].map((_, i) => (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={i}>
+                  <Skeleton variant="rectangular" height={96} sx={{ borderRadius: 2 }} />
+                </Grid>
+              ))}
+            </Grid>
+          ) : versionViews.length === 0 ? (
             <Card sx={{ 
               backgroundColor: isDark ? '#1c1917' : '#ffffff', 
               p: 4, 
