@@ -1526,10 +1526,16 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
               >
                 <TableCell
                   sx={{
-                    width: 56,
-                    py: 0.25,
+                    width: NUMBER_COL_WIDTH_PX,
+                    minWidth: NUMBER_COL_WIDTH_PX,
+                    maxWidth: NUMBER_COL_WIDTH_PX,
+                    boxSizing: 'border-box',
+                    py: 0.5,
                     verticalAlign: 'middle',
-                    textAlign: 'center',
+                    textAlign: 'left',
+                    /* # 列仅 56px：默认左右 16px 时内容区 24px，28px 按钮会溢出到「标题」列；与编号列左对齐并收紧右侧留白 */
+                    pl: 2,
+                    pr: 0.75,
                   }}
                 >
                   <IconButton
@@ -1541,14 +1547,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       void addRow()
                     }}
                     sx={{
-                      width: 28,
-                      height: 28,
+                      width: 26,
+                      height: 26,
+                      p: 0.25,
                       borderRadius: 2,
                       border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
                       backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                     }}
                   >
-                    <Add fontSize="small" />
+                    <Add sx={{ fontSize: 18 }} />
                   </IconButton>
                 </TableCell>
                 <TableCell
