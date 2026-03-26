@@ -188,7 +188,9 @@
       "codeOptional": "コード（任意）",
       "codePlaceholder": "空欄で自動生成",
       "note": "メモ",
-      "expiresAt": "有効期限",
+      "validity": "有効期間",
+      "validityOption": "{days} 日",
+      "uses": "使用回数",
       "create": "作成",
       "loading": "読み込み中…",
       "delete": "削除",
@@ -197,6 +199,7 @@
       "table": {
         "code": "コード",
         "status": "状態",
+        "remaining": "残り/合計",
         "note": "メモ",
         "created": "作成日時",
         "expires": "有効期限",

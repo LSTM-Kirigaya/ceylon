@@ -191,7 +191,9 @@
       "codeOptional": "自定义码（可选）",
       "codePlaceholder": "留空则自动生成",
       "note": "备注",
-      "expiresAt": "过期时间",
+      "validity": "有效时间",
+      "validityOption": "{days} 天",
+      "uses": "可使用次数",
       "create": "创建",
       "loading": "加载中…",
       "delete": "删除",
@@ -200,6 +202,7 @@
       "table": {
         "code": "邀请码",
         "status": "状态",
+        "remaining": "剩余/总数",
         "note": "备注",
         "created": "创建时间",
         "expires": "过期时间",

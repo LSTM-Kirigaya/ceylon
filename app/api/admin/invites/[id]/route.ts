@@ -12,7 +12,7 @@ export async function DELETE(_: Request, ctx: { params: Promise<{ id: string }> 
   if (error) {
     if ((error as any).code === 'PGRST205') {
       return NextResponse.json(
-        { error: 'invite_codes table not found. Please apply migration 000018_admin_invites_analytics.sql.' },
+        { error: 'invite_codes table not found. Please apply migrations 000018_admin_invites_analytics.sql and 000019_invite_code_multi_use.sql.' },
         { status: 503 }
       )
     }

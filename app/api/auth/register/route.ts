@@ -22,22 +22,6 @@ export async function POST(request: NextRequest) {
     }
 
     const service = createServiceRoleClient()
-    const normalized = inviteCode
-    const { data: inviteRow, error: inviteErr } = await service
-      .from('invite_codes')
-      .select('id, code, used_by, expires_at')
-      .eq('code', normalized)
-      .maybeSingle()
-
-    if (inviteErr || !inviteRow) {
-      return NextResponse.json({ error: 'Invalid or expired invite code' }, { status: 400 })
-    }
-    if (inviteRow.used_by) {
-      return NextResponse.json({ error: 'This invite code has already been used' }, { status: 400 })
-    }
-    if (inviteRow.expires_at && new Date(inviteRow.expires_at) < new Date()) {
-      return NextResponse.json({ error: 'This invite code has expired' }, { status: 400 })
-    }
 
     const supabase = await createServerSupabaseClient()
     const { data, error } = await supabase.auth.signUp({
@@ -56,20 +40,25 @@ export async function POST(request: NextRequest) {
 
     const newUser = data.user
     if (newUser?.id) {
-      const { data: updated, error: consumeErr } = await service
-        .from('invite_codes')
-        .update({ used_by: newUser.id, used_at: new Date().toISOString() })
-        .eq('id', inviteRow.id)
-        .is('used_by', null)
-        .select('id')
-        .maybeSingle()
+      const { data: consumed, error: consumeErr } = await service.rpc('consume_invite_code', {
+        p_code: inviteCode,
+        p_user_id: newUser.id,
+      })
 
-      if (consumeErr || !updated) {
+      const ok = Array.isArray(consumed) ? consumed[0]?.ok === true : (consumed as any)?.ok === true
+      const reason = Array.isArray(consumed) ? consumed[0]?.reason : (consumed as any)?.reason
+
+      if (consumeErr || !ok) {
         await service.auth.admin.deleteUser(newUser.id)
-        return NextResponse.json(
-          { error: 'Could not complete registration with this invite code. Please try again.' },
-          { status: 409 }
-        )
+        const msg =
+          reason === 'expired'
+            ? 'This invite code has expired'
+            : reason === 'exhausted'
+              ? 'This invite code has already been used up'
+              : reason === 'not_found'
+                ? 'Invalid or expired invite code'
+                : 'Could not complete registration with this invite code. Please try again.'
+        return NextResponse.json({ error: msg }, { status: 409 })
       }
     }
 

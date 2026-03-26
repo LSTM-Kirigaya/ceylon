@@ -9,6 +9,7 @@ import {
   TextField,
   Button,
   Stack,
+  MenuItem,
   Table,
   TableBody,
   TableCell,
@@ -28,8 +29,8 @@ type InviteRow = {
   note: string | null
   created_at: string
   expires_at: string | null
-  used_at: string | null
-  used_by: string | null
+  max_uses: number | null
+  remaining_uses: number | null
 }
 
 export default function AdminInvitesPage() {
@@ -41,7 +42,8 @@ export default function AdminInvitesPage() {
   const [error, setError] = useState<string | null>(null)
   const [code, setCode] = useState('')
   const [note, setNote] = useState('')
-  const [expiresAt, setExpiresAt] = useState('')
+  const [validityDays, setValidityDays] = useState<number>(7)
+  const [uses, setUses] = useState<number>(1)
   const [submitting, setSubmitting] = useState(false)
   const skeletonRowCount = 6
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -84,7 +86,8 @@ export default function AdminInvitesPage() {
         body: JSON.stringify({
           code: code.trim() || undefined,
           note: note.trim() || undefined,
-          expiresAt: expiresAt || undefined,
+          validityDays,
+          uses,
         }),
       })
       const body = await res.json().catch(() => ({}))
@@ -94,7 +97,8 @@ export default function AdminInvitesPage() {
       }
       setCode('')
       setNote('')
-      setExpiresAt('')
+      setValidityDays(7)
+      setUses(1)
       await load()
     } finally {
       setSubmitting(false)
@@ -156,13 +160,27 @@ export default function AdminInvitesPage() {
           />
           <TextField label={t('note')} value={note} onChange={(e) => setNote(e.target.value)} size="small" fullWidth />
           <TextField
-            label={t('expiresAt')}
-            type="datetime-local"
-            value={expiresAt}
-            onChange={(e) => setExpiresAt(e.target.value)}
+            select
+            label={t('validity')}
+            value={validityDays}
+            onChange={(e) => setValidityDays(Number(e.target.value))}
             size="small"
-            InputLabelProps={{ shrink: true }}
             sx={{ minWidth: 220 }}
+          >
+            {[7, 30, 60, 90, 180].map((d) => (
+              <MenuItem key={d} value={d}>
+                {t('validityOption', { days: d })}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label={t('uses')}
+            type="number"
+            value={uses}
+            onChange={(e) => setUses(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
+            size="small"
+            sx={{ width: 150 }}
+            inputProps={{ min: 1, max: 1000, step: 1 }}
           />
           <Button type="submit" variant="contained" disabled={submitting} sx={{ minWidth: 120 }}>
             {t('create')}
@@ -190,6 +208,7 @@ export default function AdminInvitesPage() {
             <TableRow sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
               <TableCell>{t('table.code')}</TableCell>
               <TableCell>{t('table.status')}</TableCell>
+              <TableCell>{t('table.remaining')}</TableCell>
               <TableCell>{t('table.note')}</TableCell>
               <TableCell>{t('table.created')}</TableCell>
               <TableCell>{t('table.expires')}</TableCell>
@@ -209,6 +228,9 @@ export default function AdminInvitesPage() {
                     <Skeleton variant="rounded" height={28} width={88} sx={{ borderRadius: 999, transform: 'none' }} />
                   </TableCell>
                   <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width={88} sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
                     <Skeleton variant="text" width="80%" sx={{ transform: 'none' }} />
                   </TableCell>
                   <TableCell sx={{ py: 1.25 }}>
@@ -224,7 +246,7 @@ export default function AdminInvitesPage() {
               ))
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6}>
+                <TableCell colSpan={7}>
                   {t('empty')}
                 </TableCell>
               </TableRow>
@@ -237,11 +259,21 @@ export default function AdminInvitesPage() {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    {row.used_at ? (
-                      <Chip size="small" label={t('status.used')} color="default" />
-                    ) : (
-                      <Chip size="small" label={t('status.unused')} color="success" />
-                    )}
+                    {(() => {
+                      const remaining = typeof row.remaining_uses === 'number' ? row.remaining_uses : 0
+                      return remaining <= 0 ? (
+                        <Chip size="small" label={t('status.used')} color="default" />
+                      ) : (
+                        <Chip size="small" label={t('status.unused')} color="success" />
+                      )
+                    })()}
+                  </TableCell>
+                  <TableCell>
+                    {(() => {
+                      const remaining = typeof row.remaining_uses === 'number' ? row.remaining_uses : 0
+                      const max = typeof row.max_uses === 'number' ? row.max_uses : null
+                      return max != null ? `${remaining}/${max}` : String(remaining)
+                    })()}
                   </TableCell>
                   <TableCell>{row.note || '—'}</TableCell>
                   <TableCell>{new Date(row.created_at).toLocaleString()}</TableCell>

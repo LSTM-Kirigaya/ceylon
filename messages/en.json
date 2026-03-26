@@ -188,7 +188,9 @@
       "codeOptional": "Code (optional)",
       "codePlaceholder": "Leave empty to generate automatically",
       "note": "Note",
-      "expiresAt": "Expires",
+      "validity": "Validity",
+      "validityOption": "{days} days",
+      "uses": "Uses",
       "create": "Create",
       "loading": "Loading…",
       "delete": "Delete",
@@ -197,6 +199,7 @@
       "table": {
         "code": "Code",
         "status": "Status",
+        "remaining": "Remaining/total",
         "note": "Note",
         "created": "Created",
         "expires": "Expires",
