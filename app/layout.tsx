@@ -11,6 +11,12 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "ceylonm - Modern Requirements Management Platform",
   description: "ceylonm is a modern requirements management platform",
+  icons: {
+    icon: [
+      { url: "/icons/icon.svg", type: "image/svg+xml" },
+      { url: "/icons/icon.png", sizes: "128x128", type: "image/png" },
+    ],
+  },
 }
 
 export const viewport: Viewport = {
