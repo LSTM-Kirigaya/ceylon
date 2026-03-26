@@ -58,6 +58,10 @@
     "pricing": "Pricing",
     "adminConsole": "Admin console"
   },
+  "view": {
+    "create": "Create view",
+    "manage": "Manage views"
+  },
   "home": {
     "hero": {
       "badge": "AI-Powered Requirements Platform",
@@ -261,6 +265,7 @@
     "title": "Dev Blog",
     "subtitle": "Updates, releases, and deep dives from the ceylonm team",
     "empty": "No blog posts yet",
+    "views": "views",
     "categories": {
       "all": "All",
       "journey": "Journey",
@@ -298,7 +303,38 @@
       "creating": "Creating..."
     }
   },
+  "requirements": {
+    "import": {
+      "insert": "Insert",
+      "insertRow": "Insert row",
+      "insertRowDesc": "Insert a new row into this table",
+      "importCSV": "Import from CSV/Excel",
+      "importCSVDesc": "Insert new rows from CSV or Excel file",
+      "importTooltip": "Supports CSV, TSV, and Excel formats",
+      "title": "Import data",
+      "uploadTab": "Upload CSV",
+      "pasteTab": "Paste text",
+      "description": "Upload CSV, TSV, or Excel file. The first row should be headers.",
+      "dragDrop": "Drag and drop file here",
+      "orBrowse": "or click to browse",
+      "parsing": "Parsing file...",
+      "uploading": "Uploading...",
+      "rowsFound": "{count} rows found",
+      "preview": "Preview",
+      "importing": "Importing",
+      "importData": "Import data",
+      "success": "Import successful",
+      "successDesc": "{count} rows imported",
+      "unsupportedFormat": "Unsupported file format",
+      "parseError": "Failed to parse file",
+      "invalidFileType": "Invalid file type, please upload CSV/TSV/Excel",
+      "uploadError": "Upload failed",
+      "pasteComingSoon": "Paste feature is coming soon"
+    }
+  },
   "project": {
+    "create": "Create project",
+    "manage": "Manage projects",
     "tabs": {
       "requirements": "Requirements",
       "team": "Team",

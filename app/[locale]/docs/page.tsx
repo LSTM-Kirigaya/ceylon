@@ -8,9 +8,6 @@ import {
   Container,
   Typography,
   Button,
-  AppBar,
-  Toolbar,
-  IconButton,
   Paper,
   List,
   ListItem,
@@ -19,18 +16,13 @@ import {
   Divider,
 } from '@mui/material'
 import {
-  LightMode,
-  DarkMode,
-  Computer,
   MenuBook,
   RocketLaunch,
   Code,
   Settings,
 } from '@mui/icons-material'
 import { useThemeStore, CEYLON_ORANGE } from '@/stores/themeStore'
-import { useAuthStore } from '@/stores/authStore'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { Logo } from '@/components/Logo'
+import { PublicNavbar } from '@/components/PublicNavbar'
 
 const getDocSections = (t: (key: string) => string) => [
   {
@@ -63,8 +55,7 @@ export default function DocsPage({ params }: { params: Promise<{ locale: string 
   const router = useRouter()
   const { locale } = use(params)
   const t = useTranslations()
-  const { mode, setMode, getEffectiveMode } = useThemeStore()
-  const { user } = useAuthStore()
+  const { getEffectiveMode } = useThemeStore()
   const [mounted, setMounted] = useState(false)
   const [selectedDoc, setSelectedDoc] = useState('Introduction')
 
@@ -76,29 +67,6 @@ export default function DocsPage({ params }: { params: Promise<{ locale: string 
   const isDark = effectiveMode === 'dark'
 
   const docSections = getDocSections(t)
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-
-  const themeIcons = [
-    { mode: 'light' as const, icon: <LightMode />, label: t('theme.light') },
-    { mode: 'dark' as const, icon: <DarkMode />, label: t('theme.dark') },
-    { mode: 'system' as const, icon: <Computer />, label: t('theme.system') },
-  ]
-
-  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleThemeMenuClose = () => {
-    setAnchorEl(null)
-  }
-
-  const handleThemeSelect = (themeMode: 'light' | 'dark' | 'system') => {
-    setMode(themeMode)
-    handleThemeMenuClose()
-  }
-
-  const currentThemeIcon = themeIcons.find((t) => t.mode === mode) || themeIcons[0]
 
   if (!mounted) {
     return null
@@ -113,133 +81,7 @@ export default function DocsPage({ params }: { params: Promise<{ locale: string 
           : 'linear-gradient(180deg, #fafaf9 0%, #ffffff 100%)',
       }}
     >
-      {/* Navigation */}
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{
-          background: 'transparent',
-          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-        }}
-      >
-        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Logo width={32} height={32} />
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                color: isDark ? 'white' : '#1c1917',
-                fontSize: '1.25rem',
-              }}
-            >
-              {t('common.appName')}
-            </Typography>
-          </Box>
-
-          {/* Navigation Links - Center */}
-          <Box
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              gap: 1,
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-            }}
-          >
-            {[
-              { label: t('nav.docs'), href: `/${locale}/docs` },
-              { label: t('nav.blog'), href: `/${locale}/blog` },
-              { label: t('nav.pricing'), href: `/${locale}/pricing` },
-            ].map((item) => (
-              <Button
-                key={item.label}
-                onClick={() => router.push(item.href)}
-                sx={{
-                  color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  fontSize: '0.9rem',
-                  px: 2,
-                  py: 0.75,
-                  borderRadius: 2,
-                  '&:hover': {
-                    color: isDark ? 'white' : '#1c1917',
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                  },
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              onClick={handleThemeMenuOpen}
-              sx={{
-                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                '&:hover': { color: CEYLON_ORANGE },
-              }}
-              title={t('theme.switch')}
-            >
-              {currentThemeIcon.icon}
-            </IconButton>
-
-            <LanguageSwitcher />
-
-            {user ? (
-              <Button
-                variant="outlined"
-                onClick={() => router.push(`/${locale}/dashboard`)}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                  color: isDark ? 'white' : '#1c1917',
-                  '&:hover': {
-                    borderColor: CEYLON_ORANGE,
-                    color: CEYLON_ORANGE,
-                    backgroundColor: 'transparent',
-                  },
-                }}
-              >
-                {t('home.hero.dashboard')}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  variant="text"
-                  onClick={() => router.push(`/${locale}/login`)}
-                  sx={{
-                    color: isDark ? 'white' : '#1c1917',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                  }}
-                >
-                  {t('auth.login.submit')}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => router.push('/register')}
-                  sx={{
-                    backgroundColor: CEYLON_ORANGE,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
-                    ml: 1,
-                  }}
-                >
-                  {t('home.hero.startNow')}
-                </Button>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <PublicNavbar locale={locale} />
 
       {/* Docs Content */}
       <Container maxWidth="xl" sx={{ py: { xs: 4, md: 6 } }}>

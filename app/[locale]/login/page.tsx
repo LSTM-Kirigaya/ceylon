@@ -111,7 +111,7 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
       console.log('Attempting login...', data.email)
       
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error(t('auth.login.errors.timeout'))), 10000)
+        setTimeout(() => reject(new Error(t('auth.login.errors.timeout'))), 30000)
       })
       
       const loginPromise = fetch('/api/auth/login', {

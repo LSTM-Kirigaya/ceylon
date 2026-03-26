@@ -58,6 +58,10 @@
     "pricing": "定价",
     "adminConsole": "管理控制台"
   },
+  "view": {
+    "create": "创建视图",
+    "manage": "管理视图"
+  },
   "home": {
     "hero": {
       "badge": "AI 驱动的需求管理平台",
@@ -185,7 +189,36 @@
       "todayViews": "今日浏览",
       "last7Days": "近 7 天"
     },
-    "blog": {
+    "requirements": {
+    "import": {
+      "insert": "插入",
+      "insertRow": "插入行",
+      "insertRowDesc": "插入新行到当前表格",
+      "importCSV": "从 CSV 导入数据",
+      "importCSVDesc": "从 CSV/Excel 文件插入新行",
+      "importTooltip": "支持 CSV、TSV、Excel 格式",
+      "title": "导入数据",
+      "uploadTab": "上传 CSV",
+      "pasteTab": "粘贴文本",
+      "description": "上传 CSV、TSV 或 Excel 文件。第一行应为表头，表头只能包含连字符(-)或下划线(_)。提示：日期时间列应格式化为 YYYY-MM-DD HH:mm:ss",
+      "dragDrop": "拖放文件到此处",
+      "orBrowse": "或点击浏览文件",
+      "parsing": "正在解析文件...",
+      "uploading": "正在上传...",
+      "rowsFound": "找到 {count} 行数据",
+      "preview": "数据预览",
+      "importing": "正在导入",
+      "importData": "导入数据",
+      "success": "导入成功",
+      "successDesc": "成功导入 {count} 行数据",
+      "unsupportedFormat": "不支持的文件格式",
+      "parseError": "文件解析失败",
+      "invalidFileType": "无效的文件类型，请上传 CSV、TSV 或 Excel 文件",
+      "uploadError": "上传失败",
+      "pasteComingSoon": "粘贴功能即将推出"
+    }
+  },
+  "blog": {
       "heading": "博客管理",
       "subtitle": "撰写和管理博客文章，支持 Markdown 格式。",
       "create": "新建文章",
@@ -284,7 +317,40 @@
       "creating": "创建中..."
     }
   },
+  "requirements": {
+    "import": {
+      "insert": "插入",
+      "insertRow": "插入行",
+      "insertRowDesc": "插入新行到当前表格",
+      "importCSV": "从 CSV/Excel 导入数据",
+      "importCSVDesc": "从 CSV/Excel 文件插入新行",
+      "importTooltip": "支持 CSV、TSV、Excel 格式",
+      "title": "导入数据",
+      "uploadTab": "上传 CSV",
+      "pasteTab": "粘贴文本",
+      "description": "上传 CSV、TSV 或 Excel 文件。第一行应为表头。",
+      "dragDrop": "拖放文件到此处",
+      "orBrowse": "或点击浏览文件",
+      "parsing": "正在解析文件...",
+      "uploading": "正在上传...",
+      "rowsFound": "找到 {count} 行数据",
+      "preview": "数据预览",
+      "importing": "正在导入",
+      "importData": "导入数据",
+      "success": "导入成功",
+      "successDesc": "成功导入 {count} 行数据",
+      "unsupportedFormat": "不支持的文件格式",
+      "parseError": "文件解析失败",
+      "invalidFileType": "无效的文件类型，请上传 CSV、TSV 或 Excel 文件",
+      "uploadError": "上传失败",
+      "pasteComingSoon": "粘贴功能即将推出"
+    }
+  },
   "project": {
+    "create": "创建项目",
+    "manage": "管理项目",
+    "createProject": "创建项目",
+    "manageProjects": "管理项目",
     "tabs": {
       "requirements": "需求",
       "team": "团队",
@@ -349,6 +415,7 @@
     "title": "开发博客",
     "subtitle": "记录锡兰的每一步进化，分享我们的思考与成长",
     "empty": "暂无博客文章",
+    "views": "浏览",
     "categories": {
       "all": "全部",
       "journey": "历程",

@@ -8,22 +8,12 @@ import {
   Container,
   Typography,
   Button,
-  AppBar,
-  Toolbar,
-  IconButton,
   Paper,
   Chip,
   Skeleton,
 } from '@mui/material'
-import {
-  LightMode,
-  DarkMode,
-  Computer,
-} from '@mui/icons-material'
-import { useThemeStore, CEYLON_ORANGE } from '@/stores/themeStore'
-import { useAuthStore } from '@/stores/authStore'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-import { Logo } from '@/components/Logo'
+import { useThemeStore } from '@/stores/themeStore'
+import { PublicNavbar } from '@/components/PublicNavbar'
 
 interface BlogPost {
   id: string
@@ -47,8 +37,7 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
   const router = useRouter()
   const { locale } = use(params)
   const t = useTranslations()
-  const { mode, setMode, getEffectiveMode } = useThemeStore()
-  const { user } = useAuthStore()
+  const { getEffectiveMode } = useThemeStore()
   const [mounted, setMounted] = useState(false)
   const [activeCategory, setActiveCategory] = useState('all')
   const [posts, setPosts] = useState<BlogPost[]>([])
@@ -73,14 +62,6 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
-
-  const themeIcons = [
-    { mode: 'light' as const, icon: <LightMode />, label: t('theme.light') },
-    { mode: 'dark' as const, icon: <DarkMode />, label: t('theme.dark') },
-    { mode: 'system' as const, icon: <Computer />, label: t('theme.system') },
-  ]
-
-  const currentThemeIcon = themeIcons.find((t) => t.mode === mode) || themeIcons[0]
 
   const categories = ['all', 'journey', 'release', 'tech', 'case']
 
@@ -107,12 +88,6 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
     return null
   }
 
-  const topNavItems = [
-    { key: 'docs', href: `/${locale}/docs` },
-    { key: 'blog', href: `/${locale}/blog` },
-    { key: 'pricing', href: `/${locale}/pricing` },
-  ] as const
-
   return (
     <Box
       sx={{
@@ -122,124 +97,7 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
           : 'linear-gradient(180deg, #fafaf9 0%, #ffffff 100%)',
       }}
     >
-      {/* Navigation */}
-      <AppBar
-        position="static"
-        elevation={0}
-        sx={{
-          background: 'transparent',
-          borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-        }}
-      >
-        <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 } }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Logo width={32} height={32} />
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                letterSpacing: '-0.02em',
-                color: isDark ? 'white' : '#1c1917',
-                fontSize: '1.25rem',
-              }}
-            >
-              {t('common.appName')}
-            </Typography>
-          </Box>
-
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1.5 }}>
-            {topNavItems.map((item) => {
-              const isActive = item.key === 'blog'
-              return (
-                <Button
-                  key={item.key}
-                  onClick={() => router.push(item.href)}
-                  sx={{
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    color: isActive
-                      ? isDark
-                        ? 'white'
-                        : '#0a0a0a'
-                      : isDark
-                        ? 'rgba(255,255,255,0.7)'
-                        : 'rgba(0,0,0,0.7)',
-                    '&:hover': {
-                      backgroundColor: 'transparent',
-                      color: isDark ? 'white' : '#0a0a0a',
-                    },
-                  }}
-                >
-                  {t(`nav.${item.key}`)}
-                </Button>
-              )
-            })}
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton
-              onClick={() => setMode(currentThemeIcon.mode === 'light' ? 'dark' : currentThemeIcon.mode === 'dark' ? 'system' : 'light')}
-              sx={{
-                color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                '&:hover': { color: CEYLON_ORANGE },
-              }}
-              title={t('theme.switch')}
-            >
-              {currentThemeIcon.icon}
-            </IconButton>
-
-            <LanguageSwitcher />
-
-            {user ? (
-              <Button
-                variant="outlined"
-                onClick={() => router.push(`/${locale}/dashboard`)}
-                sx={{
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  px: 3,
-                  borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
-                  color: isDark ? 'white' : '#1c1917',
-                  '&:hover': {
-                    borderColor: CEYLON_ORANGE,
-                    color: CEYLON_ORANGE,
-                    backgroundColor: 'transparent',
-                  },
-                }}
-              >
-                {t('home.hero.dashboard')}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  variant="text"
-                  onClick={() => router.push(`/${locale}/login`)}
-                  sx={{
-                    color: isDark ? 'white' : '#1c1917',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                  }}
-                >
-                  {t('auth.login.submit')}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => router.push('/register')}
-                  sx={{
-                    backgroundColor: CEYLON_ORANGE,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    px: 3,
-                    ml: 1,
-                  }}
-                >
-                  {t('home.hero.startNow')}
-                </Button>
-              </>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
+      <PublicNavbar locale={locale} />
 
       {/* Blog Header */}
       <Container maxWidth="lg" sx={{ py: { xs: 6, md: 10 } }}>

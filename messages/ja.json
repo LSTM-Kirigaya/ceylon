@@ -58,6 +58,10 @@
     "pricing": "料金",
     "adminConsole": "管理コンソール"
   },
+  "view": {
+    "create": "ビュー作成",
+    "manage": "ビュー管理"
+  },
   "home": {
     "hero": {
       "badge": "AI駆動の要件管理プラットフォーム",
@@ -261,6 +265,7 @@
     "title": "開発ブログ",
     "subtitle": "Ceylon の進化と開発の学びを共有します",
     "empty": "ブログ記事がありません",
+    "views": "閲覧",
     "categories": {
       "all": "すべて",
       "journey": "歩み",
@@ -298,7 +303,38 @@
       "creating": "作成中..."
     }
   },
+  "requirements": {
+    "import": {
+      "insert": "挿入",
+      "insertRow": "行を挿入",
+      "insertRowDesc": "現在のテーブルに新しい行を追加",
+      "importCSV": "CSV/Excel からインポート",
+      "importCSVDesc": "CSV または Excel から新しい行を追加",
+      "importTooltip": "CSV、TSV、Excel 形式に対応",
+      "title": "データをインポート",
+      "uploadTab": "CSV アップロード",
+      "pasteTab": "テキスト貼り付け",
+      "description": "CSV、TSV、Excel ファイルをアップロードしてください。1 行目はヘッダーです。",
+      "dragDrop": "ここにファイルをドラッグ＆ドロップ",
+      "orBrowse": "またはクリックして選択",
+      "parsing": "ファイルを解析中...",
+      "uploading": "アップロード中...",
+      "rowsFound": "{count} 行を検出",
+      "preview": "プレビュー",
+      "importing": "インポート中",
+      "importData": "データをインポート",
+      "success": "インポート成功",
+      "successDesc": "{count} 行をインポートしました",
+      "unsupportedFormat": "未対応のファイル形式です",
+      "parseError": "ファイル解析に失敗しました",
+      "invalidFileType": "無効なファイル形式です（CSV/TSV/Excel を使用してください）",
+      "uploadError": "アップロードに失敗しました",
+      "pasteComingSoon": "貼り付け機能は近日公開予定です"
+    }
+  },
   "project": {
+    "create": "プロジェクトを作成",
+    "manage": "プロジェクトを管理",
     "tabs": {
       "requirements": "要件",
       "team": "チーム",

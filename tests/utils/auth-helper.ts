@@ -60,7 +60,7 @@ export async function signInUser(page: Page, email: string = TEST_USER.email, pa
 
   // Submit and wait for dashboard
   await page.click('button[type="submit"]')
-  await page.waitForURL(/\/dashboard/, { timeout: 20000 })
+  await page.waitForURL(/\/dashboard/, { timeout: 45000 })
 }
 
 export async function signUpUser(page: Page, email: string, password: string, displayName: string) {

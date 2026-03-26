@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale } from 'next-intl'
 import {
@@ -32,6 +32,8 @@ import {
   Menu,
   Autocomplete,
   InputAdornment,
+  Checkbox,
+  Alert,
 } from '@mui/material'
 import {
   Add,
@@ -41,6 +43,8 @@ import {
   Delete as DeleteIcon,
   KeyboardArrowDown,
   DragIndicator,
+  DeleteOutline,
+  FileDownload,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
@@ -48,6 +52,8 @@ import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { getSelectOptionColors } from '@/lib/selectOptionColors'
 import type { Requirement, ProjectMember, VersionView, VersionViewColumn } from '@/types'
 import { getPriorityColor, getPriorityLabel, REQUIREMENT_STATUS } from '@/types'
+import ImportDataButton from '@/components/requirements/ImportDataButton'
+import * as XLSX from 'xlsx'
 
 // React types used in handlers (avoid importing full React default)
 import type React from 'react'
@@ -178,8 +184,22 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const clearSort = () => setSortState(null)
   const [draggingRowId, setDraggingRowId] = useState<string | null>(null)
   const [dragOverRowId, setDragOverRowId] = useState<string | null>(null)
+  const [selectedRowIds, setSelectedRowIds] = useState<string[]>([])
+  const [exportMenuAnchor, setExportMenuAnchor] = useState<null | HTMLElement>(null)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false)
+  const [resizeGuideX, setResizeGuideX] = useState<number | null>(null)
+  const tableContainerRef = useRef<HTMLDivElement | null>(null)
+
+  const pendingCreatesRef = useRef<
+    Array<{ localId: string; payload: Omit<Requirement, 'id' | 'created_at' | 'updated_at' | 'assignee'> }>
+  >([])
+  const pendingPatchesRef = useRef<Map<string, Record<string, unknown>>>(new Map())
+  const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isFlushingRef = useRef(false)
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
+  const [resizingColumnKey, setResizingColumnKey] = useState<string | null>(null)
   const getWidth = useCallback(
     (k: string, fallback: number) => {
       if (k === 'number') return NUMBER_COL_WIDTH_PX
@@ -199,9 +219,15 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
       const delta = e.clientX - any.startX
       const next = Math.max(80, Math.min(800, any.startW + delta))
       setColumnWidths((prev) => ({ ...prev, [any.key]: next }))
+      const rect = tableContainerRef.current?.getBoundingClientRect()
+      if (rect) {
+        setResizeGuideX(Math.max(0, Math.min(rect.width, e.clientX - rect.left)))
+      }
     }
     const onUp = () => {
       ;(window as any).__ceylon_resize = undefined
+      setResizingColumnKey(null)
+      setResizeGuideX(null)
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
@@ -214,7 +240,12 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const startResize = (key: string, startW: number, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    setResizingColumnKey(key)
     ;(window as any).__ceylon_resize = { key, startX: e.clientX, startW }
+    const rect = tableContainerRef.current?.getBoundingClientRect()
+    if (rect) {
+      setResizeGuideX(Math.max(0, Math.min(rect.width, e.clientX - rect.left)))
+    }
   }
 
   const fetchAll = useCallback(async () => {
@@ -383,18 +414,49 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     })
   }, [requirements, searchQuery, visibleColumns, memberById, sortState, getSortValue, applyFilters, filters.length])
 
+  const selectedRows = useMemo(
+    () => filteredRows.filter((r) => selectedRowIds.includes(r.id)),
+    [filteredRows, selectedRowIds]
+  )
+
+  const allVisibleSelected = filteredRows.length > 0 && filteredRows.every((r) => selectedRowIds.includes(r.id))
+  const hasSelectedRows = selectedRowIds.length > 0
+
   const patchRequirement = async (id: string, patch: Record<string, unknown>) => {
-    const { requirement } = await apiJson<{ requirement: Requirement }>(`/api/requirements/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(patch),
-    })
-    setRequirements((prev) => prev.map((r) => (r.id === id ? { ...r, ...requirement } : r)))
+    const now = new Date().toISOString()
+    setRequirements((prev) =>
+      prev.map((r) => {
+        if (r.id !== id) return r
+        const next = { ...r, ...patch, updated_at: now } as Requirement
+        if (patch.custom_values && typeof patch.custom_values === 'object' && !Array.isArray(patch.custom_values)) {
+          next.custom_values = {
+            ...(r.custom_values ?? {}),
+            ...(patch.custom_values as Record<string, string | null>),
+          }
+        }
+        return next
+      })
+    )
+
+    const createIdx = pendingCreatesRef.current.findIndex((x) => x.localId === id)
+    if (createIdx >= 0) {
+      pendingCreatesRef.current[createIdx].payload = {
+        ...pendingCreatesRef.current[createIdx].payload,
+        ...patch,
+      }
+      scheduleFlush()
+      return
+    }
+
+    const prevPatch = pendingPatchesRef.current.get(id) ?? {}
+    pendingPatchesRef.current.set(id, { ...prevPatch, ...patch })
+    scheduleFlush()
   }
 
-  const patchTitle = async (id: string, title: string) => {
+  const patchTitle = (id: string, title: string) => {
     const t = title.trim()
     if (!t) return
-    await patchRequirement(id, { title: t })
+    void patchRequirement(id, { title: t })
   }
 
   const fetchRequirementsOnly = useCallback(async () => {
@@ -409,8 +471,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     }
   }, [versionViewId, projectId])
 
-  const patchCustomCell = async (reqId: string, columnId: string, value: string | null) => {
-    await patchRequirement(reqId, { custom_values: { [columnId]: value } })
+  const patchCustomCell = (reqId: string, columnId: string, value: string | null) => {
+    void patchRequirement(reqId, { custom_values: { [columnId]: value } })
   }
 
   const openAddColumnMenu = (
@@ -503,44 +565,212 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const onSelectChange = async (req: Requirement, col: VersionViewColumn, label: string | null) => {
     if (!label || !label.trim()) {
-      await patchCustomCell(req.id, col.id, null)
+      patchCustomCell(req.id, col.id, null)
       return
     }
     const trimmed = label.trim()
     let opts = [...col.options]
     if (!opts.includes(trimmed)) opts = [...opts, trimmed]
     await ensureSelectOption(col, opts)
-    await patchCustomCell(req.id, col.id, trimmed)
+    patchCustomCell(req.id, col.id, trimmed)
   }
 
-  const addRow = async () => {
-    try {
-      await apiJson(`/api/version-views/${versionViewId}/requirements`, {
-        method: 'POST',
-        body: JSON.stringify({
-          title: '新需求',
-          description: null,
-          assignee_id: null,
-          priority: 5,
-          type: 'Feature',
-          status: 'pending',
-        }),
-      })
-      // 静默更新：不要触发表格全量 loading/skeleton，避免“整页刷新感”
-      await fetchRequirementsOnly()
-    } catch (e) {
-      console.error(e)
+  const addRow = () => {
+    const now = new Date().toISOString()
+    const localId = `local-${Date.now()}-${Math.random().toString(16).slice(2)}`
+    const nextNum = (requirements.reduce((m, r) => Math.max(m, r.requirement_number || 0), 0) || 0) + 1
+    const payload = {
+      version_view_id: versionViewId,
+      requirement_number: nextNum,
+      title: '新需求',
+      description: null,
+      assignee_id: null,
+      priority: 5,
+      type: 'Feature',
+      status: 'pending',
+      created_by: '',
+      custom_values: {},
+    } as Omit<Requirement, 'id' | 'created_at' | 'updated_at' | 'assignee'>
+
+    const localRow: Requirement = {
+      id: localId,
+      created_at: now,
+      updated_at: now,
+      ...payload,
     }
+
+    setRequirements((prev) => [...prev, localRow])
+    pendingCreatesRef.current.push({ localId, payload })
+    scheduleFlush()
   }
+
+  const flushPendingChanges = useCallback(async () => {
+    if (isFlushingRef.current) return
+    isFlushingRef.current = true
+    setSyncError(null)
+    try {
+      while (pendingCreatesRef.current.length > 0) {
+        const current = pendingCreatesRef.current.shift()
+        if (!current) break
+        try {
+          const { requirement } = await apiJson<{ requirement: Requirement }>(
+            `/api/version-views/${versionViewId}/requirements`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                title: current.payload.title,
+                description: current.payload.description,
+                assignee_id: current.payload.assignee_id,
+                priority: current.payload.priority,
+                type: current.payload.type,
+                status: current.payload.status,
+                custom_values: current.payload.custom_values,
+              }),
+            }
+          )
+          setRequirements((prev) =>
+            prev.map((r) => (r.id === current.localId ? requirement : r))
+          )
+        } catch (error) {
+          pendingCreatesRef.current.unshift(current)
+          setSyncError('新增数据同步失败，将在下次编辑时重试。')
+          console.error(error)
+          break
+        }
+      }
+
+      const patchEntries = Array.from(pendingPatchesRef.current.entries())
+      for (const [id, patch] of patchEntries) {
+        try {
+          const { requirement } = await apiJson<{ requirement: Requirement }>(`/api/requirements/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(patch),
+          })
+          setRequirements((prev) => prev.map((r) => (r.id === id ? { ...r, ...requirement } : r)))
+          pendingPatchesRef.current.delete(id)
+        } catch (error) {
+          setSyncError('部分修改暂未同步成功，将在下次编辑时自动重试。')
+          console.error(error)
+        }
+      }
+    } finally {
+      isFlushingRef.current = false
+    }
+  }, [versionViewId])
+
+  const scheduleFlush = useCallback(() => {
+    if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
+    flushTimerRef.current = setTimeout(() => {
+      void flushPendingChanges()
+    }, 2000)
+  }, [flushPendingChanges])
+
+  useEffect(() => {
+    return () => {
+      if (flushTimerRef.current) clearTimeout(flushTimerRef.current)
+    }
+  }, [])
 
   const deleteRow = async (id: string) => {
     if (!confirm('删除此行？')) return
+    if (id.startsWith('local-')) {
+      setRequirements((prev) => prev.filter((r) => r.id !== id))
+      pendingCreatesRef.current = pendingCreatesRef.current.filter((x) => x.localId !== id)
+      pendingPatchesRef.current.delete(id)
+      return
+    }
     try {
       await apiJson(`/api/requirements/${id}`, { method: 'DELETE' })
+      pendingPatchesRef.current.delete(id)
       await fetchRequirementsOnly()
     } catch (e) {
       console.error(e)
     }
+  }
+
+  const toggleRowSelected = (id: string, checked: boolean) => {
+    setSelectedRowIds((prev) => (checked ? [...prev, id] : prev.filter((x) => x !== id)))
+  }
+
+  const toggleSelectAllVisible = (checked: boolean) => {
+    if (!checked) {
+      setSelectedRowIds((prev) => prev.filter((id) => !filteredRows.some((r) => r.id === id)))
+      return
+    }
+    const visibleIds = filteredRows.map((r) => r.id)
+    setSelectedRowIds((prev) => Array.from(new Set([...prev, ...visibleIds])))
+  }
+
+  const bulkDeleteSelected = async () => {
+    if (!selectedRowIds.length) return
+    try {
+      const localIds = selectedRowIds.filter((id) => id.startsWith('local-'))
+      const remoteIds = selectedRowIds.filter((id) => !id.startsWith('local-'))
+
+      if (localIds.length > 0) {
+        setRequirements((prev) => prev.filter((r) => !localIds.includes(r.id)))
+        pendingCreatesRef.current = pendingCreatesRef.current.filter((x) => !localIds.includes(x.localId))
+        for (const id of localIds) pendingPatchesRef.current.delete(id)
+      }
+      if (remoteIds.length > 0) {
+        await Promise.all(remoteIds.map((id) => apiJson(`/api/requirements/${id}`, { method: 'DELETE' })))
+        for (const id of remoteIds) pendingPatchesRef.current.delete(id)
+      }
+      setSelectedRowIds([])
+      setBulkDeleteDialogOpen(false)
+      await fetchRequirementsOnly()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const buildExportRows = () => {
+    const targetRows = selectedRows
+    return targetRows.map((req) => {
+      const row: Record<string, unknown> = {
+        编号: req.requirement_number,
+        标题: req.title,
+        优先级: typeof req.priority === 'number' ? `P${req.priority}` : '',
+        状态: req.status,
+      }
+      for (const col of visibleColumns) {
+        row[col.name] = req.custom_values?.[col.id] ?? ''
+      }
+      return row
+    })
+  }
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const exportSelectedAs = (format: 'csv' | 'xlsx' | 'json') => {
+    if (!selectedRows.length) return
+    const rows = buildExportRows()
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    if (format === 'json') {
+      const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' })
+      downloadBlob(blob, `requirements-${stamp}.json`)
+      return
+    }
+    if (format === 'csv') {
+      const ws = XLSX.utils.json_to_sheet(rows)
+      const csv = XLSX.utils.sheet_to_csv(ws)
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+      downloadBlob(blob, `requirements-${stamp}.csv`)
+      return
+    }
+    const wb = XLSX.utils.book_new()
+    const ws = XLSX.utils.json_to_sheet(rows)
+    XLSX.utils.book_append_sheet(wb, ws, 'Requirements')
+    const data = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    downloadBlob(blob, `requirements-${stamp}.xlsx`)
   }
 
   const openViewSettings = () => {
@@ -608,74 +838,118 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', minWidth: 0 }}>
-          <Typography
-            variant="body2"
-            component="span"
-            sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
-          >
-            {tableLoading ? (
-              <>
-                <Skeleton
-                  variant="text"
-                  width={28}
-                  sx={{
-                    display: 'inline-block',
-                    transform: 'none',
-                    bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                  }}
-                />
-                <span>行</span>
-              </>
-            ) : (
-              <>
-                {filteredRows.length} 行
-                {searchQuery || filters.length > 0 ? ` · 已筛选` : ''}
-              </>
-            )}
-          </Typography>
-          <Button
-            size="small"
-            variant="outlined"
-            onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
-            sx={{ textTransform: 'none', borderRadius: 2 }}
-          >
-            筛选
-          </Button>
-          {filters.length > 0 && (
-            <Button
-              size="small"
-              onClick={() => setFilters([])}
-              sx={{ textTransform: 'none', color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)' }}
-            >
-              清空筛选
-            </Button>
-          )}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-            {filters.map((f) => {
-              const field = filterFieldOptions.find((x) => x.key === f.key)
-              const label =
-                f.key === 'priority'
-                  ? `优先级 ${f.op === 'neq' ? '≠' : '='} P${f.value}`
-                  : f.key === 'status' && f.op === 'not_completed'
-                    ? '状态 = 未完成'
-                    : f.key === 'status'
-                      ? `状态 ${f.op === 'neq' ? '≠' : '='} ${REQUIREMENT_STATUS.find((s) => s.value === f.value)?.label || f.value}`
-                      : `${field?.label || f.key} ${f.op === 'contains' ? '包含' : f.op === 'neq' ? '≠' : '='} ${f.value}`
-              return (
-                <Chip
-                  key={f.id}
+          {hasSelectedRows ? (
+            <>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{ color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)' }}
+              >
+                已选择 {selectedRowIds.length} 行
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                color="error"
+                startIcon={<DeleteOutline />}
+                onClick={() => setBulkDeleteDialogOpen(true)}
+                sx={{ textTransform: 'none', borderRadius: 2 }}
+              >
+                删除
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<FileDownload />}
+                endIcon={<KeyboardArrowDown />}
+                onClick={(e) => setExportMenuAnchor(e.currentTarget)}
+                sx={{ textTransform: 'none', borderRadius: 2 }}
+              >
+                导出
+              </Button>
+            </>
+          ) : (
+            <>
+              <Typography
+                variant="body2"
+                component="span"
+                sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)', display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+              >
+                {tableLoading ? (
+                  <>
+                    <Skeleton
+                      variant="text"
+                      width={28}
+                      sx={{
+                        display: 'inline-block',
+                        transform: 'none',
+                        bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                      }}
+                    />
+                    <span>行</span>
+                  </>
+                ) : (
+                  <>
+                    {filteredRows.length} 行
+                    {searchQuery || filters.length > 0 ? ` · 已筛选` : ''}
+                  </>
+                )}
+              </Typography>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={(e) => setFilterMenuAnchor(e.currentTarget)}
+                sx={{ textTransform: 'none', borderRadius: 2 }}
+              >
+                筛选
+              </Button>
+              <ImportDataButton
+                projectId={projectId}
+                viewId={versionViewId}
+                onInsertRow={() => {
+                  void addRow()
+                }}
+                onImportSuccess={() => {
+                  void fetchRequirementsOnly()
+                }}
+              />
+              {filters.length > 0 && (
+                <Button
                   size="small"
-                  label={label}
-                  onDelete={() => setFilters((prev) => prev.filter((x) => x.id !== f.id))}
-                  sx={{
-                    height: 22,
-                    fontSize: '0.7rem',
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                  }}
-                />
-              )
-            })}
-          </Box>
+                  onClick={() => setFilters([])}
+                  sx={{ textTransform: 'none', color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.6)' }}
+                >
+                  清空筛选
+                </Button>
+              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                {filters.map((f) => {
+                  const field = filterFieldOptions.find((x) => x.key === f.key)
+                  const label =
+                    f.key === 'priority'
+                      ? `优先级 ${f.op === 'neq' ? '≠' : '='} P${f.value}`
+                      : f.key === 'status' && f.op === 'not_completed'
+                        ? '状态 = 未完成'
+                        : f.key === 'status'
+                          ? `状态 ${f.op === 'neq' ? '≠' : '='} ${REQUIREMENT_STATUS.find((s) => s.value === f.value)?.label || f.value}`
+                          : `${field?.label || f.key} ${f.op === 'contains' ? '包含' : f.op === 'neq' ? '≠' : '='} ${f.value}`
+                  return (
+                    <Chip
+                      key={f.id}
+                      size="small"
+                      label={label}
+                      onDelete={() => setFilters((prev) => prev.filter((x) => x.id !== f.id))}
+                      sx={{
+                        height: 22,
+                        fontSize: '0.7rem',
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                      }}
+                    />
+                  )
+                })}
+              </Box>
+            </>
+          )}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Tooltip title="视图名称与描述、删除视图">
@@ -691,6 +965,11 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           </Tooltip>
         </Box>
       </Box>
+      {syncError && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {syncError}
+        </Alert>
+      )}
 
       <Menu
         anchorEl={filterMenuAnchor}
@@ -889,17 +1168,47 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
       <TableContainer
         component={Paper}
+        ref={tableContainerRef}
         sx={{
           backgroundColor: isDark ? '#1c1917' : '#ffffff',
           border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
           borderRadius: 2,
           boxShadow: 'none',
           overflowX: 'auto',
+          position: 'relative',
         }}
       >
-        <Table size="small" sx={{ minWidth: 720, tableLayout: 'fixed', width: '100%' }}>
+        <Table
+          size="small"
+          sx={{
+            minWidth: 720,
+            tableLayout: 'fixed',
+            width: '100%',
+            '& th, & td': {
+              borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'}`,
+            },
+            '& tr > *:last-child': {
+              borderRight: 'none',
+            },
+          }}
+        >
           <TableHead>
-            <TableRow sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+            <TableRow sx={{ backgroundColor: 'transparent' }}>
+              <TableCell
+                sx={{
+                  width: 42,
+                  minWidth: 42,
+                  maxWidth: 42,
+                  boxSizing: 'border-box',
+                }}
+              >
+                <Checkbox
+                  size="small"
+                  indeterminate={!allVisibleSelected && selectedRows.length > 0}
+                  checked={allVisibleSelected}
+                  onChange={(e) => toggleSelectAllVisible(e.target.checked)}
+                />
+              </TableCell>
               <TableCell
                 sx={{
                   width: NUMBER_COL_WIDTH_PX,
@@ -969,6 +1278,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     zIndex: 2,
                   }}
                 />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 6,
+                    bottom: 6,
+                    right: 0,
+                    width: 1,
+                    backgroundColor:
+                      resizingColumnKey === 'title'
+                        ? CEYLON_ORANGE
+                        : isDark
+                          ? 'rgba(255,255,255,0.2)'
+                          : 'rgba(0,0,0,0.15)',
+                    boxShadow: resizingColumnKey === 'title' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                    pointerEvents: 'none',
+                  }}
+                />
               </TableCell>
               {!isHidden('priority') && (
                 <TableCell
@@ -1007,6 +1333,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       height: '100%',
                       cursor: 'col-resize',
                       zIndex: 2,
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      bottom: 6,
+                      right: 0,
+                      width: 1,
+                      backgroundColor:
+                        resizingColumnKey === 'priority'
+                          ? CEYLON_ORANGE
+                          : isDark
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'rgba(0,0,0,0.15)',
+                      boxShadow: resizingColumnKey === 'priority' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      pointerEvents: 'none',
                     }}
                   />
                 </TableCell>
@@ -1048,6 +1391,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       height: '100%',
                       cursor: 'col-resize',
                       zIndex: 2,
+                    }}
+                  />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      bottom: 6,
+                      right: 0,
+                      width: 1,
+                      backgroundColor:
+                        resizingColumnKey === 'status'
+                          ? CEYLON_ORANGE
+                          : isDark
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'rgba(0,0,0,0.15)',
+                      boxShadow: resizingColumnKey === 'status' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      pointerEvents: 'none',
                     }}
                   />
                 </TableCell>
@@ -1125,6 +1485,23 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       zIndex: 2,
                     }}
                   />
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: 6,
+                      bottom: 6,
+                      right: 0,
+                      width: 1,
+                      backgroundColor:
+                        resizingColumnKey === `c:${col.id}`
+                          ? CEYLON_ORANGE
+                          : isDark
+                            ? 'rgba(255,255,255,0.2)'
+                            : 'rgba(0,0,0,0.15)',
+                      boxShadow: resizingColumnKey === `c:${col.id}` ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      pointerEvents: 'none',
+                    }}
+                  />
                 </TableCell>
               ))}
               <TableCell
@@ -1149,6 +1526,9 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             {tableLoading ? (
               [...Array(skeletonRowCount)].map((_, ri) => (
                 <TableRow key={`sk-${ri}`}>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="rounded" width={18} height={18} sx={{ transform: 'none' }} />
+                  </TableCell>
                   <TableCell sx={{ py: 1.25 }}>
                     <Skeleton variant="text" width={20} sx={{ transform: 'none' }} />
                   </TableCell>
@@ -1209,6 +1589,13 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                         : undefined,
                   }}
                 >
+                  <TableCell sx={{ width: 42, minWidth: 42, maxWidth: 42, py: 0.5 }}>
+                    <Checkbox
+                      size="small"
+                      checked={selectedRowIds.includes(req.id)}
+                      onChange={(e) => toggleRowSelected(req.id, e.target.checked)}
+                    />
+                  </TableCell>
                   <TableCell
                     sx={{
                       width: NUMBER_COL_WIDTH_PX,
@@ -1582,6 +1969,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       : undefined,
                 }}
               >
+                <TableCell sx={{ width: 42, minWidth: 42, maxWidth: 42 }} />
                 <TableCell
                   sx={{
                     width: NUMBER_COL_WIDTH_PX,
@@ -1618,6 +2006,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                 </TableCell>
                 <TableCell
                   colSpan={
+                    1 + // checkbox
                     2 + // title + blank cell
                     (isHidden('priority') ? 0 : 1) +
                     (isHidden('status') ? 0 : 1) +
@@ -1630,6 +2019,21 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           )}
           </TableBody>
         </Table>
+        {resizingColumnKey && resizeGuideX !== null && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: resizeGuideX,
+              width: 2,
+              backgroundColor: CEYLON_ORANGE,
+              boxShadow: `0 0 0 1px ${CEYLON_ORANGE}66`,
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
+        )}
       </TableContainer>
 
       <Menu
@@ -1822,6 +2226,45 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             })
           })()}
         </Box>
+      </Menu>
+
+      <Menu
+        anchorEl={exportMenuAnchor}
+        open={Boolean(exportMenuAnchor)}
+        onClose={() => setExportMenuAnchor(null)}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            minWidth: 180,
+            backgroundColor: isDark ? '#1c1917' : '#fff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+          },
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            exportSelectedAs('csv')
+            setExportMenuAnchor(null)
+          }}
+        >
+          导出为 CSV
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            exportSelectedAs('xlsx')
+            setExportMenuAnchor(null)
+          }}
+        >
+          导出为 Excel
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            exportSelectedAs('json')
+            setExportMenuAnchor(null)
+          }}
+        >
+          导出为 JSON
+        </MenuItem>
       </Menu>
 
       <Menu
@@ -2351,6 +2794,27 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
               保存
             </Button>
           </Box>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={bulkDeleteDialogOpen} onClose={() => setBulkDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>批量删除确认</DialogTitle>
+        <DialogContent>
+          <Typography>
+            确定要删除选中的 {selectedRowIds.length} 行数据吗？此操作不可撤销。
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBulkDeleteDialogOpen(false)}>取消</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              void bulkDeleteSelected()
+            }}
+          >
+            确认删除
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>
