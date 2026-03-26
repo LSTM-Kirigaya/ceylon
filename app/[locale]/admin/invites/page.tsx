@@ -19,6 +19,11 @@ import {
   Chip,
   Skeleton,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import { useThemeStore } from '@/stores/themeStore'
 import { Delete } from '@mui/icons-material'
@@ -35,6 +40,7 @@ type InviteRow = {
 
 export default function AdminInvitesPage() {
   const t = useTranslations('admin.invites')
+  const tCommon = useTranslations('common')
   const { getEffectiveMode } = useThemeStore()
   const isDark = getEffectiveMode() === 'dark'
   const [rows, setRows] = useState<InviteRow[]>([])
@@ -47,6 +53,7 @@ export default function AdminInvitesPage() {
   const [submitting, setSubmitting] = useState(false)
   const skeletonRowCount = 6
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const load = async () => {
     setError(null)
@@ -106,7 +113,6 @@ export default function AdminInvitesPage() {
   }
 
   const onDelete = async (id: string) => {
-    if (!confirm(t('deleteConfirm'))) return
     setDeletingId(id)
     setError(null)
     try {
@@ -282,7 +288,7 @@ export default function AdminInvitesPage() {
                     <IconButton
                       size="small"
                       aria-label={t('delete')}
-                      onClick={() => void onDelete(row.id)}
+                      onClick={() => setPendingDeleteId(row.id)}
                       disabled={deletingId === row.id}
                       sx={{
                         width: 28,
@@ -300,6 +306,38 @@ export default function AdminInvitesPage() {
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog
+        open={pendingDeleteId != null}
+        onClose={() => {
+          if (!deletingId) setPendingDeleteId(null)
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>{t('delete')}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t('deleteConfirm')}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setPendingDeleteId(null)} disabled={Boolean(deletingId)}>
+            {tCommon('cancel')}
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            disabled={!pendingDeleteId || Boolean(deletingId)}
+            onClick={async () => {
+              if (!pendingDeleteId) return
+              const id = pendingDeleteId
+              setPendingDeleteId(null)
+              await onDelete(id)
+            }}
+          >
+            {tCommon('confirm')}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

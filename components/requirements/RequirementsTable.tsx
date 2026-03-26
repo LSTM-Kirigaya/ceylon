@@ -40,6 +40,7 @@ import {
   ViewColumn,
   Delete as DeleteIcon,
   KeyboardArrowDown,
+  DragIndicator,
 } from '@mui/icons-material'
 import { apiJson } from '@/lib/client-api'
 import { useThemeStore } from '@/stores/themeStore'
@@ -175,6 +176,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const [sortState, setSortState] = useState<null | { key: string; dir: 'asc' | 'desc' }>(null)
   const clearSort = () => setSortState(null)
+  const [draggingRowId, setDraggingRowId] = useState<string | null>(null)
+  const [dragOverRowId, setDragOverRowId] = useState<string | null>(null)
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
   const getWidth = useCallback(
@@ -577,12 +580,18 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     }
   }
 
-  const tableColSpan =
-    3 + // number + title + blank cell
-    (isHidden('priority') ? 0 : 1) +
-    (isHidden('status') ? 0 : 1) +
-    visibleColumns.length +
-    1 // add-column plus
+  const moveRowInState = useCallback((sourceId: string, targetId: string) => {
+    if (!sourceId || !targetId || sourceId === targetId) return
+    setRequirements((prev) => {
+      const from = prev.findIndex((r) => r.id === sourceId)
+      const to = prev.findIndex((r) => r.id === targetId)
+      if (from < 0 || to < 0 || from === to) return prev
+      const next = [...prev]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+  }, [])
 
   const skeletonRowCount = 6
 
@@ -1169,40 +1178,35 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                   <TableCell sx={{ py: 1.25, width: 44 }} />
                 </TableRow>
               ))
-            ) : filteredRows.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColSpan}
-                  align="center"
-                  sx={{ py: 6 }}
-                >
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1.5 }}>
-                    <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)' }}>
-                      暂无数据，点击下方 `+` 添加新行
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => void addRow()}
-                      sx={{
-                        width: 42,
-                        height: 42,
-                        borderRadius: 3,
-                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
-                      }}
-                    >
-                      <Add />
-                    </IconButton>
-                  </Box>
-                </TableCell>
-              </TableRow>
             ) : ([
               ...filteredRows.map((req) => (
                 <TableRow
                   key={req.id}
                   hover
+                  onDragOver={(e) => {
+                    if (!draggingRowId || draggingRowId === req.id) return
+                    e.preventDefault()
+                    setDragOverRowId(req.id)
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const sourceId = e.dataTransfer.getData('text/plain') || draggingRowId
+                    if (!sourceId || sourceId === req.id) return
+                    moveRowInState(sourceId, req.id)
+                    setDraggingRowId(null)
+                    setDragOverRowId(null)
+                  }}
+                  onDragLeave={() => {
+                    if (dragOverRowId === req.id) setDragOverRowId(null)
+                  }}
                   sx={{
                     '&:hover': { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)' },
+                    backgroundColor:
+                      dragOverRowId === req.id
+                        ? isDark
+                          ? 'rgba(255,255,255,0.08)'
+                          : 'rgba(0,0,0,0.06)'
+                        : undefined,
                   }}
                 >
                   <TableCell
@@ -1215,7 +1219,32 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       fontSize: '0.8rem',
                     }}
                   >
-                    {req.requirement_number}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                      <IconButton
+                        size="small"
+                        draggable
+                        aria-label="拖拽行"
+                        onDragStart={(e) => {
+                          setDraggingRowId(req.id)
+                          e.dataTransfer.effectAllowed = 'move'
+                          e.dataTransfer.setData('text/plain', req.id)
+                        }}
+                        onDragEnd={() => {
+                          setDraggingRowId(null)
+                          setDragOverRowId(null)
+                        }}
+                        sx={{
+                          width: 20,
+                          height: 20,
+                          p: 0,
+                          color: isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)',
+                          cursor: 'grab',
+                        }}
+                      >
+                        <DragIndicator sx={{ fontSize: 14 }} />
+                      </IconButton>
+                      <Box component="span">{req.requirement_number}</Box>
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 0.5, verticalAlign: 'middle', width: getWidth('title', 260), minWidth: getWidth('title', 200) }}>
                     <TextField
@@ -1520,8 +1549,37 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
               )),
               <TableRow
                 key="add-bottom-row"
+                onDragOver={(e) => {
+                  if (!draggingRowId) return
+                  e.preventDefault()
+                  setDragOverRowId('add-bottom-row')
+                }}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  const sourceId = e.dataTransfer.getData('text/plain') || draggingRowId
+                  if (!sourceId) return
+                  setRequirements((prev) => {
+                    const from = prev.findIndex((r) => r.id === sourceId)
+                    if (from < 0 || from === prev.length - 1) return prev
+                    const next = [...prev]
+                    const [moved] = next.splice(from, 1)
+                    next.push(moved)
+                    return next
+                  })
+                  setDraggingRowId(null)
+                  setDragOverRowId(null)
+                }}
+                onDragLeave={() => {
+                  if (dragOverRowId === 'add-bottom-row') setDragOverRowId(null)
+                }}
                 sx={{
                   '&:hover': { backgroundColor: 'transparent' },
+                  backgroundColor:
+                    dragOverRowId === 'add-bottom-row'
+                      ? isDark
+                        ? 'rgba(255,255,255,0.08)'
+                        : 'rgba(0,0,0,0.06)'
+                      : undefined,
                 }}
               >
                 <TableCell
