@@ -19,6 +19,7 @@ import {
   Button,
   Breadcrumbs,
   Link as MuiLink,
+  Skeleton,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -144,18 +145,27 @@ export default function MainLayout({ children }: MainLayoutProps) {
       const href = `/${locale}/${pathSegments.slice(0, index + 1).join('/')}`
       const isLast = index === pathSegments.length - 1
       const isUuidLike = segment.length > 20 && /^[0-9a-f-]+$/i.test(segment)
-      let label = breadcrumbLabelMap[segment] || (isUuidLike ? segment.slice(0, 8) : segment)
+      const isProjectId = isUuidLike && index > 0 && pathSegments[index - 1] === 'project'
+      const isViewId = isUuidLike && index > 0 && pathSegments[index - 1] === 'view'
 
-      if (isUuidLike && index > 0 && pathSegments[index - 1] === 'project' && resolvedNames.projectName) {
+      // For dynamic id segments, do NOT show raw id; show skeleton until resolved.
+      const loading =
+        (isProjectId && !resolvedNames.projectName) ||
+        (isViewId && !resolvedNames.viewName) ||
+        (!breadcrumbLabelMap[segment] && isUuidLike && !isProjectId && !isViewId)
+
+      let label = breadcrumbLabelMap[segment] || (isUuidLike ? '' : segment)
+
+      if (isProjectId && resolvedNames.projectName) {
         label = resolvedNames.projectName
       }
-      if (isUuidLike && index > 0 && pathSegments[index - 1] === 'view' && resolvedNames.viewName) {
+      if (isViewId && resolvedNames.viewName) {
         label = resolvedNames.viewName
       }
 
-      return { href, isLast, label }
+      return { href, isLast, label, loading }
     })
-    .filter((x): x is { href: string; isLast: boolean; label: string } => x !== null)
+    .filter((x): x is { href: string; isLast: boolean; label: string; loading: boolean } => x !== null)
 
   useEffect(() => {
     const loadNames = async () => {
@@ -435,7 +445,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         fontWeight: 500,
                       }}
                     >
-                      {item.label}
+                      {item.loading ? (
+                        <Skeleton
+                          variant="text"
+                          width={120}
+                          sx={{
+                            display: 'inline-block',
+                            transform: 'none',
+                            bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                          }}
+                        />
+                      ) : (
+                        item.label
+                      )}
                     </Typography>
                   ) : (
                     <MuiLink
@@ -448,7 +470,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         fontSize: '0.875rem',
                       }}
                     >
-                      {item.label}
+                      {item.loading ? (
+                        <Skeleton
+                          variant="text"
+                          width={120}
+                          sx={{
+                            display: 'inline-block',
+                            transform: 'none',
+                            bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                          }}
+                        />
+                      ) : (
+                        item.label
+                      )}
                     </MuiLink>
                   )
                 )}
