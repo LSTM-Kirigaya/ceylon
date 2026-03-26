@@ -174,7 +174,8 @@
     "title": "管理后台",
     "nav": {
       "overview": "概览与流量",
-      "invites": "邀请码"
+      "invites": "邀请码",
+      "blog": "博客管理"
     },
     "backToApp": "返回应用",
     "overview": {
@@ -183,6 +184,41 @@
       "totalViews": "累计浏览量",
       "todayViews": "今日浏览",
       "last7Days": "近 7 天"
+    },
+    "blog": {
+      "heading": "博客管理",
+      "subtitle": "撰写和管理博客文章，支持 Markdown 格式。",
+      "create": "新建文章",
+      "createTitle": "创建新文章",
+      "editTitle": "编辑文章",
+      "preview": "预览",
+      "publish": "发布",
+      "empty": "暂无博客文章",
+      "deleteTitle": "删除文章",
+      "deleteConfirm": "确定要删除文章「{title}」吗？此操作不可恢复。",
+      "table": {
+        "title": "标题",
+        "category": "分类",
+        "status": "状态",
+        "views": "浏览量",
+        "created": "创建时间",
+        "actions": "操作"
+      },
+      "form": {
+        "slug": "URL 标识",
+        "slugHelp": "用于 URL 的唯一标识，创建后不可修改",
+        "title": "文章标题",
+        "subtitle": "副标题",
+        "category": "分类",
+        "status": "状态",
+        "coverImage": "封面图片 URL",
+        "excerpt": "摘要",
+        "excerptHelp": "显示在博客列表中的简短描述",
+        "content": "正文内容",
+        "seo": "SEO 设置",
+        "metaTitle": "SEO 标题",
+        "metaDescription": "SEO 描述"
+      }
     },
     "invites": {
       "heading": "邀请码",

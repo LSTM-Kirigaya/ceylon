@@ -37,6 +37,9 @@ import {
   Language,
   KeyboardCommandKey,
   KeyboardArrowDown,
+  UnfoldMore,
+  Check,
+  Tune,
   CreditCard,
   ChevronRight,
   AdminPanelSettings,
@@ -539,12 +542,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           sx={{
                             width: 22,
                             height: 22,
-                            borderRadius: 1.25,
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                            p: 0,
+                            borderRadius: 1,
+                            color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                            '&:hover': {
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            },
                           }}
                         >
-                          <KeyboardArrowDown fontSize="small" />
+                          <UnfoldMore fontSize="small" />
                         </IconButton>
                       ) : item.kind === 'view' ? (
                         <IconButton
@@ -560,12 +566,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           sx={{
                             width: 22,
                             height: 22,
-                            borderRadius: 1.25,
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                            p: 0,
+                            borderRadius: 1,
+                            color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                            '&:hover': {
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            },
                           }}
                         >
-                          <KeyboardArrowDown fontSize="small" />
+                          <UnfoldMore fontSize="small" />
                         </IconButton>
                       ) : null}
                     </Box>
@@ -615,12 +624,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           sx={{
                             width: 22,
                             height: 22,
-                            borderRadius: 1.25,
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                            p: 0,
+                            borderRadius: 1,
+                            color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                            '&:hover': {
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            },
                           }}
                         >
-                          <KeyboardArrowDown fontSize="small" />
+                          <UnfoldMore fontSize="small" />
                         </IconButton>
                       ) : item.kind === 'view' ? (
                         <IconButton
@@ -636,12 +648,15 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           sx={{
                             width: 22,
                             height: 22,
-                            borderRadius: 1.25,
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
-                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                            p: 0,
+                            borderRadius: 1,
+                            color: isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+                            '&:hover': {
+                              backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                            },
                           }}
                         >
-                          <KeyboardArrowDown fontSize="small" />
+                          <UnfoldMore fontSize="small" />
                         </IconButton>
                       ) : null}
                     </Box>
@@ -1030,7 +1045,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             backgroundColor: isDark ? '#1c1917' : '#ffffff',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
             boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.55)' : '0 8px 30px rgba(0,0,0,0.12)',
-            minWidth: 260,
+            minWidth: 320,
             mt: 1,
           },
         }}
@@ -1041,10 +1056,105 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
             <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2 }} />
           </Box>
-        ) : (
-          switcherProjects.map((p) => {
+        ) : (() => {
+          const nodes: any[] = []
+          const current = switcherProjects.find((p) => p.id === currentProjectId) || null
+          if (current) {
+            nodes.push(
+              <MenuItem
+                key="project-current"
+                data-testid="breadcrumb-project-current"
+                onClick={() => {
+                  setProjectSwitchAnchor(null)
+                  router.push(`/${locale}/dashboard/project/${current.id}`)
+                }}
+                sx={{ py: 1 }}
+              >
+                <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                  <Check fontSize="small" />
+                </ListItemIcon>
+                <ListItemAvatar sx={{ minWidth: 34 }}>
+                  {current.icon_url ? (
+                    <Avatar src={current.icon_url} variant="rounded" sx={{ width: 24, height: 24, borderRadius: 1 }} />
+                  ) : (
+                    <Avatar
+                      variant="rounded"
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 1,
+                        bgcolor: isDark ? 'rgba(200, 92, 27, 0.18)' : 'rgba(200, 92, 27, 0.12)',
+                        color: CEYLON_ORANGE,
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {(current.name || 'P')[0]?.toUpperCase()}
+                    </Avatar>
+                  )}
+                </ListItemAvatar>
+                <ListItemText
+                  primary={current.name}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    sx: {
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                    },
+                  }}
+                />
+              </MenuItem>,
+            )
+            nodes.push(
+              <Divider
+                key="project-current-divider"
+                sx={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+              />,
+            )
+          }
+
+          nodes.push(
+            <MenuItem
+              key="project-action-create"
+              data-testid="breadcrumb-project-action-create"
+              onClick={() => {
+                setProjectSwitchAnchor(null)
+                router.push(`/${locale}/dashboard?create=1`)
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                <Add fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Create project" />
+            </MenuItem>,
+          )
+          nodes.push(
+            <MenuItem
+              key="project-action-manage"
+              data-testid="breadcrumb-project-action-manage"
+              onClick={() => {
+                setProjectSwitchAnchor(null)
+                router.push(`/${locale}/dashboard`)
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                <Tune fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Manage projects" />
+            </MenuItem>,
+          )
+
+          nodes.push(
+            <Divider
+              key="project-actions-divider"
+              sx={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+            />,
+          )
+
+          for (const p of switcherProjects) {
             const selected = currentProjectId === p.id
-            return (
+            nodes.push(
               <MenuItem
                 key={p.id}
                 data-testid={`breadcrumb-project-item-${p.id}`}
@@ -1090,10 +1200,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     },
                   }}
                 />
-              </MenuItem>
+              </MenuItem>,
             )
-          })
-        )}
+          }
+
+          return nodes
+        })()}
       </Menu>
 
       <Menu
@@ -1107,7 +1219,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             backgroundColor: isDark ? '#1c1917' : '#ffffff',
             border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
             boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.55)' : '0 8px 30px rgba(0,0,0,0.12)',
-            minWidth: 260,
+            minWidth: 320,
             mt: 1,
           },
         }}
@@ -1118,10 +1230,89 @@ export default function MainLayout({ children }: MainLayoutProps) {
             <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
             <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2 }} />
           </Box>
-        ) : (
-          switcherViews.map((v) => {
+        ) : (() => {
+          const nodes: any[] = []
+          const current = switcherViews.find((v) => v.id === currentViewId) || null
+
+          if (current) {
+            nodes.push(
+              <MenuItem
+                key="view-current"
+                data-testid="breadcrumb-view-current"
+                onClick={() => {
+                  setViewSwitchAnchor(null)
+                  if (!currentProjectId) return
+                  router.push(`/${locale}/dashboard/project/${currentProjectId}/view/${current.id}`)
+                }}
+                sx={{ py: 1 }}
+              >
+                <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                  <Check fontSize="small" />
+                </ListItemIcon>
+                <ListItemText
+                  primary={current.name}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    sx: {
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
+                      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                    },
+                  }}
+                />
+              </MenuItem>,
+            )
+            nodes.push(
+              <Divider
+                key="view-current-divider"
+                sx={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+              />,
+            )
+          }
+
+          nodes.push(
+            <MenuItem
+              key="view-action-create"
+              data-testid="breadcrumb-view-action-create"
+              onClick={() => {
+                setViewSwitchAnchor(null)
+                if (!currentProjectId) return
+                router.push(`/${locale}/dashboard/project/${currentProjectId}/settings`)
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                <Add fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Create view" />
+            </MenuItem>,
+          )
+          nodes.push(
+            <MenuItem
+              key="view-action-manage"
+              data-testid="breadcrumb-view-action-manage"
+              onClick={() => {
+                setViewSwitchAnchor(null)
+                if (!currentProjectId) return
+                router.push(`/${locale}/dashboard/project/${currentProjectId}/settings`)
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
+                <Tune fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Manage views" />
+            </MenuItem>,
+          )
+
+          nodes.push(
+            <Divider
+              key="view-actions-divider"
+              sx={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+            />,
+          )
+
+          for (const v of switcherViews) {
             const selected = currentViewId === v.id
-            return (
+            nodes.push(
               <MenuItem
                 key={v.id}
                 data-testid={`breadcrumb-view-item-${v.id}`}
@@ -1148,10 +1339,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     },
                   }}
                 />
-              </MenuItem>
+              </MenuItem>,
             )
-          })
-        )}
+          }
+
+          return nodes
+        })()}
       </Menu>
     </Box>
   )

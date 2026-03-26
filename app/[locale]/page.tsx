@@ -523,7 +523,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                 variant="contained"
                 size="large"
                 onClick={() =>
-                  router.push(user ? '/dashboard' : '/register')
+                  router.push(user ? `/${locale}/dashboard` : `/${locale}/register`)
                 }
                 sx={{
                   backgroundColor: CEYLON_ORANGE,

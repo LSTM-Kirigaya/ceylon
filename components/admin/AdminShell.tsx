@@ -15,7 +15,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material'
-import { Menu as MenuIcon, Dashboard, VpnKey, ArrowBack } from '@mui/icons-material'
+import { Menu as MenuIcon, Dashboard, VpnKey, Article, ArrowBack } from '@mui/icons-material'
 import { useThemeStore } from '@/stores/themeStore'
 import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Logo } from '@/components/Logo'
@@ -41,6 +41,7 @@ export default function AdminShell({
   const nav = [
     { href: base, label: t('nav.overview'), icon: <Dashboard /> },
     { href: `${base}/invites`, label: t('nav.invites'), icon: <VpnKey /> },
+    { href: `${base}/blog`, label: t('nav.blog'), icon: <Article /> },
   ]
 
   const drawer = (

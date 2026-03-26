@@ -7,4 +7,15 @@ test.describe('Full Workflow Integration', () => {
     await expect(page).toHaveURL(/\/dashboard/)
     await expect(page.locator('text=所有项目')).toBeVisible()
   })
+
+  test('home CTA should go to dashboard when logged in', async ({ page }) => {
+    await signInUser(page)
+    await page.goto('/')
+
+    // "开始项目" / primary CTA (avoid locale-dependent exact text by using the first contained button in hero).
+    const cta = page.locator('main button, button').filter({ hasText: /开始|Start|Get started|创建|项目/ }).first()
+    await cta.click()
+
+    await expect(page).toHaveURL(/\/dashboard/)
+  })
 })

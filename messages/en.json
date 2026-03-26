@@ -181,6 +181,41 @@
       "todayViews": "Today",
       "last7Days": "Last 7 days"
     },
+    "blog": {
+      "heading": "Blog Management",
+      "subtitle": "Write and manage blog posts with Markdown support.",
+      "create": "New Post",
+      "createTitle": "Create New Post",
+      "editTitle": "Edit Post",
+      "preview": "Preview",
+      "publish": "Publish",
+      "empty": "No blog posts yet",
+      "deleteTitle": "Delete Post",
+      "deleteConfirm": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+      "table": {
+        "title": "Title",
+        "category": "Category",
+        "status": "Status",
+        "views": "Views",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "form": {
+        "slug": "URL Slug",
+        "slugHelp": "Unique identifier for URL, cannot be changed after creation",
+        "title": "Post Title",
+        "subtitle": "Subtitle",
+        "category": "Category",
+        "status": "Status",
+        "coverImage": "Cover Image URL",
+        "excerpt": "Excerpt",
+        "excerptHelp": "Short description displayed in blog list",
+        "content": "Content",
+        "seo": "SEO Settings",
+        "metaTitle": "SEO Title",
+        "metaDescription": "SEO Description"
+      }
+    },
     "invites": {
       "heading": "Invite codes",
       "subtitle": "Create codes for new user registration. Each code can be used once.",

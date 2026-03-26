@@ -13,6 +13,7 @@ import {
   IconButton,
   Paper,
   Chip,
+  Skeleton,
 } from '@mui/material'
 import {
   LightMode,
@@ -24,43 +25,16 @@ import { useAuthStore } from '@/stores/authStore'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Logo } from '@/components/Logo'
 
-// Blog post data - using translation keys for categories
-const getBlogPosts = (t: (key: string) => string) => [
-  {
-    id: 1,
-    title: 'The Birth of ceylonm: Why We Decided to Build This Project',
-    category: t('blog.categories.journey'),
-    date: '2024-03-15',
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
-    size: 'large',
-  },
-  {
-    id: 2,
-    title: 'v0.5.0 Release: New UI and Multi-language Support',
-    category: t('blog.categories.release'),
-    date: '2024-03-10',
-    gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
-    size: 'small',
-  },
-  {
-    id: 3,
-    title: 'How We Built the AI-Powered Requirements Analysis',
-    category: t('blog.categories.tech'),
-    date: '2024-03-05',
-    gradient: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
-    size: 'small',
-  },
-]
-
-const getCategoryKey = (category: string) => {
-  const keyMap: Record<string, string> = {
-    'All': 'blog.categories.all',
-    'Journey': 'blog.categories.journey',
-    'Release': 'blog.categories.release',
-    'Tech Deep Dive': 'blog.categories.tech',
-    'Case Studies': 'blog.categories.case',
-  }
-  return keyMap[category] || category
+interface BlogPost {
+  id: string
+  slug: string
+  title: string
+  subtitle: string
+  category: string
+  published_at: string
+  excerpt: string
+  cover_image: string | null
+  view_count: number
 }
 
 export default function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -70,18 +44,29 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
   const { mode, setMode, getEffectiveMode } = useThemeStore()
   const { user } = useAuthStore()
   const [mounted, setMounted] = useState(false)
-  const [activeCategory, setActiveCategory] = useState('All')
+  const [activeCategory, setActiveCategory] = useState('all')
+  const [posts, setPosts] = useState<BlogPost[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
+    fetchPosts()
   }, [])
+
+  const fetchPosts = async () => {
+    try {
+      const res = await fetch('/api/blog')
+      if (res.ok) {
+        const data = await res.json()
+        setPosts(data.posts)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
-
-  const blogPosts = getBlogPosts(t)
-
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
 
   const themeIcons = [
     { mode: 'light' as const, icon: <LightMode />, label: t('theme.light') },
@@ -89,24 +74,28 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
     { mode: 'system' as const, icon: <Computer />, label: t('theme.system') },
   ]
 
-  const handleThemeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleThemeMenuClose = () => {
-    setAnchorEl(null)
-  }
-
-  const handleThemeSelect = (themeMode: 'light' | 'dark' | 'system') => {
-    setMode(themeMode)
-    handleThemeMenuClose()
-  }
-
   const currentThemeIcon = themeIcons.find((t) => t.mode === mode) || themeIcons[0]
 
-  const filteredPosts = activeCategory === 'All' 
-    ? blogPosts 
-    : blogPosts.filter(post => post.category === t(getCategoryKey(activeCategory)))
+  const categories = ['all', 'journey', 'release', 'tech', 'case']
+
+  const getCategoryLabel = (category: string) => {
+    const key = `blog.categories.${category}`
+    return t(key) || category
+  }
+
+  const getCategoryColor = (category: string): string => {
+    const colors: Record<string, string> = {
+      journey: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+      release: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)',
+      tech: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+      case: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    }
+    return colors[category] || colors.journey
+  }
+
+  const filteredPosts = activeCategory === 'all'
+    ? posts
+    : posts.filter(post => post.category === activeCategory)
 
   if (!mounted) {
     return null
@@ -146,47 +135,9 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
             </Typography>
           </Box>
 
-          {/* Navigation Links - Center */}
-          <Box
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              alignItems: 'center',
-              gap: 1,
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-            }}
-          >
-            {[
-              { label: t('nav.docs'), href: `/${locale}/docs` },
-              { label: t('nav.blog'), href: `/${locale}/blog` },
-              { label: t('nav.pricing'), href: `/${locale}/pricing` },
-            ].map((item) => (
-              <Button
-                key={item.label}
-                onClick={() => router.push(item.href)}
-                sx={{
-                  color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  fontSize: '0.9rem',
-                  px: 2,
-                  py: 0.75,
-                  borderRadius: 2,
-                  '&:hover': {
-                    color: isDark ? 'white' : '#1c1917',
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                  },
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Box>
-
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <IconButton
-              onClick={handleThemeMenuOpen}
+              onClick={() => setMode(currentThemeIcon.mode === 'light' ? 'dark' : currentThemeIcon.mode === 'dark' ? 'system' : 'light')}
               sx={{
                 color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
                 '&:hover': { color: CEYLON_ORANGE },
@@ -290,14 +241,14 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
             pb: 2,
           }}
         >
-          {['All', 'Journey', 'Release', 'Tech Deep Dive', 'Case Studies'].map((category) => (
+          {categories.map((category) => (
             <Button
               key={category}
               onClick={() => setActiveCategory(category)}
               sx={{
                 textTransform: 'none',
                 fontWeight: 500,
-                color: activeCategory === category 
+                color: activeCategory === category
                   ? isDark ? 'white' : '#0a0a0a'
                   : isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                 backgroundColor: activeCategory === category
@@ -311,80 +262,37 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
                 },
               }}
             >
-              {t(getCategoryKey(category))}
+              {getCategoryLabel(category)}
             </Button>
           ))}
         </Box>
 
         {/* Blog Grid */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-            gap: 3,
-          }}
-        >
-          {/* Large Post */}
-          <Paper
-            elevation={0}
+        {loading ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+            <Skeleton variant="rectangular" height={400} sx={{ borderRadius: 3 }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Skeleton variant="rectangular" height={190} sx={{ borderRadius: 3 }} />
+              <Skeleton variant="rectangular" height={190} sx={{ borderRadius: 3 }} />
+            </Box>
+          </Box>
+        ) : filteredPosts.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography sx={{ color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)' }}>
+              {t('blog.empty')}
+            </Typography>
+          </Box>
+        ) : (
+          <Box
             sx={{
-              borderRadius: 3,
-              overflow: 'hidden',
-              backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-              border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease',
-              '&:hover': {
-                transform: 'translateY(-4px)',
-              },
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+              gap: 3,
             }}
           >
-            <Box
-              sx={{
-                height: 320,
-                background: blogPosts[0].gradient,
-                position: 'relative',
-                p: 3,
-              }}
-            >
-              <Chip
-                label={blogPosts[0].category}
-                size="small"
-                sx={{
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  color: 'white',
-                  fontWeight: 500,
-                }}
-              />
-            </Box>
-            <Box sx={{ p: 3 }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  color: isDark ? 'white' : '#0a0a0a',
-                  mb: 2,
-                  lineHeight: 1.4,
-                }}
-              >
-                {blogPosts[0].title}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
-                }}
-              >
-                {t('blog.author')} · {blogPosts[0].date}
-              </Typography>
-            </Box>
-          </Paper>
-
-          {/* Small Posts */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {blogPosts.slice(1).map((post) => (
+            {/* Featured Post (First) */}
+            {filteredPosts[0] && (
               <Paper
-                key={post.id}
                 elevation={0}
                 sx={{
                   borderRadius: 3,
@@ -393,22 +301,26 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
                   border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
                   cursor: 'pointer',
                   transition: 'transform 0.2s ease',
-                  flex: 1,
                   '&:hover': {
                     transform: 'translateY(-4px)',
                   },
                 }}
+                onClick={() => router.push(`/${locale}/blog/${filteredPosts[0].slug}`)}
               >
                 <Box
                   sx={{
-                    height: 140,
-                    background: post.gradient,
+                    height: 320,
+                    background: filteredPosts[0].cover_image
+                      ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${filteredPosts[0].cover_image})`
+                      : getCategoryColor(filteredPosts[0].category),
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
                     position: 'relative',
-                    p: 2,
+                    p: 3,
                   }}
                 >
                   <Chip
-                    label={post.category}
+                    label={getCategoryLabel(filteredPosts[0].category)}
                     size="small"
                     sx={{
                       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -417,32 +329,110 @@ export default function BlogPage({ params }: { params: Promise<{ locale: string 
                     }}
                   />
                 </Box>
-                <Box sx={{ p: 2 }}>
+                <Box sx={{ p: 3 }}>
                   <Typography
-                    variant="h6"
+                    variant="h5"
                     sx={{
                       fontWeight: 600,
                       color: isDark ? 'white' : '#0a0a0a',
                       mb: 1,
-                      fontSize: '0.95rem',
                       lineHeight: 1.4,
                     }}
                   >
-                    {post.title}
+                    {filteredPosts[0].title}
                   </Typography>
+                  {filteredPosts[0].excerpt && (
+                    <Typography
+                      sx={{
+                        color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+                        mb: 2,
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {filteredPosts[0].excerpt}
+                    </Typography>
+                  )}
                   <Typography
                     variant="caption"
                     sx={{
                       color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
-                    {t('blog.author')} · {post.date}
+                    {t('blog.author')} · {new Date(filteredPosts[0].published_at).toLocaleDateString()}
                   </Typography>
                 </Box>
               </Paper>
-            ))}
+            )}
+
+            {/* Other Posts */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {filteredPosts.slice(1).map((post) => (
+                <Paper
+                  key={post.id}
+                  elevation={0}
+                  sx={{
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                    flex: 1,
+                    '&:hover': {
+                      transform: 'translateY(-4px)',
+                    },
+                  }}
+                  onClick={() => router.push(`/${locale}/blog/${post.slug}`)}
+                >
+                  <Box
+                    sx={{
+                      height: 140,
+                      background: post.cover_image
+                        ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${post.cover_image})`
+                        : getCategoryColor(post.category),
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      position: 'relative',
+                      p: 2,
+                    }}
+                  >
+                    <Chip
+                      label={getCategoryLabel(post.category)}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        color: 'white',
+                        fontWeight: 500,
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ p: 2 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontWeight: 600,
+                        color: isDark ? 'white' : '#0a0a0a',
+                        mb: 1,
+                        fontSize: '0.95rem',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      {post.title}
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)',
+                      }}
+                    >
+                      {t('blog.author')} · {new Date(post.published_at).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </Paper>
+              ))}
+            </Box>
           </Box>
-        </Box>
+        )}
       </Container>
 
       {/* Footer */}

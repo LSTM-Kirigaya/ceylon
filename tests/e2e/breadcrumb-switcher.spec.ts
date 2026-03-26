@@ -62,12 +62,18 @@ test.describe('Breadcrumb switchers', () => {
     // Project switcher
     await expect(page.getByTestId('breadcrumb-project-switcher').first()).toBeVisible()
     await page.getByTestId('breadcrumb-project-switcher').first().click()
+    await expect(page.getByTestId('breadcrumb-project-current')).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByTestId('breadcrumb-project-action-create')).toBeVisible()
+    await expect(page.getByTestId('breadcrumb-project-action-manage')).toBeVisible()
     await expect(page.getByTestId(`breadcrumb-project-item-${projectId}`)).toBeVisible({ timeout: 30_000 })
     // Close the menu so it doesn't intercept clicks.
     await page.keyboard.press('Escape')
 
     // View switcher
     await page.getByTestId('breadcrumb-view-switcher').first().click()
+    await expect(page.getByTestId('breadcrumb-view-current')).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByTestId('breadcrumb-view-action-create')).toBeVisible()
+    await expect(page.getByTestId('breadcrumb-view-action-manage')).toBeVisible()
     await expect(page.getByTestId(`breadcrumb-view-item-${viewId}`)).toBeVisible({ timeout: 30_000 })
 
     // Navigate via view menu (re-click current item is OK; just ensure it closes and URL remains valid)

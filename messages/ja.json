@@ -181,6 +181,41 @@
       "todayViews": "今日",
       "last7Days": "直近7日間"
     },
+    "blog": {
+      "heading": "ブログ管理",
+      "subtitle": "Markdown対応のブログ記事の作成と管理。",
+      "create": "新規作成",
+      "createTitle": "新規記事作成",
+      "editTitle": "記事編集",
+      "preview": "プレビュー",
+      "publish": "公開",
+      "empty": "ブログ記事がありません",
+      "deleteTitle": "記事削除",
+      "deleteConfirm": "「{title}」を削除してもよろしいですか？この操作は元に戻せません。",
+      "table": {
+        "title": "タイトル",
+        "category": "カテゴリー",
+        "status": "ステータス",
+        "views": "閲覧数",
+        "created": "作成日",
+        "actions": "操作"
+      },
+      "form": {
+        "slug": "URLスラッグ",
+        "slugHelp": "URL用の一意な識別子、作成後は変更できません",
+        "title": "記事タイトル",
+        "subtitle": "サブタイトル",
+        "category": "カテゴリー",
+        "status": "ステータス",
+        "coverImage": "カバー画像URL",
+        "excerpt": "要約",
+        "excerptHelp": "ブログリストに表示される短い説明",
+        "content": "本文",
+        "seo": "SEO設定",
+        "metaTitle": "SEOタイトル",
+        "metaDescription": "SEO説明"
+      }
+    },
     "invites": {
       "heading": "招待コード",
       "subtitle": "新規登録用のコードを作成します。各コードは1回のみ使用できます。",
