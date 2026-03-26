@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import { createMiddlewareSupabaseClient } from '@/lib/supabase-server'
 import { locales, defaultLocale } from './i18n/config'
 
-const intlMiddleware = createIntlMiddleware({
+const intlProxy = createIntlMiddleware({
   locales,
   defaultLocale,
   localePrefix: 'never',
   localeDetection: false,
 })
 
-export default async function middleware(request: NextRequest) {
-  const response = intlMiddleware(request)
+export async function proxy(request: NextRequest) {
+  const response = intlProxy(request)
   const supabase = createMiddlewareSupabaseClient(request, response)
   await supabase.auth.getUser()
   return response
@@ -20,3 +20,4 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 }
+
