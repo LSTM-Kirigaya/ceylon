@@ -57,7 +57,7 @@ export async function listRequirements(viewId: string): Promise<void> {
 
   if (requirements.length === 0) {
     console.log(chalk.yellow('No requirements found.'))
-    console.log(chalk.gray('Use `ceylon create` to add requirements'))
+    console.log(chalk.gray('Use `ceylonm create` to add requirements'))
     return
   }
 

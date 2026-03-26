@@ -310,7 +310,7 @@ export async function isAuthenticated() {
 
 ### 测试用户
 
-- **邮箱**: `autotest_1774216249112@ceylon.test`
+- **邮箱**: `autotest_1774216249112@ceylonm.test`
 - **密码**: `Test123456!`
 - **显示名**: `Auto Test User`
 

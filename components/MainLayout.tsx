@@ -20,6 +20,7 @@ import {
   Breadcrumbs,
   Link as MuiLink,
   Skeleton,
+  ListItemAvatar,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -35,6 +36,7 @@ import {
   Computer,
   Language,
   KeyboardCommandKey,
+  KeyboardArrowDown,
   CreditCard,
   ChevronRight,
   AdminPanelSettings,
@@ -70,6 +72,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [langAnchorEl, setLangAnchorEl] = useState<null | HTMLElement>(null)
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [resolvedNames, setResolvedNames] = useState<{ projectName?: string; viewName?: string }>({})
+  const [projectSwitchAnchor, setProjectSwitchAnchor] = useState<null | HTMLElement>(null)
+  const [viewSwitchAnchor, setViewSwitchAnchor] = useState<null | HTMLElement>(null)
+  const [switcherProjects, setSwitcherProjects] = useState<
+    { id: string; name: string; icon_url?: string | null }[]
+  >([])
+  const [switcherViews, setSwitcherViews] = useState<{ id: string; name: string }[]>([])
+  const [switcherLoading, setSwitcherLoading] = useState<{ projects: boolean; views: boolean }>({
+    projects: false,
+    views: false,
+  })
 
   useEffect(() => {
     setMounted(true)
@@ -127,6 +139,18 @@ export default function MainLayout({ children }: MainLayoutProps) {
     return segments[0] === locale ? segments.slice(1) : segments
   }, [pathname, locale])
 
+  const currentProjectId = useMemo(() => {
+    const projectIndex = pathSegments.findIndex((s) => s === 'project')
+    const projectId = projectIndex >= 0 ? pathSegments[projectIndex + 1] : undefined
+    return projectId && /^[0-9a-f-]{36}$/i.test(projectId) ? projectId : null
+  }, [pathSegments])
+
+  const currentViewId = useMemo(() => {
+    const viewIndex = pathSegments.findIndex((s) => s === 'view')
+    const viewId = viewIndex >= 0 ? pathSegments[viewIndex + 1] : undefined
+    return viewId && /^[0-9a-f-]{36}$/i.test(viewId) ? viewId : null
+  }, [pathSegments])
+
   const breadcrumbLabelMap: Record<string, string> = {
     dashboard: '控制台',
     project: '项目',
@@ -149,6 +173,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       const isUuidLike = segment.length > 20 && /^[0-9a-f-]+$/i.test(segment)
       const isProjectId = isUuidLike && index > 0 && pathSegments[index - 1] === 'project'
       const isViewId = isUuidLike && index > 0 && pathSegments[index - 1] === 'view'
+      const kind: 'project' | 'view' | 'normal' = isProjectId ? 'project' : isViewId ? 'view' : 'normal'
 
       // For dynamic id segments, do NOT show raw id; show skeleton until resolved.
       const loading =
@@ -165,9 +190,36 @@ export default function MainLayout({ children }: MainLayoutProps) {
         label = resolvedNames.viewName
       }
 
-      return { href, isLast, label, loading }
+      return { href, isLast, label, loading, kind }
     })
-    .filter((x): x is { href: string; isLast: boolean; label: string; loading: boolean } => x !== null)
+    .filter(
+      (x): x is { href: string; isLast: boolean; label: string; loading: boolean; kind: 'project' | 'view' | 'normal' } =>
+        x !== null
+    )
+
+  const loadSwitcherProjects = useCallback(async () => {
+    if (switcherProjects.length > 0) return
+    setSwitcherLoading((p) => ({ ...p, projects: true }))
+    try {
+      const res = await apiJson<{ projects: { id: string; name: string; icon_url?: string | null }[] }>(`/api/projects`)
+      const list = (res.projects ?? []).filter((p) => p && typeof p.id === 'string' && typeof p.name === 'string')
+      setSwitcherProjects(list)
+    } finally {
+      setSwitcherLoading((p) => ({ ...p, projects: false }))
+    }
+  }, [switcherProjects.length])
+
+  const loadSwitcherViews = useCallback(async () => {
+    if (!currentProjectId) return
+    setSwitcherLoading((p) => ({ ...p, views: true }))
+    try {
+      const res = await apiJson<{ views: { id: string; name: string }[] }>(`/api/projects/${currentProjectId}/views`)
+      const list = (res.views ?? []).filter((v) => v && typeof v.id === 'string' && typeof v.name === 'string')
+      setSwitcherViews(list)
+    } finally {
+      setSwitcherLoading((p) => ({ ...p, views: false }))
+    }
+  }, [currentProjectId])
 
   useEffect(() => {
     const loadNames = async () => {
@@ -235,8 +287,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         }
       })()
     }
-    window.addEventListener('ceylon-view-renamed', onRename)
-    return () => window.removeEventListener('ceylon-view-renamed', onRename)
+    window.addEventListener('ceylonm-view-renamed', onRename)
+    return () => window.removeEventListener('ceylonm-view-renamed', onRename)
   }, [pathSegments])
 
   // Theme options
@@ -439,53 +491,160 @@ export default function MainLayout({ children }: MainLayoutProps) {
               >
                 {breadcrumbs.map((item) =>
                   item.isLast ? (
-                    <Typography
+                    <Box
                       key={item.href}
                       sx={{
-                        color: isDark ? 'white' : '#1c1917',
-                        fontSize: '0.875rem',
-                        fontWeight: 500,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        minWidth: 0,
                       }}
                     >
-                      {item.loading ? (
-                        <Skeleton
-                          variant="text"
-                          width={120}
-                          sx={{
-                            display: 'inline-block',
-                            transform: 'none',
-                            bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                      <Typography
+                        sx={{
+                          color: isDark ? 'white' : '#1c1917',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          minWidth: 0,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {item.loading ? (
+                          <Skeleton
+                            variant="text"
+                            width={120}
+                            sx={{
+                              display: 'inline-block',
+                              transform: 'none',
+                              bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                            }}
+                          />
+                        ) : (
+                          item.label
+                        )}
+                      </Typography>
+                      {item.kind === 'project' ? (
+                        <IconButton
+                          size="small"
+                          aria-label="切换项目"
+                          data-testid="breadcrumb-project-switcher"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setProjectSwitchAnchor(e.currentTarget)
+                            await loadSwitcherProjects()
                           }}
-                        />
-                      ) : (
-                        item.label
-                      )}
-                    </Typography>
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 1.25,
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                          }}
+                        >
+                          <KeyboardArrowDown fontSize="small" />
+                        </IconButton>
+                      ) : item.kind === 'view' ? (
+                        <IconButton
+                          size="small"
+                          aria-label="切换版本视图"
+                          data-testid="breadcrumb-view-switcher"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setViewSwitchAnchor(e.currentTarget)
+                            await loadSwitcherViews()
+                          }}
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 1.25,
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                          }}
+                        >
+                          <KeyboardArrowDown fontSize="small" />
+                        </IconButton>
+                      ) : null}
+                    </Box>
                   ) : (
-                    <MuiLink
+                    <Box
                       key={item.href}
-                      underline="hover"
-                      onClick={() => handleNavigation(item.href)}
                       sx={{
-                        cursor: 'pointer',
-                        color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                        fontSize: '0.875rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
                       }}
                     >
-                      {item.loading ? (
-                        <Skeleton
-                          variant="text"
-                          width={120}
-                          sx={{
-                            display: 'inline-block',
-                            transform: 'none',
-                            bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                      <MuiLink
+                        underline="hover"
+                        onClick={() => handleNavigation(item.href)}
+                        sx={{
+                          cursor: 'pointer',
+                          color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
+                          fontSize: '0.875rem',
+                        }}
+                      >
+                        {item.loading ? (
+                          <Skeleton
+                            variant="text"
+                            width={120}
+                            sx={{
+                              display: 'inline-block',
+                              transform: 'none',
+                              bgcolor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                            }}
+                          />
+                        ) : (
+                          item.label
+                        )}
+                      </MuiLink>
+                      {item.kind === 'project' ? (
+                        <IconButton
+                          size="small"
+                          aria-label="切换项目"
+                          data-testid="breadcrumb-project-switcher"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setProjectSwitchAnchor(e.currentTarget)
+                            await loadSwitcherProjects()
                           }}
-                        />
-                      ) : (
-                        item.label
-                      )}
-                    </MuiLink>
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 1.25,
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                          }}
+                        >
+                          <KeyboardArrowDown fontSize="small" />
+                        </IconButton>
+                      ) : item.kind === 'view' ? (
+                        <IconButton
+                          size="small"
+                          aria-label="切换版本视图"
+                          data-testid="breadcrumb-view-switcher"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setViewSwitchAnchor(e.currentTarget)
+                            await loadSwitcherViews()
+                          }}
+                          sx={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 1.25,
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                            color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)',
+                          }}
+                        >
+                          <KeyboardArrowDown fontSize="small" />
+                        </IconButton>
+                      ) : null}
+                    </Box>
                   )
                 )}
               </Breadcrumbs>
@@ -857,6 +1016,142 @@ export default function MainLayout({ children }: MainLayoutProps) {
             />
           </MenuItem>
         ))}
+      </Menu>
+
+      {/* Breadcrumb switchers */}
+      <Menu
+        anchorEl={projectSwitchAnchor}
+        open={Boolean(projectSwitchAnchor)}
+        onClose={() => setProjectSwitchAnchor(null)}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#ffffff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.55)' : '0 8px 30px rgba(0,0,0,0.12)',
+            minWidth: 260,
+            mt: 1,
+          },
+        }}
+      >
+        {switcherLoading.projects ? (
+          <Box sx={{ p: 1.5 }}>
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2 }} />
+          </Box>
+        ) : (
+          switcherProjects.map((p) => {
+            const selected = currentProjectId === p.id
+            return (
+              <MenuItem
+                key={p.id}
+                data-testid={`breadcrumb-project-item-${p.id}`}
+                selected={selected}
+                onClick={() => {
+                  setProjectSwitchAnchor(null)
+                  router.push(`/${locale}/dashboard/project/${p.id}`)
+                }}
+                sx={{
+                  py: 1,
+                  '&.Mui-selected': {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  },
+                }}
+              >
+                <ListItemAvatar>
+                  {p.icon_url ? (
+                    <Avatar src={p.icon_url} variant="rounded" sx={{ width: 24, height: 24, borderRadius: 1 }} />
+                  ) : (
+                    <Avatar
+                      variant="rounded"
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 1,
+                        bgcolor: isDark ? 'rgba(200, 92, 27, 0.18)' : 'rgba(200, 92, 27, 0.12)',
+                        color: CEYLON_ORANGE,
+                        fontSize: 12,
+                        fontWeight: 800,
+                      }}
+                    >
+                      {(p.name || 'P')[0]?.toUpperCase()}
+                    </Avatar>
+                  )}
+                </ListItemAvatar>
+                <ListItemText
+                  primary={p.name}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    sx: {
+                      fontSize: '0.9rem',
+                      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                    },
+                  }}
+                />
+              </MenuItem>
+            )
+          })
+        )}
+      </Menu>
+
+      <Menu
+        anchorEl={viewSwitchAnchor}
+        open={Boolean(viewSwitchAnchor)}
+        onClose={() => setViewSwitchAnchor(null)}
+        transitionDuration={0}
+        TransitionProps={{ timeout: 0 }}
+        PaperProps={{
+          sx: {
+            backgroundColor: isDark ? '#1c1917' : '#ffffff',
+            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+            boxShadow: isDark ? '0 8px 30px rgba(0,0,0,0.55)' : '0 8px 30px rgba(0,0,0,0.12)',
+            minWidth: 260,
+            mt: 1,
+          },
+        }}
+      >
+        {switcherLoading.views ? (
+          <Box sx={{ p: 1.5 }}>
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2, mb: 1 }} />
+            <Skeleton variant="rounded" height={36} sx={{ transform: 'none', borderRadius: 2 }} />
+          </Box>
+        ) : (
+          switcherViews.map((v) => {
+            const selected = currentViewId === v.id
+            return (
+              <MenuItem
+                key={v.id}
+                data-testid={`breadcrumb-view-item-${v.id}`}
+                selected={selected}
+                onClick={() => {
+                  setViewSwitchAnchor(null)
+                  if (!currentProjectId) return
+                  router.push(`/${locale}/dashboard/project/${currentProjectId}/view/${v.id}`)
+                }}
+                sx={{
+                  py: 1,
+                  '&.Mui-selected': {
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                  },
+                }}
+              >
+                <ListItemText
+                  primary={v.name}
+                  primaryTypographyProps={{
+                    noWrap: true,
+                    sx: {
+                      fontSize: '0.9rem',
+                      color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
+                    },
+                  }}
+                />
+              </MenuItem>
+            )
+          })
+        )}
       </Menu>
     </Box>
   )

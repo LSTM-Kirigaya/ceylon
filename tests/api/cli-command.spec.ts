@@ -23,7 +23,7 @@ test.describe('CLI command (local binary) - smoke', () => {
   let projectId = ''
   let viewId = ''
 
-  // tmp home for cli config: ~/.ceylon/token
+  // tmp home for cli config: ~/.ceylonm/token
   const tmpHome = path.join(__dirname, '..', 'test-results', 'tmp-cli-home', testId)
 
   test.beforeAll(async () => {
@@ -68,8 +68,8 @@ test.describe('CLI command (local binary) - smoke', () => {
     // (we'll add it to track to be consistent with other tests).
     globalCleanup.trackView(viewId)
 
-    fs.mkdirSync(path.join(tmpHome, '.ceylon'), { recursive: true })
-    fs.writeFileSync(path.join(tmpHome, '.ceylon', 'token'), token!, { encoding: 'utf-8', mode: 0o600 })
+    fs.mkdirSync(path.join(tmpHome, '.ceylonm'), { recursive: true })
+    fs.writeFileSync(path.join(tmpHome, '.ceylonm', 'token'), token!, { encoding: 'utf-8', mode: 0o600 })
   })
 
   test.afterAll(async () => {
@@ -166,7 +166,7 @@ test.describe('CLI command (local binary) - smoke', () => {
 
   test('unauthorized cli token should fail', async () => {
     // Overwrite token with invalid value in tmp home
-    fs.writeFileSync(path.join(tmpHome, '.ceylon', 'token'), 'invalid_token_123', { encoding: 'utf-8' })
+    fs.writeFileSync(path.join(tmpHome, '.ceylonm', 'token'), 'invalid_token_123', { encoding: 'utf-8' })
 
     const res = runCli(['projects'])
     expect(res.status).not.toBe(0)

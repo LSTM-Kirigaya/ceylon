@@ -562,7 +562,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
       })
       await fetchAll()
       setViewSettingsOpen(false)
-      window.dispatchEvent(new CustomEvent('ceylon-view-renamed'))
+      window.dispatchEvent(new CustomEvent('ceylonm-view-renamed'))
     } catch (e) {
       console.error(e)
     } finally {

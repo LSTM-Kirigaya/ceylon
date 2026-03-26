@@ -17,7 +17,7 @@ try {
   console.log('   ✅ Login page loaded\n');
 
   console.log('2. Filling credentials...');
-  await page.fill('input[name="email"]', 'demo@ceylon.test');
+  await page.fill('input[name="email"]', 'demo@ceylonm.test');
   await page.fill('input[name="password"]', 'Demo123456!');
   console.log('   ✅ Form filled\n');
 

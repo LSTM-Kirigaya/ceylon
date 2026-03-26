@@ -15,7 +15,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
 });
 
 // 测试用户凭证
-const TEST_EMAIL = 'e2e_test@ceylon.test';
+const TEST_EMAIL = 'e2e_test@ceylonm.test';
 const TEST_PASSWORD = 'Test123456!';
 const TEST_NAME = 'E2E Test User';
 

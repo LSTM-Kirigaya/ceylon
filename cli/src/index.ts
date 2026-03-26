@@ -11,7 +11,7 @@ import { getConfig, ensureConfigDir } from './utils/config'
 const program = new Command()
 
 program
-  .name('ceylon')
+  .name('ceylonm')
   .description('CLI tool for ceylonm - Intelligent Requirements Management')
   .version('1.0.0')
 
@@ -53,7 +53,7 @@ program
         console.log(chalk.gray('User:'), status.user?.email)
       } else {
         console.log(chalk.yellow('✗ Not authenticated'))
-        console.log(chalk.gray('Run `ceylon login` to authenticate'))
+        console.log(chalk.gray('Run `ceylonm login` to authenticate'))
       }
     } catch (error: any) {
       console.error(chalk.red('Error:'), error.message)

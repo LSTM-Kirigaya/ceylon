@@ -28,14 +28,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     authors: [{ name: "ceylonm Team" }],
     creator: "ceylonm Team",
     publisher: "ceylonm",
-    metadataBase: new URL("https://ceylon.app"),
+    metadataBase: new URL("https://ceylonm.app"),
     alternates: {
       canonical: "/",
     },
     openGraph: {
       title: t('title'),
       description: t('description'),
-      url: "https://ceylon.app",
+      url: "https://ceylonm.app",
       siteName: "ceylonm",
       type: "website",
       images: [

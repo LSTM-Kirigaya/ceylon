@@ -9,7 +9,7 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://vaukvwgvklnpmlwhgyei.supabase.co';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhdWt2d2d2a2xucG1sd2hneWVpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTU0MDMsImV4cCI6MjA4OTc3MTQwM30.8fmv1ppusEdHEDvEnHGzKgf9g_zsTToyx832BL3yopo';
 
-const TEST_EMAIL = 'cookie_test@ceylon.test';
+const TEST_EMAIL = 'cookie_test@ceylonm.test';
 const TEST_PASSWORD = 'Test123456!';
 
 console.log('🧪 Cookie Test\n');

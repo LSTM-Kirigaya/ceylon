@@ -14,7 +14,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
 });
 
 const timestamp = Date.now();
-const TEST_EMAIL = `debug_${timestamp}@ceylon.test`;
+const TEST_EMAIL = `debug_${timestamp}@ceylonm.test`;
 const TEST_PASSWORD = 'Test123456!';
 const TEST_NAME = 'Debug User';
 

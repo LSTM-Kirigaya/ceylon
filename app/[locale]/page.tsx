@@ -324,22 +324,29 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                   onClick={handleUserMenuOpen}
                   sx={{
                     ml: 1,
-                    p: 0.5,
-                    border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                    p: 0,
+                    border: 'none',
                     '&:hover': {
-                      borderColor: CEYLON_ORANGE,
+                      backgroundColor: 'transparent',
                     },
                   }}
                 >
                   <Avatar
+                    data-testid="home-user-avatar"
                     src={profile?.avatar_url || undefined}
                     alt={profile?.display_name || user?.email}
                     sx={{
                       width: 36,
                       height: 36,
                       backgroundColor: CEYLON_ORANGE,
-                      fontSize: '1rem',
-                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer',
+                      border: `2px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                        transform: 'scale(1.05)',
+                      },
                     }}
                   >
                     {(profile?.display_name || user?.email || 'U').charAt(0).toUpperCase()}
@@ -615,13 +622,13 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box component="span" sx={{ color: '#22c55e' }}>$</Box>
-                  <span>npm install -g @ceylon/cli</span>
+                  <span>npm install -g @ceylonm/cli</span>
                 </Box>
                 <Button
                   size="small"
                   variant="outlined"
                   onClick={() => {
-                    navigator.clipboard.writeText('npm install -g @ceylon/cli')
+                    navigator.clipboard.writeText('npm install -g @ceylonm/cli')
                   }}
                   sx={{
                     textTransform: 'none',

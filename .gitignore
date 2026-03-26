@@ -54,6 +54,10 @@ next-env.d.ts
 # Output directories
 /output
 
+# Local deployment artifacts / scripts
+/.deploy/
+/scripts/deploy-ceylonm.sh
+
 # Supabase
 /supabase/.temp
 

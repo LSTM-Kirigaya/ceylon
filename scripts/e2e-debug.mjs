@@ -13,7 +13,7 @@ const supabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false }
 });
 
-const TEST_EMAIL = 'debug_e2e@ceylon.test';
+const TEST_EMAIL = 'debug_e2e@ceylonm.test';
 const TEST_PASSWORD = 'Test123456!';
 
 console.log('🧪 Debug E2E Test\n');

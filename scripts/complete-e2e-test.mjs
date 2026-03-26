@@ -14,7 +14,7 @@ const adminSupabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false }
 });
 
-const TEST_EMAIL = 'demo@ceylon.test';
+const TEST_EMAIL = 'demo@ceylonm.test';
 const TEST_PASSWORD = 'Demo123456!';
 
 console.log('🧪 Complete E2E Test\n');

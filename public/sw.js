@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ceylon-v1'
+const CACHE_NAME = 'ceylonm-v1'
 const STATIC_ASSETS = [
   '/',
   '/login',

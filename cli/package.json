@@ -1,10 +1,10 @@
 {
-  "name": "ceylon-cli",
+  "name": "ceylonm-cli",
   "version": "1.0.0",
   "description": "CLI tool for ceylonm - Intelligent Requirements Management",
   "main": "dist/index.js",
   "bin": {
-    "ceylon": "./dist/index.js"
+    "ceylonm": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
@@ -12,7 +12,7 @@
     "prepublish": "npm run build"
   },
   "keywords": [
-    "ceylon",
+    "ceylonm",
     "cli",
     "requirements",
     "management"

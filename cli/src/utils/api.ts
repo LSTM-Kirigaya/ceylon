@@ -6,7 +6,7 @@ export async function createApiClient(): Promise<AxiosInstance> {
   const config = await getConfig()
 
   if (!token) {
-    throw new Error('Not authenticated. Please run `ceylon login` first.')
+    throw new Error('Not authenticated. Please run `ceylonm login` first.')
   }
 
   const client = axios.create({
@@ -21,7 +21,7 @@ export async function createApiClient(): Promise<AxiosInstance> {
     (response) => response,
     (error) => {
       if (error.response?.status === 401) {
-        throw new Error('Authentication expired. Please run `ceylon login` again.')
+        throw new Error('Authentication expired. Please run `ceylonm login` again.')
       }
       throw error
     }

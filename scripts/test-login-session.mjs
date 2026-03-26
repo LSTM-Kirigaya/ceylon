@@ -14,7 +14,7 @@ const adminSupabase = createClient(SUPABASE_URL, SERVICE_KEY, {
   auth: { persistSession: false }
 });
 
-const TEST_EMAIL = 'session_test@ceylon.test';
+const TEST_EMAIL = 'session_test@ceylonm.test';
 const TEST_PASSWORD = 'Test123456!';
 const TEST_NAME = 'Session Test User';
 
