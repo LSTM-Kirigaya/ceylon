@@ -1,0 +1,273 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import {
+  Box,
+  Typography,
+  Paper,
+  TextField,
+  Button,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Skeleton,
+  IconButton,
+} from '@mui/material'
+import { useThemeStore } from '@/stores/themeStore'
+import { Delete } from '@mui/icons-material'
+
+type InviteRow = {
+  id: string
+  code: string
+  note: string | null
+  created_at: string
+  expires_at: string | null
+  used_at: string | null
+  used_by: string | null
+}
+
+export default function AdminInvitesPage() {
+  const t = useTranslations('admin.invites')
+  const { getEffectiveMode } = useThemeStore()
+  const isDark = getEffectiveMode() === 'dark'
+  const [rows, setRows] = useState<InviteRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [code, setCode] = useState('')
+  const [note, setNote] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const skeletonRowCount = 6
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const load = async () => {
+    setError(null)
+    const res = await fetch('/api/admin/invites', { credentials: 'include' })
+    const body = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      setError(body.error || 'Failed to load')
+      return
+    }
+    setRows(body.invites ?? [])
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      try {
+        await load()
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const onCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/admin/invites', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: code.trim() || undefined,
+          note: note.trim() || undefined,
+          expiresAt: expiresAt || undefined,
+        }),
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(body.error || 'Failed to create')
+        return
+      }
+      setCode('')
+      setNote('')
+      setExpiresAt('')
+      await load()
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onDelete = async (id: string) => {
+    if (!confirm(t('deleteConfirm'))) return
+    setDeletingId(id)
+    setError(null)
+    try {
+      const res = await fetch(`/api/admin/invites/${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(body.error || 'Failed to delete')
+        return
+      }
+      await load()
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  return (
+    <Box>
+      <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+        {t('heading')}
+      </Typography>
+      <Typography variant="body2" sx={{ mb: 3, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.5)' }}>
+        {t('subtitle')}
+      </Typography>
+
+      <Paper
+        component="form"
+        onSubmit={onCreate}
+        sx={{
+          p: 2,
+          mb: 3,
+          backgroundColor: isDark ? '#1c1917' : '#fff',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: 2,
+          boxShadow: 'none',
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+          {t('createTitle')}
+        </Typography>
+        <Stack spacing={2} direction={{ xs: 'column', md: 'row' }} alignItems={{ md: 'flex-end' }}>
+          <TextField
+            label={t('codeOptional')}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder={t('codePlaceholder')}
+            size="small"
+            fullWidth
+          />
+          <TextField label={t('note')} value={note} onChange={(e) => setNote(e.target.value)} size="small" fullWidth />
+          <TextField
+            label={t('expiresAt')}
+            type="datetime-local"
+            value={expiresAt}
+            onChange={(e) => setExpiresAt(e.target.value)}
+            size="small"
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 220 }}
+          />
+          <Button type="submit" variant="contained" disabled={submitting} sx={{ minWidth: 120 }}>
+            {t('create')}
+          </Button>
+        </Stack>
+        {error ? (
+          <Typography color="error" variant="body2" sx={{ mt: 2 }}>
+            {error}
+          </Typography>
+        ) : null}
+      </Paper>
+
+      <TableContainer
+        component={Paper}
+        sx={{
+          backgroundColor: isDark ? '#1c1917' : '#fff',
+          border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}`,
+          borderRadius: 2,
+          boxShadow: 'none',
+          overflow: 'hidden',
+        }}
+      >
+        <Table size="small" sx={{ minWidth: 720, tableLayout: 'fixed', width: '100%' }}>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+              <TableCell>{t('table.code')}</TableCell>
+              <TableCell>{t('table.status')}</TableCell>
+              <TableCell>{t('table.note')}</TableCell>
+              <TableCell>{t('table.created')}</TableCell>
+              <TableCell>{t('table.expires')}</TableCell>
+              <TableCell align="right" sx={{ width: 72 }}>
+                {t('table.actions')}
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              [...Array(skeletonRowCount)].map((_, i) => (
+                <TableRow key={`sk-${i}`}>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width={140} sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="rounded" height={28} width={88} sx={{ borderRadius: 999, transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width="80%" sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width={160} sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }}>
+                    <Skeleton variant="text" width={160} sx={{ transform: 'none' }} />
+                  </TableCell>
+                  <TableCell sx={{ py: 1.25 }} align="right">
+                    <Skeleton variant="rounded" width={28} height={28} sx={{ borderRadius: 2, transform: 'none', ml: 'auto' }} />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6}>
+                  {t('empty')}
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row) => (
+                <TableRow key={row.id}>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace' }}>
+                      {row.code}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {row.used_at ? (
+                      <Chip size="small" label={t('status.used')} color="default" />
+                    ) : (
+                      <Chip size="small" label={t('status.unused')} color="success" />
+                    )}
+                  </TableCell>
+                  <TableCell>{row.note || '—'}</TableCell>
+                  <TableCell>{new Date(row.created_at).toLocaleString()}</TableCell>
+                  <TableCell>{row.expires_at ? new Date(row.expires_at).toLocaleString() : '—'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      size="small"
+                      aria-label={t('delete')}
+                      onClick={() => void onDelete(row.id)}
+                      disabled={deletingId === row.id}
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 2,
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                      }}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
+  )
+}

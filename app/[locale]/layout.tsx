@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Montserrat } from "next/font/google"
-import { getMessages, getTranslations } from 'next-intl/server'
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server'
 import { locales } from '@/i18n/config'
 import { NextIntlClientProvider } from 'next-intl'
 import "../globals.css"
@@ -121,7 +121,8 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>
 }) {
   const { locale } = await params
-  const messages = await getMessages()
+  setRequestLocale(locale)
+  const messages = await getMessages({ locale })
   const supabaseOrigin = process.env.SUPABASE_URL
 
   return (

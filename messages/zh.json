@@ -55,7 +55,8 @@
     "profile": "个人资料",
     "docs": "文档",
     "blog": "博客",
-    "pricing": "定价"
+    "pricing": "定价",
+    "adminConsole": "管理控制台"
   },
   "home": {
     "hero": {
@@ -123,6 +124,7 @@
         "complete": "完成"
       },
       "email": "邮箱",
+      "inviteCode": "邀请码",
       "displayName": "显示名称",
       "password": "密码",
       "confirmPassword": "确认密码",
@@ -157,6 +159,7 @@
         "confirmRequired": "请确认密码",
         "confirmMismatch": "两次输入的密码不一致",
         "displayNameRequired": "请输入显示名称",
+        "inviteRequired": "请输入有效邀请码",
         "avatarSize": "头像图片不能超过 2MB",
         "registerFailed": "注册失败，请重试",
         "uploadFailed": "上传头像失败"
@@ -165,6 +168,47 @@
     "logout": {
       "title": "退出登录",
       "confirm": "确定要退出登录吗？"
+    }
+  },
+  "admin": {
+    "title": "管理后台",
+    "nav": {
+      "overview": "概览与流量",
+      "invites": "邀请码"
+    },
+    "backToApp": "返回应用",
+    "overview": {
+      "heading": "控制面板",
+      "subtitle": "站点浏览量与概览数据。",
+      "totalViews": "累计浏览量",
+      "todayViews": "今日浏览",
+      "last7Days": "近 7 天"
+    },
+    "invites": {
+      "heading": "邀请码",
+      "subtitle": "创建邀请码供新用户注册，每个码仅可使用一次。",
+      "createTitle": "创建邀请码",
+      "codeOptional": "自定义码（可选）",
+      "codePlaceholder": "留空则自动生成",
+      "note": "备注",
+      "expiresAt": "过期时间",
+      "create": "创建",
+      "loading": "加载中…",
+      "delete": "删除",
+      "deleteConfirm": "确定要删除这个邀请码吗？",
+      "empty": "暂无邀请码。",
+      "table": {
+        "code": "邀请码",
+        "status": "状态",
+        "note": "备注",
+        "created": "创建时间",
+        "expires": "过期时间",
+        "actions": "操作"
+      },
+      "status": {
+        "used": "已使用",
+        "unused": "可用"
+      }
     }
   },
   "dashboard": {

@@ -129,6 +129,28 @@ export function usePWA() {
  */
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    // Dev: prevent stale caches from SW during UI iteration.
+    // We proactively unregister existing SW and clear Cache Storage.
+    if (process.env.NODE_ENV !== 'production') {
+      window.addEventListener('load', () => {
+        void (async () => {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations()
+            await Promise.all(regs.map((r) => r.unregister()))
+          } catch {
+            /* ignore */
+          }
+          try {
+            const keys = await caches.keys()
+            await Promise.all(keys.map((k) => caches.delete(k)))
+          } catch {
+            /* ignore */
+          }
+        })()
+      })
+      return
+    }
+
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/sw.js')

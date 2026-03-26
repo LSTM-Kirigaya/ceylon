@@ -37,6 +37,7 @@ import {
   KeyboardCommandKey,
   CreditCard,
   ChevronRight,
+  AdminPanelSettings,
 } from '@mui/icons-material'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
@@ -89,6 +90,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
   const isDashboard = pathname === `/${locale}/dashboard`
+  const isAdminUser = profile?.role === 'admin' || profile?.role === 'super_user'
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
@@ -698,6 +700,27 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </ListItemIcon>
           <ListItemText primary={t('common.settings')} />
         </MenuItem>
+
+        {isAdminUser ? (
+          <MenuItem
+            onClick={() => {
+              router.push(`/${locale}/admin`)
+              handleProfileMenuClose()
+            }}
+            sx={{
+              py: 1.5,
+              color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
+              '&:hover': {
+                backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ color: CEYLON_ORANGE, minWidth: 36 }}>
+              <AdminPanelSettings fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('nav.adminConsole')} />
+          </MenuItem>
+        ) : null}
 
         <Divider sx={{ borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }} />
 

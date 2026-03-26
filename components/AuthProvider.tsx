@@ -3,6 +3,8 @@
 import { useEffect, ReactNode } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useAuthStore } from '@/stores/authStore'
+import { locales, type Locale } from '@/i18n/config'
+import { AnalyticsTracker } from '@/components/AnalyticsTracker'
 
 interface AuthProviderProps {
   children: ReactNode
@@ -11,8 +13,12 @@ interface AuthProviderProps {
 function isPublicPathname(pathname: string | null | undefined): boolean {
   if (!pathname) return false
   if (pathname === '/') return true
-  const prefixes = ['/login', '/register', '/auth/callback'] as const
-  return prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+  if (locales.some((l) => pathname === `/${l}` || pathname === `/${l}/`)) return true
+  if (/(^|\/)login(\/|$)/.test(pathname)) return true
+  if (/(^|\/)register(\/|$)/.test(pathname)) return true
+  if (/(^|\/)auth\/callback(\/|$)/.test(pathname)) return true
+  if (/(^|\/)(blog|docs|pricing|cli-oauth|forgot-password|reset-password)(\/|$)/.test(pathname)) return true
+  return false
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
@@ -61,10 +67,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     if (!user && !isPublic) {
       router.push('/login')
-    } else if (user && (pathname === '/login' || pathname === '/register')) {
+    } else if (
+      user &&
+      (/(^|\/)login(\/|$)/.test(pathname ?? '') || /(^|\/)register(\/|$)/.test(pathname ?? ''))
+    ) {
       router.push('/dashboard')
     }
   }, [pathname, router, user, loading])
 
-  return <>{children}</>
+  return (
+    <>
+      <AnalyticsTracker />
+      {children}
+    </>
+  )
 }

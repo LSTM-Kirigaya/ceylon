@@ -32,6 +32,7 @@ import {
   CheckCircle,
   MarkEmailRead,
   Login,
+  VpnKey,
 } from '@mui/icons-material'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -61,6 +62,10 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
       .string()
       .required(t('auth.register.errors.emailRequired'))
       .email(t('auth.register.errors.emailInvalid')),
+    inviteCode: yup
+      .string()
+      .trim()
+      .required(t('auth.register.errors.inviteRequired')),
     password: yup
       .string()
       .required(t('auth.register.errors.passwordRequired'))
@@ -143,6 +148,7 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
           email: data.email,
           password: data.password,
           displayName: data.displayName,
+          inviteCode: data.inviteCode,
         }),
       })
       const authData = await res.json().catch(() => ({}))
@@ -196,6 +202,28 @@ export default function RegisterPage({ params }: { params: Promise<{ locale: str
                 startAdornment: (
                   <InputAdornment position="start">
                     <Email sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label={t('auth.register.inviteCode')}
+              margin="normal"
+              {...register('inviteCode')}
+              error={!!errors.inviteCode}
+              helperText={errors.inviteCode?.message}
+              autoComplete="off"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <VpnKey sx={{ color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)' }} />
                   </InputAdornment>
                 ),
               }}

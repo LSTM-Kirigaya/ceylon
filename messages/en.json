@@ -52,7 +52,8 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "team": "Team",
-    "profile": "Profile"
+    "profile": "Profile",
+    "adminConsole": "Admin console"
   },
   "home": {
     "hero": {
@@ -120,6 +121,7 @@
         "complete": "Complete"
       },
       "email": "Email",
+      "inviteCode": "Invite code",
       "displayName": "Display Name",
       "password": "Password",
       "confirmPassword": "Confirm Password",
@@ -154,6 +156,7 @@
         "confirmRequired": "Please confirm your password",
         "confirmMismatch": "Passwords do not match",
         "displayNameRequired": "Please enter a display name",
+        "inviteRequired": "Please enter a valid invite code",
         "avatarSize": "Avatar image must be less than 2MB",
         "registerFailed": "Registration failed, please try again",
         "uploadFailed": "Failed to upload avatar"
@@ -162,6 +165,47 @@
     "logout": {
       "title": "Logout",
       "confirm": "Are you sure you want to logout?"
+    }
+  },
+  "admin": {
+    "title": "Admin",
+    "nav": {
+      "overview": "Overview & traffic",
+      "invites": "Invite codes"
+    },
+    "backToApp": "Back to app",
+    "overview": {
+      "heading": "Dashboard",
+      "subtitle": "Site traffic and overview metrics.",
+      "totalViews": "Total page views",
+      "todayViews": "Today",
+      "last7Days": "Last 7 days"
+    },
+    "invites": {
+      "heading": "Invite codes",
+      "subtitle": "Create codes for new user registration. Each code can be used once.",
+      "createTitle": "Create invite",
+      "codeOptional": "Code (optional)",
+      "codePlaceholder": "Leave empty to generate automatically",
+      "note": "Note",
+      "expiresAt": "Expires",
+      "create": "Create",
+      "loading": "Loading…",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this invite code?",
+      "empty": "No invite codes yet.",
+      "table": {
+        "code": "Code",
+        "status": "Status",
+        "note": "Note",
+        "created": "Created",
+        "expires": "Expires",
+        "actions": "Actions"
+      },
+      "status": {
+        "used": "Used",
+        "unused": "Available"
+      }
     }
   },
   "dashboard": {

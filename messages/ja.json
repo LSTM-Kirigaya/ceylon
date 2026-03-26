@@ -52,7 +52,8 @@
     "dashboard": "ダッシュボード",
     "projects": "プロジェクト",
     "team": "チーム",
-    "profile": "プロフィール"
+    "profile": "プロフィール",
+    "adminConsole": "管理コンソール"
   },
   "home": {
     "hero": {
@@ -120,6 +121,7 @@
         "complete": "完了"
       },
       "email": "メールアドレス",
+      "inviteCode": "招待コード",
       "displayName": "表示名",
       "password": "パスワード",
       "confirmPassword": "パスワード確認",
@@ -154,6 +156,7 @@
         "confirmRequired": "パスワードを確認してください",
         "confirmMismatch": "パスワードが一致しません",
         "displayNameRequired": "表示名を入力してください",
+        "inviteRequired": "有効な招待コードを入力してください",
         "avatarSize": "アバター画像は2MB未満である必要があります",
         "registerFailed": "登録に失敗しました。もう一度お試しください",
         "uploadFailed": "アバターのアップロードに失敗しました"
@@ -162,6 +165,47 @@
     "logout": {
       "title": "ログアウト",
       "confirm": "ログアウトしてもよろしいですか？"
+    }
+  },
+  "admin": {
+    "title": "管理",
+    "nav": {
+      "overview": "概要・トラフィック",
+      "invites": "招待コード"
+    },
+    "backToApp": "アプリに戻る",
+    "overview": {
+      "heading": "ダッシュボード",
+      "subtitle": "サイトの閲覧トラフィックと概要。",
+      "totalViews": "累計ページビュー",
+      "todayViews": "今日",
+      "last7Days": "直近7日間"
+    },
+    "invites": {
+      "heading": "招待コード",
+      "subtitle": "新規登録用のコードを作成します。各コードは1回のみ使用できます。",
+      "createTitle": "招待コードを作成",
+      "codeOptional": "コード（任意）",
+      "codePlaceholder": "空欄で自動生成",
+      "note": "メモ",
+      "expiresAt": "有効期限",
+      "create": "作成",
+      "loading": "読み込み中…",
+      "delete": "削除",
+      "deleteConfirm": "この招待コードを削除しますか？",
+      "empty": "招待コードがありません。",
+      "table": {
+        "code": "コード",
+        "status": "状態",
+        "note": "メモ",
+        "created": "作成日時",
+        "expires": "有効期限",
+        "actions": "操作"
+      },
+      "status": {
+        "used": "使用済み",
+        "unused": "未使用"
+      }
     }
   },
   "dashboard": {
