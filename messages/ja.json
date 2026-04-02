@@ -97,6 +97,47 @@
       "title": "ローカルAI向けに構築されたCLIツール",
       "description": "インストール後、AIアシスタントが直接要件ドキュメントを読み書きできます。様々なAIツールと統合し、完全自動化された要件管理を実現します。"
     },
+    "pricing": {
+      "overline": "料金プラン",
+      "title": "チームの段階に合わせて選択",
+      "subtitle": "個人検証からエンタープライズ協業まで、同じ要件ワークフローで拡張できます。",
+      "cta": "料金を詳しく見る",
+      "starter": {
+        "badge": "個人 / トライアル",
+        "title": "Starter",
+        "description": "要件プロセスの検証や小規模プロジェクトに最適。AI導入を素早く開始できます。"
+      },
+      "team": {
+        "badge": "おすすめ",
+        "title": "Team",
+        "description": "複数職能での協業と継続的な改善を、1つの要件ビューで進められます。"
+      },
+      "enterprise": {
+        "badge": "Enterprise",
+        "title": "Enterprise",
+        "description": "高度な統制、拡張性、コンプライアンスが必要な大規模組織向けです。"
+      }
+    },
+    "blog": {
+      "overline": "ブログ",
+      "title": "製品アップデートと実践知",
+      "subtitle": "リリース情報、技術解説、実プロジェクトの知見を継続的に公開しています。",
+      "cta": "ブログを読む",
+      "cards": {
+        "product": {
+          "title": "製品アップデート",
+          "description": "新機能の背景と変更点を把握し、導入判断を素早く行えます。"
+        },
+        "engineering": {
+          "title": "エンジニアリング",
+          "description": "インポートや自動化、協業機能の実装ポイントを詳しく紹介します。"
+        },
+        "bestPractice": {
+          "title": "ベストプラクティス",
+          "description": "実案件から得た再現可能な手法で、反復開発の品質を高めます。"
+        }
+      }
+    },
     "footer": {
       "copyright": "© 2024 セイロン. All rights reserved."
     }

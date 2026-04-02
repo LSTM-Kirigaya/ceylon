@@ -81,7 +81,7 @@ export default function AdminShell({
       <Box sx={{ mt: 'auto', p: 2 }}>
         <ListItemButton
           onClick={() => {
-            router.push(`/${locale}/dashboard`)
+            router.push(`/dashboard`)
             setMobileOpen(false)
           }}
           sx={{ borderRadius: 1.5, color: CEYLON_ORANGE }}

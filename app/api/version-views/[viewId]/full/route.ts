@@ -23,16 +23,6 @@ export async function GET(
     if (ve || !vv) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Prefer the single-field snapshot if present; otherwise build it on the fly.
-  // If the `data` column isn't deployed yet, this select will fail—fall back gracefully.
-  const snapshotTry = await supabase.from('version_views').select('data').eq('id', viewId).single()
-  if (!snapshotTry.error) {
-    const data = (snapshotTry.data as { data?: unknown } | null)?.data
-    if (data && typeof data === 'object') {
-      return NextResponse.json({ data })
-    }
-  }
-
   try {
     const snap = await buildVersionViewDataSnapshot(supabase, viewId)
     // Best-effort persist to the single JSON field (may fail if migration not applied yet).
@@ -42,4 +32,3 @@ export async function GET(
     return NextResponse.json({ error: (e as Error).message || 'Internal server error' }, { status: 500 })
   }
 }
-

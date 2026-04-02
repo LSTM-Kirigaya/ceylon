@@ -5,7 +5,7 @@ import { Box } from '@mui/material'
 import MainLayout from '@/components/MainLayout'
 import RequirementsTable from '@/components/requirements/RequirementsTable'
 
-export default function ViewPage({ params }: { params: Promise<{ locale: string; projectId: string; viewId: string }> }) {
+export default function ViewPage({ params }: { params: Promise<{ projectId: string; viewId: string }> }) {
   const { projectId, viewId } = use(params)
 
   return (

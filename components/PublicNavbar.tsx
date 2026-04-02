@@ -205,7 +205,7 @@ export function PublicNavbar({ locale }: { locale: string }) {
             <>
               <Button
                 variant="outlined"
-                onClick={() => router.push(`/${locale}/dashboard`)}
+                onClick={() => router.push(`/dashboard`)}
                 sx={{
                   textTransform: 'none',
                   fontWeight: 600,
@@ -319,7 +319,7 @@ export function PublicNavbar({ locale }: { locale: string }) {
               </Button>
               <Button
                 variant="contained"
-                onClick={() => router.push(`/${locale}/dashboard`)}
+                onClick={() => router.push(`/dashboard`)}
                 sx={{ backgroundColor: CEYLON_ORANGE, textTransform: 'none', fontWeight: 600, px: 3, ml: 1 }}
               >
                 {t('home.hero.dashboard')}

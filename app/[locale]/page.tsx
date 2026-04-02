@@ -8,7 +8,6 @@ import {
   Container,
   Typography,
   Button,
-  IconButton,
   Chip,
   Fade,
   Paper,
@@ -42,7 +41,7 @@ function FeatureCard({
     <Paper
       elevation={0}
       sx={{
-        p: 4,
+        p: { xs: 2.5, sm: 4 },
         height: '100%',
         backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
         border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
@@ -130,6 +129,43 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
       description: t('home.features.aiCli.description'),
     },
   ]
+  const pricingPlans = [
+    {
+      key: 'starter',
+      badge: t('home.pricing.starter.badge'),
+      title: t('home.pricing.starter.title'),
+      desc: t('home.pricing.starter.description'),
+    },
+    {
+      key: 'team',
+      badge: t('home.pricing.team.badge'),
+      title: t('home.pricing.team.title'),
+      desc: t('home.pricing.team.description'),
+    },
+    {
+      key: 'enterprise',
+      badge: t('home.pricing.enterprise.badge'),
+      title: t('home.pricing.enterprise.title'),
+      desc: t('home.pricing.enterprise.description'),
+    },
+  ]
+  const blogHighlights = [
+    {
+      key: 'product',
+      title: t('home.blog.cards.product.title'),
+      desc: t('home.blog.cards.product.description'),
+    },
+    {
+      key: 'engineering',
+      title: t('home.blog.cards.engineering.title'),
+      desc: t('home.blog.cards.engineering.description'),
+    },
+    {
+      key: 'bestPractice',
+      title: t('home.blog.cards.bestPractice.title'),
+      desc: t('home.blog.cards.bestPractice.description'),
+    },
+  ]
 
   return (
     <Box
@@ -152,7 +188,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
           position: 'relative',
         }}
       >
-      <Container maxWidth="md" sx={{ py: 4 }}>
+      <Container maxWidth="md" sx={{ py: { xs: 2, sm: 4 } }}>
         <Fade in={mounted} timeout={1000}>
           <Box sx={{ textAlign: 'center' }}>
             {/* Badge */}
@@ -209,6 +245,8 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                 gap: 2,
                 justifyContent: 'center',
                 flexWrap: 'wrap',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: 'stretch',
                 mb: 4,
               }}
             >
@@ -217,13 +255,13 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                 size="large"
                 onClick={async () => {
                   if (user) {
-                    router.push(`/${locale}/dashboard`)
+                    router.push(`/dashboard`)
                     return
                   }
                   try {
                     const res = await fetch('/api/auth/session', { credentials: 'include' })
                     if (res.ok) {
-                      router.push(`/${locale}/dashboard`)
+                      router.push(`/dashboard`)
                       return
                     }
                   } catch {
@@ -233,8 +271,9 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                 }}
                 sx={{
                   backgroundColor: CEYLON_ORANGE,
-                  px: 4,
+                  px: { xs: 2, sm: 4 },
                   py: 1.5,
+                  width: { xs: '100%', sm: 'auto' },
                   textTransform: 'none',
                   fontWeight: 600,
                   fontSize: '1rem',
@@ -253,8 +292,9 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                 onClick={() => router.push(`/${locale}/login`)}
                 endIcon={<KeyboardArrowDown />}
                 sx={{
-                  px: 4,
+                  px: { xs: 2, sm: 4 },
                   py: 1.5,
+                  width: { xs: '100%', sm: 'auto' },
                   textTransform: 'none',
                   fontWeight: 600,
                   fontSize: '1rem',
@@ -275,7 +315,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
             <Paper
               elevation={0}
               sx={{
-                maxWidth: 560,
+                maxWidth: { xs: '100%', sm: 560 },
                 mx: 'auto',
                 backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
@@ -314,15 +354,16 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
               {/* Code Block */}
               <Box
                 sx={{
-                  p: 2,
+                  p: { xs: 1.5, sm: 2 },
                   backgroundColor: isDark ? '#0a0a0a' : '#f5f5f4',
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                  fontSize: '0.875rem',
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   color: isDark ? '#a8a29e' : '#57534e',
                   textAlign: 'left',
                   display: 'flex',
-                  alignItems: 'center',
                   justifyContent: 'space-between',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' },
                   gap: 2,
                 }}
               >
@@ -343,6 +384,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                     color: isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.7)',
                     minWidth: 'auto',
                     px: 1.5,
+                    alignSelf: { xs: 'stretch', sm: 'auto' },
                   }}
                 >
                   Copy
@@ -354,7 +396,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
             <Box
               sx={{
                 display: 'flex',
-                gap: 3,
+                gap: { xs: 1.5, sm: 3 },
                 justifyContent: 'center',
                 flexWrap: 'wrap',
                 mt: 4,
@@ -372,7 +414,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
                     alignItems: 'center',
                     gap: 0.75,
                     color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
-                    fontSize: '0.875rem',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
                   }}
                 >
                   <span>{item.icon}</span>
@@ -392,7 +434,7 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
             bottom: 32,
             left: '50%',
             transform: 'translateX(-50%)',
-            display: 'flex',
+            display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
             alignItems: 'center',
             gap: 1,
@@ -475,6 +517,190 @@ export default function Home({ params }: { params: Promise<{ locale: string }> }
               isDark={isDark}
             />
           ))}
+        </Box>
+      </Container>
+
+      {/* Pricing Preview Section */}
+      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 12 } }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography
+            variant="overline"
+            sx={{
+              color: CEYLON_ORANGE,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              fontSize: '0.875rem',
+            }}
+          >
+            {t('home.pricing.overline')}
+          </Typography>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              color: isDark ? 'white' : '#0a0a0a',
+              mt: 1,
+              fontSize: { xs: '1.75rem', md: '2.25rem' },
+            }}
+          >
+            {t('home.pricing.title')}
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              mt: 1.5,
+              color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)',
+              maxWidth: 720,
+              mx: 'auto',
+            }}
+          >
+            {t('home.pricing.subtitle')}
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {pricingPlans.map((plan) => (
+            <Paper
+              key={plan.key}
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 3,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              }}
+            >
+              <Chip
+                size="small"
+                label={plan.badge}
+                sx={{
+                  mb: 1.5,
+                  backgroundColor: `${CEYLON_ORANGE}1a`,
+                  color: CEYLON_ORANGE,
+                  fontWeight: 600,
+                }}
+              />
+              <Typography variant="h6" sx={{ fontWeight: 700, color: isDark ? 'white' : '#1c1917' }}>
+                {plan.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, lineHeight: 1.7, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)' }}
+              >
+                {plan.desc}
+              </Typography>
+            </Paper>
+          ))}
+        </Box>
+
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            onClick={() => router.push(`/${locale}/pricing`)}
+            sx={{
+              textTransform: 'none',
+              borderColor: CEYLON_ORANGE,
+              color: CEYLON_ORANGE,
+              width: { xs: '100%', sm: 'auto' },
+              px: 3,
+              py: 1.2,
+            }}
+          >
+            {t('home.pricing.cta')}
+          </Button>
+        </Box>
+      </Container>
+
+      {/* Blog Preview Section */}
+      <Container maxWidth="lg" sx={{ pb: { xs: 8, md: 10 } }}>
+        <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Typography
+            variant="overline"
+            sx={{
+              color: CEYLON_ORANGE,
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              fontSize: '0.875rem',
+            }}
+          >
+            {t('home.blog.overline')}
+          </Typography>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
+              color: isDark ? 'white' : '#0a0a0a',
+              mt: 1,
+              fontSize: { xs: '1.75rem', md: '2.25rem' },
+            }}
+          >
+            {t('home.blog.title')}
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              mt: 1.5,
+              color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)',
+              maxWidth: 720,
+              mx: 'auto',
+            }}
+          >
+            {t('home.blog.subtitle')}
+          </Typography>
+        </Box>
+
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {blogHighlights.map((item) => (
+            <Paper
+              key={item.key}
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 3,
+                backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+              }}
+            >
+              <Typography variant="h6" sx={{ fontWeight: 700, color: isDark ? 'white' : '#1c1917' }}>
+                {item.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{ mt: 1, lineHeight: 1.7, color: isDark ? 'rgba(255,255,255,0.65)' : 'rgba(0,0,0,0.65)' }}
+              >
+                {item.desc}
+              </Typography>
+            </Paper>
+          ))}
+        </Box>
+
+        <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Button
+            variant="outlined"
+            onClick={() => router.push(`/${locale}/blog`)}
+            sx={{
+              textTransform: 'none',
+              borderColor: CEYLON_ORANGE,
+              color: CEYLON_ORANGE,
+              width: { xs: '100%', sm: 'auto' },
+              px: 3,
+              py: 1.2,
+            }}
+          >
+            {t('home.blog.cta')}
+          </Button>
         </Box>
       </Container>
 

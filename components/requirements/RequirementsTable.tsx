@@ -195,6 +195,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     Array<{ localId: string; payload: Omit<Requirement, 'id' | 'created_at' | 'updated_at' | 'assignee'> }>
   >([])
   const pendingPatchesRef = useRef<Map<string, Record<string, unknown>>>(new Map())
+  const pendingDeletesRef = useRef<Set<string>>(new Set())
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFlushingRef = useRef(false)
 
@@ -228,18 +229,24 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
       ;(window as any).__ceylon_resize = undefined
       setResizingColumnKey(null)
       setResizeGuideX(null)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
     }
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onUp)
     return () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseup', onUp)
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
     }
   }, [])
 
   const startResize = (key: string, startW: number, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'col-resize'
     setResizingColumnKey(key)
     ;(window as any).__ceylon_resize = { key, startX: e.clientX, startW }
     const rect = tableContainerRef.current?.getBoundingClientRect()
@@ -423,6 +430,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
   const hasSelectedRows = selectedRowIds.length > 0
 
   const patchRequirement = async (id: string, patch: Record<string, unknown>) => {
+    if (pendingDeletesRef.current.has(id)) return
     const now = new Date().toISOString()
     setRequirements((prev) =>
       prev.map((r) => {
@@ -641,6 +649,10 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
       const patchEntries = Array.from(pendingPatchesRef.current.entries())
       for (const [id, patch] of patchEntries) {
+        if (pendingDeletesRef.current.has(id)) {
+          pendingPatchesRef.current.delete(id)
+          continue
+        }
         try {
           const { requirement } = await apiJson<{ requirement: Requirement }>(`/api/requirements/${id}`, {
             method: 'PATCH',
@@ -650,6 +662,17 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
           pendingPatchesRef.current.delete(id)
         } catch (error) {
           setSyncError('部分修改暂未同步成功，将在下次编辑时自动重试。')
+          console.error(error)
+        }
+      }
+
+      const deleteIds = Array.from(pendingDeletesRef.current)
+      for (const id of deleteIds) {
+        try {
+          await apiJson(`/api/requirements/${id}`, { method: 'DELETE' })
+          pendingDeletesRef.current.delete(id)
+        } catch (error) {
+          setSyncError('部分删除暂未同步成功，将在下次编辑时自动重试。')
           console.error(error)
         }
       }
@@ -673,19 +696,17 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const deleteRow = async (id: string) => {
     if (!confirm('删除此行？')) return
+    setRequirements((prev) => prev.filter((r) => r.id !== id))
+    setSelectedRowIds((prev) => prev.filter((x) => x !== id))
     if (id.startsWith('local-')) {
-      setRequirements((prev) => prev.filter((r) => r.id !== id))
       pendingCreatesRef.current = pendingCreatesRef.current.filter((x) => x.localId !== id)
       pendingPatchesRef.current.delete(id)
+      scheduleFlush()
       return
     }
-    try {
-      await apiJson(`/api/requirements/${id}`, { method: 'DELETE' })
-      pendingPatchesRef.current.delete(id)
-      await fetchRequirementsOnly()
-    } catch (e) {
-      console.error(e)
-    }
+    pendingPatchesRef.current.delete(id)
+    pendingDeletesRef.current.add(id)
+    scheduleFlush()
   }
 
   const toggleRowSelected = (id: string, checked: boolean) => {
@@ -703,25 +724,21 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
 
   const bulkDeleteSelected = async () => {
     if (!selectedRowIds.length) return
-    try {
-      const localIds = selectedRowIds.filter((id) => id.startsWith('local-'))
-      const remoteIds = selectedRowIds.filter((id) => !id.startsWith('local-'))
+    const deletingIds = new Set(selectedRowIds)
+    const localIds = selectedRowIds.filter((id) => id.startsWith('local-'))
+    const remoteIds = selectedRowIds.filter((id) => !id.startsWith('local-'))
 
-      if (localIds.length > 0) {
-        setRequirements((prev) => prev.filter((r) => !localIds.includes(r.id)))
-        pendingCreatesRef.current = pendingCreatesRef.current.filter((x) => !localIds.includes(x.localId))
-        for (const id of localIds) pendingPatchesRef.current.delete(id)
-      }
-      if (remoteIds.length > 0) {
-        await Promise.all(remoteIds.map((id) => apiJson(`/api/requirements/${id}`, { method: 'DELETE' })))
-        for (const id of remoteIds) pendingPatchesRef.current.delete(id)
-      }
-      setSelectedRowIds([])
-      setBulkDeleteDialogOpen(false)
-      await fetchRequirementsOnly()
-    } catch (e) {
-      console.error(e)
+    setRequirements((prev) => prev.filter((r) => !deletingIds.has(r.id)))
+    pendingCreatesRef.current = pendingCreatesRef.current.filter((x) => !deletingIds.has(x.localId))
+    for (const id of localIds) pendingPatchesRef.current.delete(id)
+    for (const id of remoteIds) {
+      pendingPatchesRef.current.delete(id)
+      pendingDeletesRef.current.add(id)
     }
+
+    setSelectedRowIds([])
+    setBulkDeleteDialogOpen(false)
+    scheduleFlush()
   }
 
   const buildExportRows = () => {
@@ -804,7 +821,7 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
     if (!confirm('确定删除该版本视图？')) return
     try {
       await apiJson(`/api/version-views/${versionViewId}`, { method: 'DELETE' })
-      router.push(`/${locale}/dashboard/project/${projectId}`)
+      router.push(`/dashboard/project/${projectId}`)
     } catch (e) {
       console.error(e)
     }
@@ -1187,13 +1204,28 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
             '& th, & td': {
               borderRight: `1px solid ${isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)'}`,
             },
+            '& tr > *:first-child': {
+              borderRight: 'none',
+            },
             '& tr > *:last-child': {
               borderRight: 'none',
             },
           }}
         >
-          <TableHead>
-            <TableRow sx={{ backgroundColor: 'transparent' }}>
+          <TableHead
+            sx={{
+              backgroundColor: 'transparent',
+              '& .MuiTableCell-root': {
+                backgroundColor: 'transparent !important',
+                backgroundImage: 'none !important',
+              },
+              '& .MuiTableCell-root:hover, & .MuiTableCell-root:active, & .MuiTableCell-root:focus, & .MuiTableCell-root:focus-within': {
+                backgroundColor: 'transparent !important',
+                backgroundImage: 'none !important',
+              },
+            }}
+          >
+            <TableRow sx={{ backgroundColor: 'transparent !important' }}>
               <TableCell
                 sx={{
                   width: 42,
@@ -1285,13 +1317,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                     bottom: 6,
                     right: 0,
                     width: 1,
-                    backgroundColor:
-                      resizingColumnKey === 'title'
-                        ? CEYLON_ORANGE
-                        : isDark
-                          ? 'rgba(255,255,255,0.2)'
-                          : 'rgba(0,0,0,0.15)',
-                    boxShadow: resizingColumnKey === 'title' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                    boxShadow: 'none',
                     pointerEvents: 'none',
                   }}
                 />
@@ -1342,13 +1369,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       bottom: 6,
                       right: 0,
                       width: 1,
-                      backgroundColor:
-                        resizingColumnKey === 'priority'
-                          ? CEYLON_ORANGE
-                          : isDark
-                            ? 'rgba(255,255,255,0.2)'
-                            : 'rgba(0,0,0,0.15)',
-                      boxShadow: resizingColumnKey === 'priority' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                      boxShadow: 'none',
                       pointerEvents: 'none',
                     }}
                   />
@@ -1400,13 +1422,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       bottom: 6,
                       right: 0,
                       width: 1,
-                      backgroundColor:
-                        resizingColumnKey === 'status'
-                          ? CEYLON_ORANGE
-                          : isDark
-                            ? 'rgba(255,255,255,0.2)'
-                            : 'rgba(0,0,0,0.15)',
-                      boxShadow: resizingColumnKey === 'status' ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                      boxShadow: 'none',
                       pointerEvents: 'none',
                     }}
                   />
@@ -1492,13 +1509,8 @@ export default function RequirementsTable({ versionViewId, projectId }: Requirem
                       bottom: 6,
                       right: 0,
                       width: 1,
-                      backgroundColor:
-                        resizingColumnKey === `c:${col.id}`
-                          ? CEYLON_ORANGE
-                          : isDark
-                            ? 'rgba(255,255,255,0.2)'
-                            : 'rgba(0,0,0,0.15)',
-                      boxShadow: resizingColumnKey === `c:${col.id}` ? `0 0 0 1px ${CEYLON_ORANGE}55` : 'none',
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                      boxShadow: 'none',
                       pointerEvents: 'none',
                     }}
                   />

@@ -212,7 +212,7 @@ export default function CliOauthVerifyPage({
                 </Box>
 
                 <Box sx={{ mt: 2, textAlign: 'center' }}>
-                  <Button variant="text" sx={{ textTransform: 'none' }} onClick={() => router.push(`/${locale}/dashboard`)}>
+                  <Button variant="text" sx={{ textTransform: 'none' }} onClick={() => router.push(`/dashboard`)}>
                     返回控制台
                   </Button>
                 </Box>

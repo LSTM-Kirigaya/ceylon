@@ -65,7 +65,7 @@ export function CommandPalette({ open, onClose }: CommandPaletteProps) {
       description: 'Go to dashboard',
       icon: <Home sx={{ fontSize: 20 }} />,
       shortcut: 'H',
-      action: () => { router.push(`/${locale}/dashboard`); onClose() },
+      action: () => { router.push(`/dashboard`); onClose() },
       category: 'Navigation',
     },
     {

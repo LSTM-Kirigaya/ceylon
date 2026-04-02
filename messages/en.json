@@ -97,6 +97,47 @@
       "title": "CLI Tool Built for Local AI",
       "description": "Once installed, your AI assistant can directly read and modify requirement documents. Integrate with various AI tools for fully automated requirement management."
     },
+    "pricing": {
+      "overline": "Pricing",
+      "title": "Choose the plan that fits your stage",
+      "subtitle": "Scale from solo validation to enterprise collaboration on the same requirements workflow.",
+      "cta": "View full pricing",
+      "starter": {
+        "badge": "Solo / Trial",
+        "title": "Starter",
+        "description": "Best for validating process and small projects, with fast AI-powered setup."
+      },
+      "team": {
+        "badge": "Most Popular",
+        "title": "Team",
+        "description": "Built for cross-functional collaboration and continuous iteration on one shared view."
+      },
+      "enterprise": {
+        "badge": "Enterprise",
+        "title": "Enterprise",
+        "description": "For larger organizations with advanced governance, scalability, and compliance needs."
+      }
+    },
+    "blog": {
+      "overline": "From the Blog",
+      "title": "Product updates and practical insights",
+      "subtitle": "Follow release notes, technical deep dives, and real-world practices from product teams.",
+      "cta": "Read the blog",
+      "cards": {
+        "product": {
+          "title": "Product Updates",
+          "description": "Track major launches and product decisions to adopt new capabilities faster."
+        },
+        "engineering": {
+          "title": "Engineering Notes",
+          "description": "Explore implementation details behind importing, collaboration, and automation flows."
+        },
+        "bestPractice": {
+          "title": "Best Practices",
+          "description": "Learn repeatable methods from real projects to improve iteration quality."
+        }
+      }
+    },
     "footer": {
       "copyright": "© 2024 ceylonm. All rights reserved."
     }

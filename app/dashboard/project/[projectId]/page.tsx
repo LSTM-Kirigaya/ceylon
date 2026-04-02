@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { useTranslations } from 'next-intl'
 import {
   Box,
@@ -38,8 +39,9 @@ import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Project, VersionView } from '@/types'
 import MainLayout from '@/components/MainLayout'
 
-export default function ProjectOverviewPage({ params }: { params: Promise<{ locale: string; projectId: string }> }) {
-  const { locale, projectId } = use(params)
+export default function ProjectOverviewPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = use(params)
+  const locale = useLocale()
   const router = useRouter()
   const t = useTranslations()
   const { profile } = useAuthStore()
@@ -194,7 +196,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
             <Button
               variant="outlined"
               startIcon={<Group />}
-              onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/team`)}
+              onClick={() => router.push(`/dashboard/project/${projectId}/team`)}
               sx={{
                 borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: isDark ? 'white' : '#1c1917',
@@ -212,7 +214,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
             <Button
               variant="outlined"
               startIcon={<Settings />}
-              onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/settings`)}
+              onClick={() => router.push(`/dashboard/project/${projectId}/settings`)}
               sx={{
                 borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
                 color: isDark ? 'white' : '#1c1917',
@@ -293,7 +295,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
             <Button
               variant="text"
               startIcon={<Add />}
-              onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/settings`)}
+              onClick={() => router.push(`/dashboard/project/${projectId}/settings`)}
               sx={{
                 color: CEYLON_ORANGE,
                 textTransform: 'none',
@@ -358,7 +360,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
                         boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.08)',
                       },
                     }}
-                    onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/view/${view.id}`)}
+                    onClick={() => router.push(`/dashboard/project/${projectId}/view/${view.id}`)}
                   >
                     <CardContent sx={{ p: 2.5 }}>
                       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
@@ -427,7 +429,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
           }}
         >
           <MenuItem 
-            onClick={() => { router.push(`/${locale}/dashboard/project/${projectId}/settings`); setMenuAnchorEl(null) }}
+            onClick={() => { router.push(`/dashboard/project/${projectId}/settings`); setMenuAnchorEl(null) }}
             sx={{
               color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
               fontSize: '0.9rem',
@@ -442,7 +444,7 @@ export default function ProjectOverviewPage({ params }: { params: Promise<{ loca
             <ListItemText>{t('common.settings')}</ListItemText>
           </MenuItem>
           <MenuItem 
-            onClick={() => { router.push(`/${locale}/dashboard/project/${projectId}/team`); setMenuAnchorEl(null) }}
+            onClick={() => { router.push(`/dashboard/project/${projectId}/team`); setMenuAnchorEl(null) }}
             sx={{
               color: isDark ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.9)',
               fontSize: '0.9rem',

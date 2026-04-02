@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import { useTranslations } from 'next-intl'
 import {
   Box,
@@ -43,8 +44,9 @@ import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Project, VersionView } from '@/types'
 import MainLayout from '@/components/MainLayout'
 
-export default function ProjectSettingsPage({ params }: { params: Promise<{ locale: string; projectId: string }> }) {
-  const { locale, projectId } = use(params)
+export default function ProjectSettingsPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = use(params)
+  const locale = useLocale()
   const router = useRouter()
   const t = useTranslations()
   const { profile } = useAuthStore()
@@ -200,7 +202,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
     try {
       await apiJson(`/api/projects/${projectId}`, { method: 'DELETE' })
 
-      router.push(`/${locale}/dashboard`)
+      router.push(`/dashboard`)
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || t('errors.generic') })
       setDeleting(false)
@@ -326,7 +328,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
           <ButtonGroup variant="outlined">
             <Button
               startIcon={<Group />}
-              onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/team`)}
+              onClick={() => router.push(`/dashboard/project/${projectId}/team`)}
               sx={{ textTransform: 'none' }}
             >
               {t('project.team.title')}
@@ -582,7 +584,7 @@ export default function ProjectSettingsPage({ params }: { params: Promise<{ loca
                             <IconButton
                               edge="end"
                               aria-label="打开视图"
-                              onClick={() => router.push(`/${locale}/dashboard/project/${projectId}/view/${v.id}`)}
+                              onClick={() => router.push(`/dashboard/project/${projectId}/view/${v.id}`)}
                               sx={{ color: CEYLON_ORANGE }}
                             >
                               <OpenInNew fontSize="small" />

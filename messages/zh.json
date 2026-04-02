@@ -97,6 +97,47 @@
       "title": "为本地 AI 打造的 CLI 工具",
       "description": "安装 CLI 后，你的 AI 助手可以直接读取和修改需求文档。配合各类 AI 工具，让需求管理链路完全自动化。"
     },
+    "pricing": {
+      "overline": "定价方案",
+      "title": "按团队阶段灵活选择",
+      "subtitle": "从个人试用到企业规模协作，均可在同一套需求工作流中平滑升级。",
+      "cta": "查看完整定价",
+      "starter": {
+        "badge": "个人 / 试用",
+        "title": "Starter",
+        "description": "适合验证需求流程与轻量项目，快速上手 AI 驱动的需求管理。"
+      },
+      "team": {
+        "badge": "团队首选",
+        "title": "Team",
+        "description": "支持多人协作与持续迭代，让产品、研发、运营共享统一需求视图。"
+      },
+      "enterprise": {
+        "badge": "企业级",
+        "title": "Enterprise",
+        "description": "面向复杂组织与高合规场景，提供更高扩展性与管理能力。"
+      }
+    },
+    "blog": {
+      "overline": "博客精选",
+      "title": "产品更新与实践沉淀",
+      "subtitle": "持续发布能力更新、技术细节和真实案例，帮助团队更快落地 AI 需求流程。",
+      "cta": "阅读博客",
+      "cards": {
+        "product": {
+          "title": "产品更新",
+          "description": "了解新功能发布节奏与设计思路，快速判断是否适配你的团队。"
+        },
+        "engineering": {
+          "title": "工程实践",
+          "description": "分享需求建模、导入与自动化协作中的关键技术实现与经验。"
+        },
+        "bestPractice": {
+          "title": "最佳实践",
+          "description": "基于真实项目沉淀方法论，帮助你建立可持续的迭代机制。"
+        }
+      }
+    },
     "footer": {
       "copyright": "© 2024 锡兰. All rights reserved."
     }

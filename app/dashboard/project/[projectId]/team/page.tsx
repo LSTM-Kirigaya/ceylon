@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use } from 'react'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Box,
   Typography,
@@ -44,8 +44,9 @@ import { Project, ProjectMember, Profile } from '@/types'
 import MainLayout from '@/components/MainLayout'
 import UserSearch from '@/components/UserSearch'
 
-export default function TeamPage({ params }: { params: Promise<{ locale: string; projectId: string }> }) {
-  const { locale, projectId } = use(params)
+export default function TeamPage({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = use(params)
+  const locale = useLocale()
   const t = useTranslations()
   const { profile, user } = useAuthStore()
   const { getEffectiveMode } = useThemeStore()

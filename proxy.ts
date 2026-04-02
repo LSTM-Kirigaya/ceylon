@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import { createMiddlewareSupabaseClient } from '@/lib/supabase-server'
 import { locales, defaultLocale } from './i18n/config'
@@ -11,6 +11,13 @@ const intlProxy = createIntlMiddleware({
 })
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  if (pathname === '/dashboard' || pathname.startsWith('/dashboard/')) {
+    const response = NextResponse.next()
+    const supabase = createMiddlewareSupabaseClient(request, response)
+    await supabase.auth.getUser()
+    return response
+  }
   const response = intlProxy(request)
   const supabase = createMiddlewareSupabaseClient(request, response)
   await supabase.auth.getUser()

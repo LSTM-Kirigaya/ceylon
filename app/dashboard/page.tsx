@@ -2,7 +2,7 @@
 
 import { useEffect, useState, use, useMemo } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import {
   Box,
   Typography,
@@ -42,8 +42,8 @@ import { CEYLON_ORANGE } from '@/stores/themeStore'
 import { Project } from '@/types'
 import MainLayout from '@/components/MainLayout'
 
-export default function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = use(params)
+export default function DashboardPage() {
+  const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
   const t = useTranslations()
@@ -362,7 +362,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
                           transform: 'translateY(-2px)',
                         },
                       }}
-                      onClick={() => router.push(`/${locale}/dashboard/project/${project.id}`)}
+                      onClick={() => router.push(`/dashboard/project/${project.id}`)}
                     >
                       <CardContent sx={{ p: 2.5, height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1.5 }}>
@@ -641,7 +641,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
         <MenuItem
           onClick={() => {
             if (selectedProject) {
-              router.push(`/${locale}/dashboard/project/${selectedProject.id}`)
+              router.push(`/dashboard/project/${selectedProject.id}`)
             }
             handleMenuClose()
           }}
@@ -660,7 +660,7 @@ export default function DashboardPage({ params }: { params: Promise<{ locale: st
         <MenuItem
           onClick={() => {
             if (selectedProject) {
-              router.push(`/${locale}/dashboard/project/${selectedProject.id}/settings`)
+              router.push(`/dashboard/project/${selectedProject.id}/settings`)
             }
             handleMenuClose()
           }}

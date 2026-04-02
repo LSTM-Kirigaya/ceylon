@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, use } from 'react'
+import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import {
   Box,
@@ -61,8 +62,8 @@ const invoices = [
   { id: 'INV-002', date: '2026-02-01', amount: '¥0', status: '免费' },
 ]
 
-export default function SubscriptionPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = use(params)
+export default function SubscriptionPage() {
+  const locale = useLocale()
   const router = useRouter()
   const { getEffectiveMode } = useThemeStore()
   const { user } = useAuthStore()

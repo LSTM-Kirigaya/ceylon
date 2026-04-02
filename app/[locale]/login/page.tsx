@@ -131,7 +131,7 @@ export default function LoginPage({ params }: { params: Promise<{ locale: string
 
       console.log('Login successful, redirecting...')
       await new Promise((resolve) => setTimeout(resolve, 200))
-      window.location.href = `/${locale}/dashboard`
+      window.location.href = `/dashboard`
     } catch (err: any) {
       console.error('Login error:', err)
       setError(err.message || t('auth.login.errors.loginFailed'))

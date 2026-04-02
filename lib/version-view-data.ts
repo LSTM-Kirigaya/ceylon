@@ -28,8 +28,11 @@ export async function buildVersionViewDataSnapshot(
     .order('requirement_number', { ascending: true })
   if (reqErr) throw new Error(reqErr.message)
 
+  // Strip the nested `data` field from the view row to prevent recursive nesting
+  const { data: _ignore, ...cleanView } = view
+
   return {
-    view: view as VersionView,
+    view: cleanView as VersionView,
     columns: (columns ?? []) as VersionViewColumn[],
     requirements: (requirements ?? []) as Requirement[],
   }

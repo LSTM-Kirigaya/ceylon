@@ -104,7 +104,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const effectiveMode = getEffectiveMode()
   const isDark = effectiveMode === 'dark'
-  const isDashboard = pathname === `/${locale}/dashboard`
+  const isDashboard = pathname === `/dashboard`
   const isAdminUser = profile?.role === 'admin' || profile?.role === 'super_user'
 
   const handleDrawerToggle = () => {
@@ -162,6 +162,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     view: '版本视图',
     profile: '个人资料',
     subscription: '订阅套餐',
+    review: 'AI 评审',
   }
 
   // Some segments (e.g. "project" / "view") are route groups without dedicated pages.
@@ -169,7 +170,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   //   /dashboard/project  (missing projectId) => 404
   const breadcrumbs = pathSegments
     .map((segment, index) => {
-      if (segment === 'project' || segment === 'view') return null
+      if (segment === 'project' || segment === 'view' || segment === 'review') return null
 
       const href = `/${locale}/${pathSegments.slice(0, index + 1).join('/')}`
       const isLast = index === pathSegments.length - 1
@@ -179,10 +180,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
       const kind: 'project' | 'view' | 'normal' = isProjectId ? 'project' : isViewId ? 'view' : 'normal'
 
       // For dynamic id segments, do NOT show raw id; show skeleton until resolved.
+      // Also skip review session IDs (they follow /review/{reviewId} pattern)
+      const isReviewSessionId = isUuidLike && index > 0 && pathSegments[index - 1] === 'review'
       const loading =
         (isProjectId && !resolvedNames.projectName) ||
         (isViewId && !resolvedNames.viewName) ||
-        (!breadcrumbLabelMap[segment] && isUuidLike && !isProjectId && !isViewId)
+        (!breadcrumbLabelMap[segment] && isUuidLike && !isProjectId && !isViewId && !isReviewSessionId)
 
       let label = breadcrumbLabelMap[segment] || (isUuidLike ? '' : segment)
 
@@ -330,7 +333,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           fullWidth
           variant="contained"
           startIcon={isSidebarExpanded ? <Add /> : undefined}
-          onClick={() => handleNavigation(`/${locale}/dashboard?create=1`)}
+          onClick={() => handleNavigation(`/dashboard?create=1`)}
           sx={{
             backgroundColor: CEYLON_ORANGE,
             '&:hover': { backgroundColor: '#A34712' },
@@ -353,7 +356,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       <Box sx={{ flex: 1, overflow: 'auto', py: 1 }}>
         {/* 我的项目 */}
         <Box
-          onClick={() => handleNavigation(`/${locale}/dashboard`)}
+          onClick={() => handleNavigation(`/dashboard`)}
           sx={{
             mx: 1.5,
             mb: 0.5,
@@ -364,14 +367,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             alignItems: 'center',
             gap: 2,
             cursor: 'pointer',
-            backgroundColor: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+            backgroundColor: pathname === `/dashboard` && !pathname.includes('/subscription')
               ? isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
               : 'transparent',
-            color: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+            color: pathname === `/dashboard` && !pathname.includes('/subscription')
               ? isDark ? '#ffffff' : '#1c1917'
               : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
             '&:hover': {
-              backgroundColor: pathname === `/${locale}/dashboard` && !pathname.includes('/subscription')
+              backgroundColor: pathname === `/dashboard` && !pathname.includes('/subscription')
                 ? isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
                 : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
             },
@@ -389,7 +392,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
         {/* 订阅套餐 */}
         <Box
-          onClick={() => handleNavigation(`/${locale}/dashboard/subscription`)}
+          onClick={() => handleNavigation(`/dashboard/subscription`)}
           sx={{
             mx: 1.5,
             mb: 0.5,
@@ -400,14 +403,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
             alignItems: 'center',
             gap: 2,
             cursor: 'pointer',
-            backgroundColor: pathname === `/${locale}/dashboard/subscription`
+            backgroundColor: pathname === `/dashboard/subscription`
               ? isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'
               : 'transparent',
-            color: pathname === `/${locale}/dashboard/subscription`
+            color: pathname === `/dashboard/subscription`
               ? isDark ? '#ffffff' : '#1c1917'
               : isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)',
             '&:hover': {
-              backgroundColor: pathname === `/${locale}/dashboard/subscription`
+              backgroundColor: pathname === `/dashboard/subscription`
                 ? isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'
                 : isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
             },
@@ -456,7 +459,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
             </IconButton>
 
             <IconButton
-              onClick={() => handleNavigation(`/${locale}/dashboard`)}
+              onClick={() => handleNavigation(`/dashboard`)}
               sx={{
                 width: 32,
                 height: 32,
@@ -1066,7 +1069,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 data-testid="breadcrumb-project-current"
                 onClick={() => {
                   setProjectSwitchAnchor(null)
-                  router.push(`/${locale}/dashboard/project/${current.id}`)
+                  router.push(`/dashboard/project/${current.id}`)
                 }}
                 sx={{ py: 1 }}
               >
@@ -1120,13 +1123,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               data-testid="breadcrumb-project-action-create"
               onClick={() => {
                 setProjectSwitchAnchor(null)
-                router.push(`/${locale}/dashboard?create=1`)
+                router.push(`/dashboard?create=1`)
               }}
             >
               <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
                 <Add fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Create project" />
+              <ListItemText primary={t('project.create')} />
             </MenuItem>,
           )
           nodes.push(
@@ -1135,13 +1138,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               data-testid="breadcrumb-project-action-manage"
               onClick={() => {
                 setProjectSwitchAnchor(null)
-                router.push(`/${locale}/dashboard`)
+                router.push(`/dashboard`)
               }}
             >
               <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
                 <Tune fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Manage projects" />
+              <ListItemText primary={t('project.manage')} />
             </MenuItem>,
           )
 
@@ -1161,7 +1164,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 selected={selected}
                 onClick={() => {
                   setProjectSwitchAnchor(null)
-                  router.push(`/${locale}/dashboard/project/${p.id}`)
+                  router.push(`/dashboard/project/${p.id}`)
                 }}
                 sx={{
                   py: 1,
@@ -1242,7 +1245,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={() => {
                   setViewSwitchAnchor(null)
                   if (!currentProjectId) return
-                  router.push(`/${locale}/dashboard/project/${currentProjectId}/view/${current.id}`)
+                  router.push(`/dashboard/project/${currentProjectId}/view/${current.id}`)
                 }}
                 sx={{ py: 1 }}
               >
@@ -1277,13 +1280,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               onClick={() => {
                 setViewSwitchAnchor(null)
                 if (!currentProjectId) return
-                router.push(`/${locale}/dashboard/project/${currentProjectId}/settings`)
+                router.push(`/dashboard/project/${currentProjectId}/settings`)
               }}
             >
               <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
                 <Add fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Create view" />
+              <ListItemText primary={t('view.create')} />
             </MenuItem>,
           )
           nodes.push(
@@ -1293,13 +1296,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
               onClick={() => {
                 setViewSwitchAnchor(null)
                 if (!currentProjectId) return
-                router.push(`/${locale}/dashboard/project/${currentProjectId}/settings`)
+                router.push(`/dashboard/project/${currentProjectId}/settings`)
               }}
             >
               <ListItemIcon sx={{ minWidth: 34, color: isDark ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.55)' }}>
                 <Tune fontSize="small" />
               </ListItemIcon>
-              <ListItemText primary="Manage views" />
+              <ListItemText primary={t('view.manage')} />
             </MenuItem>,
           )
 
@@ -1320,7 +1323,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 onClick={() => {
                   setViewSwitchAnchor(null)
                   if (!currentProjectId) return
-                  router.push(`/${locale}/dashboard/project/${currentProjectId}/view/${v.id}`)
+                  router.push(`/dashboard/project/${currentProjectId}/view/${v.id}`)
                 }}
                 sx={{
                   py: 1,
